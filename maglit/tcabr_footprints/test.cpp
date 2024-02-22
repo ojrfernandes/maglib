@@ -77,7 +77,7 @@ void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
     scalars.deltaPhi = phi1 - phi0;
     scalars.length = arc;
-    printf("\n%f\n", scalars.psimin);
+    // printf("\n%f\n", scalars.psimin);
     status_printer(status);
 }
 

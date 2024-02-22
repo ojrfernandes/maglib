@@ -1,12 +1,4 @@
-typedef struct {
-    int     np;  // number of nodes
-    double *R;   // node coords
-    double *Z;   //
-    double  Rc;  // center coords
-    double  Zc;  //
-    double *th;  // sector angles
-    int     idx; // current index
-} tcabr_shape;
+#include "tcabr_collider.h"
 
 bool load_shape(const char path[], tcabr_shape *shape) {
     FILE *f0 = fopen(path, "r");
@@ -95,8 +87,7 @@ bool search_index(double ang, tcabr_shape *shape) {
 }
 
 // calculate AB x AC
-double
-cross(double RA, double ZA, double RB, double ZB, double RC, double ZC) {
+double cross(double RA, double ZA, double RB, double ZB, double RC, double ZC) {
     double dR1 = RB - RA;
     double dZ1 = ZB - ZA;
     double dR2 = RC - RA;
