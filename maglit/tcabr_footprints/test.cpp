@@ -1,24 +1,5 @@
-#include <stdio.h>
-#include <unistd.h>
 
-#include "../../sode/sode.cpp"
-#include "../auxfields.cpp"
-#include "../maglit.cpp"
-#include "tcabr_collider.cpp"
-
-//  COMPILATION: make test
-
-// function to map coordinates in vessel and get scalar values
-typedef struct
-{
-    double deltaPhi;
-    double length;
-    double psimin;
-} map_scalars;
-
-void   map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars);
-void   status_printer(int status);
-double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1);
+#include "test.h"
 
 int main() {
     char   source_path[] = "/home/jose/Software/maglib/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
