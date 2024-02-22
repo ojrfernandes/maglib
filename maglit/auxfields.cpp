@@ -17,7 +17,12 @@ auxfields::auxfields(char *source_path, int source_type) {
 
 // int psi_eval(double *x, double *psi)
 void auxfields::psi_eval(double &R, double &Phi, double &Z, double *psi) {
-    int    status = src->get_field(FIO_POLOIDAL_FLUX, &psi_field, &opt);
+    int status = src->get_field(FIO_POLOIDAL_FLUX, &psi_field, &opt);
+    if (status != FIO_SUCCESS) {
+        printf("Error evaluating poloidal flux\n");
+        psi_field = 0;
+        return;
+    }
     double x[3] = {R, Phi, Z};
     psi_field->eval(x, psi);
     // printf("psi = %f\n", *psi);
@@ -25,7 +30,12 @@ void auxfields::psi_eval(double &R, double &Phi, double &Z, double *psi) {
 
 // int psin_eval(double *x, double *psin)
 void auxfields::psin_eval(double &R, double &Phi, double &Z, double *psin) {
-    int    status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field, &opt);
+    int status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field, &opt);
+    if (status != FIO_SUCCESS) {
+        printf("Error evaluating normalized poloidal flux\n");
+        psin_field = 0;
+        return;
+    }
     double x[3] = {R, Phi, Z};
     psin_field->eval(x, psin);
     // printf("psin = %f\n", *psin);
