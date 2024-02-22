@@ -23,27 +23,9 @@ INCLUDE := -I$(FIO_DIR)/include $(HDF5_INCLUDE) $(INCLUDE)
 
 test : test.o
 	$(LD) $(LDFLAGS) $< $(LIBS) -o $@
-	
-test_copy : test_copy.o
-	$(LD) $(LDFLAGS) $< $(LIBS) -o $@
-
-test_2 : test_2.o
-	$(LD) $(LDFLAGS) $< $(LIBS) -o $@
-
-test_3 : test_3.o
-	$(LD) $(LDFLAGS) $< $(LIBS) -o $@
 
 test.o : test.cpp
 	$(CXX) $< -c $(CFLAGS) $(INCLUDE) -o$@
 
-test_copy.o : test_copy.cpp
-	$(CXX) $< -c $(CFLAGS) $(INCLUDE) -o $@
-
-test_2.o : test_2.cpp
-	$(CXX) $< -c $(CFLAGS) $(INCLUDE) -o $@
-
-test_3.o : test_3.cpp
-	$(CXX) $< -c $(CFLAGS) $(INCLUDE) -o $@
-
 clean :
-	rm -f *.o *~ test test_copy test_2 test_3
+	rm -f *.o *~ test

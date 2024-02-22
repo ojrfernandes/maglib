@@ -16,14 +16,32 @@ bool load_shape(const char path[], tcabr_shape *shape) {
     } else {
         printf("load_shape: %s loaded\n", path);
     }
-    fscanf(f0, "%d", &(shape->np));
+
+    // Check the return value of fscanf and handle errors
+    if (fscanf(f0, "%d", &(shape->np)) != 1) {
+        fclose(f0);
+        fprintf(stderr, "Error reading 'np' from file\n");
+        return false;
+    }
+
     shape->R = new double[shape->np];
     shape->Z = new double[shape->np];
     shape->th = new double[shape->np + 1];
-    double Rmin, Rmax, Zmin, Zmax;
+    double Rmin = 0, Rmax = 0, Zmin = 0, Zmax = 0;
+
     for (int i = 0; i < (shape->np); i++) {
-        fscanf(f0, "%lf", shape->R + i);
-        fscanf(f0, "%lf", shape->Z + i);
+        if (fscanf(f0, "%lf", shape->R + i) != 1) {
+            fclose(f0);
+            fprintf(stderr, "Error reading 'R[%d]' from file\n", i);
+            return false;
+        }
+
+        if (fscanf(f0, "%lf", shape->Z + i) != 1) {
+            fclose(f0);
+            fprintf(stderr, "Error reading 'Z[%d]' from file\n", i);
+            return false;
+        }
+
         if (shape->R[i] < Rmin || i == 0)
             Rmin = shape->R[i];
         if (shape->R[i] > Rmax || i == 0)
@@ -33,12 +51,15 @@ bool load_shape(const char path[], tcabr_shape *shape) {
         if (shape->Z[i] > Zmax || i == 0)
             Zmax = shape->Z[i];
     }
+
     shape->Rc = 0.5 * (Rmin + Rmax);
     shape->Zc = 0.5 * (Zmin + Zmax);
     printf("shape Rc, Zc = %f, %f\n", shape->Rc, shape->Zc);
+
     for (int i = 0; i < (shape->np); i++) {
         shape->th[i] = atan2(shape->Z[i] - shape->Zc, shape->R[i] - shape->Rc);
     }
+
     shape->th[shape->np] = shape->th[0] + 2 * M_PI;
     fclose(f0);
     return true;

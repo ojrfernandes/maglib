@@ -1,8 +1,7 @@
-
 #include "test.h"
 
 int main() {
-    char   source_path[] = "/home/jose/Software/maglib/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
+    char   source_path[] = "/home/jose/Software/maglib_backup/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
     char   shape_path[] = "tcabr_first_wall_m3dc1";
     char   output_path[] = "i_coils_n3.dat";
     double Rmin = 0.471;
