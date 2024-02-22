@@ -21,15 +21,16 @@ void   status_printer(int status);
 double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1);
 
 int main() {
-    char   source_path[] = "../our_m3dc1_data/i_coils/n03/C1.h5";
+    char   source_path[] = "/home/jose/Software/maglib/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
     char   shape_path[] = "tcabr_first_wall_m3dc1";
-    char   output_path[] = "../orbits/i_coils_n3_02.dat";
-    double Rmin = 0.470;
-    double Rmax = 0.487;
-    int    nR = 300;
-    int    nPhi = 300;
+    char   output_path[] = "i_coils_n3.dat";
+    double Rmin = 0.471;
+    double Rmax = 0.478;
+    int    nR = 10;
+    int    nPhi = 20;
 
-    Check if the output file name is unique if (access(output_path, F_OK) != -1) {
+    // Check if the output file name is unique
+    if (access(output_path, F_OK) != -1) {
         printf("There is a file with the same name saved to the chosen directory. Please change the output file name to avoid overwriting your data. \n");
         return 1;
     }
@@ -70,28 +71,6 @@ int main() {
     fclose(f0);
     free_shape(shape);
     return 0;
-}
-
-// test function for psi (obsolete - NOT BEING USED)
-void calc_fields(double R, double Z, double phi) {
-    double      psi[1];
-    double      x2[3] = {R, phi, Z};
-    const char *source_path = "../our_m3dc1_data/i_coils/n03/C1.h5";
-
-    fio_source     *src2;
-    fio_field      *psi_field;
-    fio_option_list opt2;
-
-    fio_open_source(&src2, FIO_M3DC1_SOURCE, source_path);
-
-    src2->get_field_options(&opt2);
-    opt2.set_option(FIO_TIMESLICE, 0);
-    opt2.set_option(FIO_PART, FIO_TOTAL);
-
-    src2->get_field(FIO_POLOIDAL_FLUX_NORM, &psi_field, &opt2);
-
-    psi_field->eval(x2, psi);
-    printf("psi = %f\n", *psi);
 }
 
 void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {

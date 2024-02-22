@@ -1,7 +1,0 @@
-source_path = ../our_m3dc1_data/i_coils/n03/C1.h5
-shape_path = tcabr_first_wall_m3dc1
-output_path = ../orbits/test_6.dat
-Rmin = 0.471
-Rmax = 0.478
-nR = 10
-nPhi = 20
