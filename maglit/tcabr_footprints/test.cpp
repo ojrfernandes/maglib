@@ -1,13 +1,13 @@
 #include "test.h"
 
 int main() {
-    char   source_path[] = "/home/jose/Software/maglib_backup/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
+    char   source_path[] = "/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
     char   shape_path[] = "tcabr_first_wall_m3dc1";
     char   output_path[] = "i_coils_n3.dat";
     double Rmin = 0.471;
     double Rmax = 0.478;
-    int    nR = 10;
-    int    nPhi = 20;
+    int    nR = 7;
+    int    nPhi = 12;
 
     // Check if the output file name is unique
     if (access(output_path, F_OK) != -1) {
@@ -61,7 +61,8 @@ void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double
     phi1 = phi0;
     tracer.reset();
     double arc = 0;
-    double psin[1] = {5};
+    double psin_value = 5.0;
+    double* psin = &psin_value;
     scalars.psimin = *psin;
     do {
         R0 = R1;
