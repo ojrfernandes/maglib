@@ -1,8 +1,11 @@
 #include <fusion_io.h>
-// #include <omp.h>
 #include <iostream>
+#include <omp.h>
 
 int main() {
+    int nt = omp_get_num_threads();
+    std::cout << nt << std::endl;
+
     fio_source *src;
     const char *source_path = "/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
 
