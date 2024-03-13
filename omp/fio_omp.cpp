@@ -1,42 +1,58 @@
 #include <fusion_io.h>
 #include <iostream>
 #include <omp.h>
+#include <sstream>
 
 int main() {
-    int nt = omp_get_num_threads();
-    std::cout << nt << std::endl;
 
-    fio_source *src;
+    // Path to the source file
     const char *source_path = "/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
 
-    int result = fio_open_source(&src, FIO_M3DC1_SOURCE, source_path);
-    if (result != FIO_SUCCESS) {
-        std::cout << "Error opening file " << source_path << std::endl;
-        delete (src);
-        return -1;
+    double B[10][3];
+    double x[10][3];
+
+#pragma omp parallel
+    {
+        fio_source *src;
+        int         result = fio_open_source(&src, FIO_M3DC1_SOURCE, source_path);
+        if (result != FIO_SUCCESS) {
+            std::cout << "Error opening file " << source_path << std::endl;
+            delete src;
+            exit(-1); // Use exit here cautiously; it will terminate the program. Consider other ways to handle errors.
+        }
+
+        fio_option_list opt;
+        src->get_field_options(&opt);
+        opt.set_option(FIO_TIMESLICE, 0);
+        opt.set_option(FIO_PART, FIO_TOTAL);
+
+        fio_field *mag_field;
+        result = src->get_field(FIO_MAGNETIC_FIELD, &mag_field, &opt);
+        if (result != FIO_SUCCESS) {
+            std::cout << "Error obtaining magnetic field from " << source_path << std::endl;
+            delete src; // Note: deleting src might not be enough; you might need to specifically release mag_field or other resources depending on the API.
+            exit(-1);
+        }
+
+#pragma omp for
+        for (int i = 0; i < 10; i++) {
+            x[i][0] = 0.6;
+            x[i][1] = 0.3;
+            x[i][2] = 0.1;
+            result = mag_field->eval(x[i], B[i]);
+
+            // Assuming you want to print inside the parallel region
+            // Be cautious about doing this to avoid jumbled output
+            std::stringstream ss;
+            ss << "BR, BPhi, BZ = " << B[i][0] << ", " << B[i][1] << ", " << B[i][2] << " from thread " << omp_get_thread_num() << std::endl;
+            std::cout << ss.str();
+        }
+
+        // Cleanup for each thread
+        delete src; // Again, make sure you're managing memory correctly according to the API's requirements.
     }
 
-    fio_option_list opt;
-    (*src).get_field_options(&opt);
-    opt.set_option(FIO_TIMESLICE, 0);
-    opt.set_option(FIO_PART, FIO_TOTAL);
-
-    fio_field *mag_field;
-    result = (*src).get_field(FIO_MAGNETIC_FIELD, &mag_field, &opt);
-    if (result != FIO_SUCCESS) {
-        std::cout << "Error opening file " << source_path << std::endl;
-        mag_field = 0;
-        return -1;
-    }
-
-    double B[3];
-    double x[3];
-    x[0] = 0.6; // R
-    x[1] = 0.0; // Phi
-    x[2] = 0.1; // Z
-    result = (*mag_field).eval(x, B);
-    std::cout << "BR, BPhi, BZ = " << B[0] << ", " << B[1] << ", " << B[2] << std::endl;
-    // std::cout << "Printed by thread: " << omp_get_thread_num() << std::endl;
+    // Note: Removed the final printing loop to avoid repeated printing
 
     return 0;
 }
