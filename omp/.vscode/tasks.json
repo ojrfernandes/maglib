@@ -1,0 +1,14 @@
+{
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "run the makefile",
+            "command": "make",
+            "args": [
+                "fio_omp"
+            ],
+            "problemMatcher": [],
+        }
+    ],
+    "version": "2.0.0"
+}
