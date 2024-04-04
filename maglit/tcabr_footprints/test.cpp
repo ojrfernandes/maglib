@@ -1,9 +1,11 @@
 #include "test.h"
 
 int main() {
-    char   source_path[] = "/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
-    char   shape_path[] = "tcabr_first_wall_m3dc1";
-    char   output_path[] = "i_coils_n3.dat";
+    std::string pathsFile = "paths.txt";
+    char       *source_path;
+    char       *shape_path;
+    char       *output_path;
+    readPaths(pathsFile, source_path, shape_path, output_path);
     double Rmin = 0.471;
     double Rmax = 0.478;
     int    nR = 7;
@@ -50,6 +52,11 @@ int main() {
 
     fclose(f0);
     free_shape(shape);
+
+    delete[] source_path;
+    delete[] shape_path;
+    delete[] output_path;
+
     return 0;
 }
 
@@ -60,9 +67,9 @@ void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double
     Z1 = Z0;
     phi1 = phi0;
     tracer.reset();
-    double arc = 0;
-    double psin_value = 5.0;
-    double* psin = &psin_value;
+    double  arc = 0;
+    double  psin_value = 5.0;
+    double *psin = &psin_value;
     scalars.psimin = *psin;
     do {
         R0 = R1;
@@ -111,10 +118,46 @@ void status_printer(int status) {
     }
 }
 
-double
-dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1) {
+double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1) {
     double dx = R1 * cos(phi1) - R0 * cos(phi0);
     double dy = R1 * sin(phi1) - R0 * sin(phi0);
     double dz = Z1 - Z0;
     return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+void readPaths(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path) {
+
+    std::ifstream pathFile(readingPath);
+
+    if (pathFile.is_open()) {
+        std::string source_path_str, shape_path_str, output_path_str;
+        int         line_index = 0;
+        std::string line;
+
+        while (std::getline(pathFile, line) && line_index < 3) {
+            if (!line.empty() && line[0] != '#') {
+                if (line_index == 0) {
+                    source_path_str = line;
+                } else if (line_index == 1) {
+                    shape_path_str = line;
+                } else if (line_index == 2) {
+                    output_path_str = line;
+                }
+                line_index++;
+            }
+        }
+        pathFile.close();
+
+        source_path = new char[source_path_str.length() + 1];
+        std::strcpy(source_path, source_path_str.c_str());
+
+        shape_path = new char[shape_path_str.length() + 1];
+        std::strcpy(shape_path, shape_path_str.c_str());
+
+        output_path = new char[output_path_str.length() + 1];
+        std::strcpy(output_path, output_path_str.c_str());
+
+    } else {
+        std::cerr << "Unable to open file: " << readingPath << std::endl;
+    }
 }

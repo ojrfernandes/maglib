@@ -1,11 +1,3 @@
-66
-/home/jose/Software/maglib/maglit_backup/our_m3dc1_data/i_coils/n03/C1.h5
-22
-tcabr_first_wall_m3dc1
-18
-/orbits/test_cont.dat
-
-10
 0.471
 0.47169999999999995
 0.4724
@@ -16,8 +8,7 @@ tcabr_first_wall_m3dc1
 0.4759
 0.47659999999999997
 0.4773
-
-20
+#
 0.0
 0.3141592653589793
 0.6283185307179586

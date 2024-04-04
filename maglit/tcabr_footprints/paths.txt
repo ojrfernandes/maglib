@@ -1,0 +1,6 @@
+# source_path
+/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5
+# shape_path
+tcabr_first_wall_m3dc1
+# output_path
+test_reading_02.dat

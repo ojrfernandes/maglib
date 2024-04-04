@@ -1,7 +1,7 @@
 FIO_DIR=/home/jfernandes/Software/fusion-io/build
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2
+CFLAGS = -Wall -fPIC -O2 -g
 
 LD = $(CXX)
 LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib
