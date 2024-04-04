@@ -1,7 +1,7 @@
 #include "auxfields.h"
 
 // auxfields(char *source_path, int source_type)
-auxfields::auxfields(char *source_path, int source_type) {
+auxfields::auxfields(const char *source_path, int source_type) {
     // load source from file
     int result = fio_open_source(&src, source_type, source_path);
     if (result != FIO_SUCCESS) {

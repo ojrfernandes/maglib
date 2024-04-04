@@ -8,7 +8,7 @@ class maglit {
   public:
     // opens source and enters additional parameters
     // source_type: FIO_M3DC1_SOURCE, FIO_GEQDSK_SOURCE, FIO_GPEC_SOURCE
-    maglit(char *source_path, int source_type);
+    maglit(const char *source_path, int source_type);
     // optional: defines the inside region of interest
     void set_inside(void *aux, bool (*inside)(double R, double Z, double phi, void *aux));
     // evaluates the magnetic field in cylindrical coordinates

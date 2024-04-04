@@ -1,7 +1,7 @@
 #include "maglit.h"
 
 // maglit::maglit(char *source_path, int source_type, void* aux):
-maglit::maglit(char *source_path, int source_type) : solver(SODE_RK56_CK, 2) {
+maglit::maglit(const char *source_path, int source_type) : solver(SODE_RK56_CK, 2) {
     // load source from file
     int result = fio_open_source(&src, source_type, source_path);
     if (result != FIO_SUCCESS) {
