@@ -50,8 +50,8 @@ int main() {
     void *hint = calloc(npts, hint_size);
 
     std::mt19937_64                        engine;
-    std::uniform_real_distribution<double> r_dist(-0.1, 0.1);
-    std::uniform_real_distribution<double> z_dist(-0.1, 0.1);
+    std::uniform_real_distribution<double> r_dist(0.4, 0.5);
+    std::uniform_real_distribution<double> z_dist(0.4, 0.5);
     std::uniform_real_distribution<double> phi_dist(0, 2.0 * M_PI);
 
     std::cout << "Starting Random" << std::endl;

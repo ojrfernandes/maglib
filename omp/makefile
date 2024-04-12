@@ -1,7 +1,7 @@
 FIO_DIR=/home/jfernandes/Software/fusion-io/build
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2 -fopenmp -g
+CFLAGS = -Wall -fPIC -O2 -fopenmp -g -fsanitize=thread
 
 LD = $(CXX)
 LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib -fopenmp -g
