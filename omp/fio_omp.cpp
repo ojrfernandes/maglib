@@ -1,10 +1,9 @@
 #include <fusion_io.h>
-#include <m3dc1_source.h>
 #include <iostream>
+#include <m3dc1_source.h>
 #include <omp.h>
 
 int main() {
-
     fio_source *src;
     const char *source_path = "/home/jfernandes/Software/fusion-io/examples/data/m3dc1/C1.h5";
 
@@ -36,28 +35,29 @@ int main() {
         x[i][0] = 0.6;
         x[i][1] = 0.4;
         x[i][2] = 0.1;
-    }   
+    }
 
-    #pragma omp parallel for reduction(+:h_array[:100])
+    omp_set_num_threads(8);
+
+#pragma omp parallel for
     for (int i = 0; i < 100; i++) {
-        void* h;
-        result = (*src).allocate_search_hint(&h);
-        if (h == nullptr) {
+        fio_hint h;
+        int      local_result = (*src).allocate_search_hint(&h);
+        if (h == nullptr || local_result != FIO_SUCCESS) {
             std::cerr << "Failed to allocate memory for hint." << std::endl;
-        }
-        else {
-            result = (*mag_field).eval(x[i], B[i]);
+        } else {
+            local_result = (*mag_field).eval(x[i], B[i], h);
             h_array[i] = *((int *)h);
             (*src).deallocate_search_hint(&h);
         }
     }
-    
+
     for (int i = 0; i < 100; i++) {
-        std::cout << "\n" << h_array[i] << std::endl;
+        std::cout << "\n"
+                  << h_array[i] << std::endl;
         std::cout << "R, Phi, Z = " << x[i][0] << ", " << x[i][1] << ", " << x[i][2] << std::endl;
         std::cout << "BR, BPhi, BZ = " << B[i][0] << ", " << B[i][1] << ", " << B[i][2] << std::endl;
-        }
+    }
 
     return 0;
-
 }

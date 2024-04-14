@@ -1,28 +1,40 @@
 #include "test.h"
 
 int main() {
+    // read paths input file
     std::string pathsFile = "paths.txt";
     char       *source_path;
     char       *shape_path;
     char       *output_path;
     readPaths(pathsFile, source_path, shape_path, output_path);
+
+    // define grid parameters
     double Rmin = 0.471;
     double Rmax = 0.478;
     int    nR = 7;
     int    nPhi = 12;
 
-    // Check if the output file name is unique
+    // check if the output file name is unique
     if (access(output_path, F_OK) != -1) {
-        printf("There is a file with the same name saved to the chosen directory. Please change the output file name to avoid overwriting your data. \n");
-        return 1;
+
+        std::cerr << "There is a file with the same name saved to the chosen directory. Please change the output file name to avoid overwriting your data.\n"
+                  << std::endl;
+        return -1;
     }
 
+    // load file containing vessel shape
     tcabr_shape *shape = new tcabr_shape;
-    if (!load_shape(shape_path, shape))
+    if (!load_shape(shape_path, shape)) {
+        std::cerr << "Error on loading vessel shape.\n"
+                  << std::endl;
         return -1;
+    }
 
+    // define tracer maglit and auxfields objects
     maglit    tracer(source_path, FIO_M3DC1_SOURCE);
     auxfields aux_field(source_path, FIO_M3DC1_SOURCE);
+
+    // configure tracer parameters
     tracer.set_inside(shape, tcabr_inside);
     double dphi_init = 0.01;
     double dphi_min = 1e-5;
@@ -30,6 +42,7 @@ int main() {
     tracer.configure(dphi_init, dphi_min, dphi_max);
     // tracer.set_verb(); // activate messages
 
+    // vessel floor Z cordinate
     double Zfloor = -0.24;
 
     map_scalars scalars;

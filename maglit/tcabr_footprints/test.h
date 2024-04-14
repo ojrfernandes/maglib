@@ -26,7 +26,7 @@ void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double
 void status_printer(int status);
 // compute the distance integrated over the magnetic line
 double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1);
-
+// read the paths to the source, shape and output from an input file
 void readPaths(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path);
 
 #endif
