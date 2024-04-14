@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "iostream": "cpp"
-    },
-    "makefile.makefilePath": "/home/jfernandes/Software/maglib/omp/makefile",
-    "cmake.configureOnOpen": true
-}
