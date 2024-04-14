@@ -11,12 +11,11 @@ int main() {
     // define grid parameters
     double Rmin = 0.471;
     double Rmax = 0.478;
-    int    nR = 7;
-    int    nPhi = 12;
+    int    nR = 10;
+    int    nPhi = 20;
 
     // check if the output file name is unique
     if (access(output_path, F_OK) != -1) {
-
         std::cerr << "There is a file with the same name saved to the chosen directory. Please change the output file name to avoid overwriting your data.\n"
                   << std::endl;
         return -1;
@@ -31,8 +30,7 @@ int main() {
     }
 
     // define tracer maglit and auxfields objects
-    maglit    tracer(source_path, FIO_M3DC1_SOURCE);
-    auxfields aux_field(source_path, FIO_M3DC1_SOURCE);
+    maglit tracer(source_path, FIO_M3DC1_SOURCE);
 
     // configure tracer parameters
     tracer.set_inside(shape, tcabr_inside);
@@ -57,7 +55,7 @@ int main() {
         for (int j = 0; j < nR; j++) {
             double R0 = Rmin + (Rmax - Rmin) * j / nR;
             double R1;
-            map_wall(tracer, aux_field, R0, Z0, phi0, R1, Z1, phi1, scalars);
+            map_wall(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
             fprintf(f0, "%.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n", R0, Z0, phi0, R1, Z1, phi1, scalars.deltaPhi, scalars.length, scalars.psimin);
             printf("%f%%\n", 100.0 * (i * nR + j) / (nR * nPhi));
         }
@@ -73,7 +71,7 @@ int main() {
     return 0;
 }
 
-void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {
+void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {
     int    status;
     double phi_max = 100 * 2 * M_PI;
     R1 = R0;
@@ -84,6 +82,7 @@ void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double
     double  psin_value = 5.0;
     double *psin = &psin_value;
     scalars.psimin = *psin;
+    tracer.alloc_hint();
     do {
         R0 = R1;
         Z0 = Z1;
@@ -91,14 +90,14 @@ void map_wall(maglit &tracer, auxfields &aux_field, double R0, double Z0, double
         status = tracer.step(R1, Z1, phi1, phi_max, -1);
         if (status == SODE_CONTINUE_GOOD_STEP) {
             arc += dist(R0, Z0, phi0, R1, Z1, phi1);
-            aux_field.psin_eval(R1, phi1, Z1, psin);
+            tracer.psin_eval(R1, phi1, Z1, psin);
         }
         if (*psin < scalars.psimin)
             scalars.psimin = *psin;
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
+    tracer.clear_hint();
     scalars.deltaPhi = phi1 - phi0;
     scalars.length = arc;
-    // printf("\n%f\n", scalars.psimin);
     status_printer(status);
 }
 

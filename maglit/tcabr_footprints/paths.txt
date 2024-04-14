@@ -3,4 +3,4 @@
 # shape_path
 tcabr_first_wall_m3dc1
 # output_path
-test_reading_02.dat
+test_reading_00.dat

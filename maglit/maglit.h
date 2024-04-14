@@ -2,7 +2,9 @@
 #define MAGLIT_H
 #define MAGLIT_V 230604
 
+#include "../sode/sode.h"
 #include <fusion_io.h>
+#include <iostream>
 
 class maglit {
   public:
@@ -22,6 +24,12 @@ class maglit {
     void reset();
     // run to print detailed messages
     void set_verb();
+    // allocate search hint
+    void alloc_hint();
+    // clear hint allocated memory
+    void clear_hint();
+    // evaluate the normalizes poloidal flux
+    void psin_eval(double &R, double &Phi, double &Z, double *psin);
 
     // public variables
     bool (*inside)(double R, double Z, double phi, void *aux);
@@ -31,8 +39,10 @@ class maglit {
     bool            verb;
     fio_source     *src;
     fio_field      *mag_field;
+    fio_field      *psin_field;
     fio_option_list opt;
     sode            solver;
+    fio_hint        hint;
     double          x[2]; // auxiliary orbit variable
 };
 
