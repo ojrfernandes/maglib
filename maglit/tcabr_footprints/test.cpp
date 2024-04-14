@@ -9,16 +9,16 @@ int main() {
     readPaths(pathsFile, source_path, shape_path, output_path);
 
     // define grid parameters
-    double Rmin = 0.471;
-    double Rmax = 0.478;
-    int    nR = 10;
-    int    nPhi = 20;
+    double Rmin = 0.470;
+    double Rmax = 0.488;
+    int    nR = 300;
+    int    nPhi = 300;
 
     // check if the output file name is unique
     if (access(output_path, F_OK) != -1) {
         std::cerr << "There is a file with the same name saved to the chosen directory. Please change the output file name to avoid overwriting your data.\n"
                   << std::endl;
-        return -1;
+        return 1;
     }
 
     // load file containing vessel shape
@@ -26,7 +26,7 @@ int main() {
     if (!load_shape(shape_path, shape)) {
         std::cerr << "Error on loading vessel shape.\n"
                   << std::endl;
-        return -1;
+        return 1;
     }
 
     // define tracer maglit and auxfields objects
@@ -43,10 +43,22 @@ int main() {
     // vessel floor Z cordinate
     double Zfloor = -0.24;
 
+    // declare scalars type
     map_scalars scalars;
-    FILE       *f0 = fopen(output_path, "w");
-    printf("Running wall grid\n");
-    fprintf(f0, "#R0 Z0 phi0 R1 Z1 phi1 deltaPhi length psiMin\n");
+
+    // create output file
+    std::ofstream f0(output_path);
+    if (!f0.is_open()) {
+        std::cerr << "Failed to open file at" << output_path << std::endl;
+        return 1;
+    }
+
+    // print info on terminal
+    std::cout << "Running wall grid\n";
+
+    // write output file header
+    f0 << "#R0 Z0 phi0 R1 Z1 phi1 deltaPhi length psiMin\n";
+
     for (int i = 0; i < nPhi / 3; i++) {
         double Z0 = Zfloor;
         double Z1;
@@ -56,14 +68,17 @@ int main() {
             double R0 = Rmin + (Rmax - Rmin) * j / nR;
             double R1;
             map_wall(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
-            fprintf(f0, "%.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n", R0, Z0, phi0, R1, Z1, phi1, scalars.deltaPhi, scalars.length, scalars.psimin);
-            printf("%f%%\n", 100.0 * (i * nR + j) / (nR * nPhi));
+            f0 << std::fixed << std::setprecision(3);
+            f0 << R0 << ' ' << Z0 << ' ' << phi0 << ' '
+               << R1 << ' ' << Z1 << ' ' << phi1 << ' '
+               << scalars.deltaPhi << ' ' << scalars.length << ' ' << scalars.psimin << '\n';
+            std::cout << "\n"
+                      << 100.0 * (i * nR + j) / (nR * nPhi) << "%" << std::endl;
         }
     }
 
-    fclose(f0);
+    f0.close();
     free_shape(shape);
-
     delete[] source_path;
     delete[] shape_path;
     delete[] output_path;
@@ -72,16 +87,16 @@ int main() {
 }
 
 void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {
-    int    status;
-    double phi_max = 100 * 2 * M_PI;
     R1 = R0;
     Z1 = Z0;
     phi1 = phi0;
-    tracer.reset();
+    int     status;
+    double  phi_max = 100 * 2 * M_PI;
     double  arc = 0;
     double  psin_value = 5.0;
     double *psin = &psin_value;
     scalars.psimin = *psin;
+    tracer.reset();
     tracer.alloc_hint();
     do {
         R0 = R1;
@@ -98,9 +113,10 @@ void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, dou
     tracer.clear_hint();
     scalars.deltaPhi = phi1 - phi0;
     scalars.length = arc;
-    status_printer(status);
+    // status_printer(status);
 }
 
+// print the status of the integrator
 void status_printer(int status) {
     switch (status) {
     case SODE_OK:
@@ -130,6 +146,7 @@ void status_printer(int status) {
     }
 }
 
+// computes the connection_length
 double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1) {
     double dx = R1 * cos(phi1) - R0 * cos(phi0);
     double dy = R1 * sin(phi1) - R0 * sin(phi0);
@@ -137,6 +154,7 @@ double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1
     return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+// read paths to the source, shape and output from a text file
 void readPaths(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path) {
 
     std::ifstream pathFile(readingPath);
