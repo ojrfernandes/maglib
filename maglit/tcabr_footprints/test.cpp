@@ -11,8 +11,8 @@ int main() {
     // define grid parameters
     double Rmin = 0.470;
     double Rmax = 0.488;
-    int    nR = 300;
-    int    nPhi = 300;
+    int    nR = 20;
+    int    nPhi = 20;
 
     // check if the output file name is unique
     if (access(output_path, F_OK) != -1) {
@@ -46,19 +46,14 @@ int main() {
     // declare scalars type
     map_scalars scalars;
 
-    // create output file
-    std::ofstream f0(output_path);
-    if (!f0.is_open()) {
-        std::cerr << "Failed to open file at" << output_path << std::endl;
-        return 1;
-    }
-
     // print info on terminal
     std::cout << "Running wall grid\n";
 
-    // write output file header
-    f0 << "#R0 Z0 phi0 R1 Z1 phi1 deltaPhi length psiMin\n";
+    // allocate memory to store results
+    std::vector<std::string> dataWrite;
+    dataWrite.reserve(nR * nPhi);
 
+    // loop over the grid
     for (int i = 0; i < nPhi / 3; i++) {
         double Z0 = Zfloor;
         double Z1;
@@ -68,16 +63,33 @@ int main() {
             double R0 = Rmin + (Rmax - Rmin) * j / nR;
             double R1;
             map_wall(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
-            f0 << std::fixed << std::setprecision(3);
-            f0 << R0 << ' ' << Z0 << ' ' << phi0 << ' '
-               << R1 << ' ' << Z1 << ' ' << phi1 << ' '
-               << scalars.deltaPhi << ' ' << scalars.length << ' ' << scalars.psimin << '\n';
+            std::ostringstream stringStream;
+            stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
+            dataWrite.push_back(stringStream.str());
             std::cout << "\n"
                       << 100.0 * (i * nR + j) / (nR * nPhi) << "%" << std::endl;
         }
     }
 
+    // create output file
+    std::ofstream f0(output_path);
+    if (!f0.is_open()) {
+        std::cerr << "Failed to open file at" << output_path << std::endl;
+        return 1;
+    }
+
+    // write output file header
+    f0 << "#R0 Z0 phi0 R1 Z1 phi1 deltaPhi length psiMin\n";
+    // write output file data
+    for (const auto &line : dataWrite) {
+        f0 << line;
+    }
+    dataWrite.shrink_to_fit();
+
+    // close output file
     f0.close();
+
+    // free allocated memory
     free_shape(shape);
     delete[] source_path;
     delete[] shape_path;
@@ -86,6 +98,7 @@ int main() {
     return 0;
 }
 
+// map coordinates in vessel and get scalar values
 void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {
     R1 = R0;
     Z1 = Z0;
