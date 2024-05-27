@@ -1,18 +1,22 @@
 #include "test.h"
 
 int main() {
-    // read paths input file
-    std::string pathsFile = "paths.txt";
+    // read params from input file
+    std::string pathsFile = "params.txt";
     char       *source_path;
     char       *shape_path;
     char       *output_path;
-    readPaths(pathsFile, source_path, shape_path, output_path);
+    double Rmin;
+    double Rmax;
+    int nR;
+    int nPhi;
+    readPaths(pathsFile, source_path, shape_path, output_path, Rmin, Rmax, nR, nPhi);
 
-    // define grid parameters
-    double Rmin = 0.470;
-    double Rmax = 0.488;
-    int    nR = 20;
-    int    nPhi = 20;
+    // print the parameters
+    std::cout << "Rmin: " << Rmin << std::endl;
+    std::cout << "Rmax: " << Rmax << std::endl;
+    std::cout << "nR: " << nR << std::endl;
+    std::cout << "nPhi: " << nPhi << std::endl;
 
     // check if the output file name is unique
     if (access(output_path, F_OK) != -1) {
@@ -167,17 +171,17 @@ double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1
     return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-// read paths to the source, shape and output from a text file
-void readPaths(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path) {
+// read paths to the source, shape and output from a text file along with the initial variables grid parameters
+void readPaths(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path, double &Rmin, double &Rmax, int &nR, int &nPhi) {
 
     std::ifstream pathFile(readingPath);
 
     if (pathFile.is_open()) {
-        std::string source_path_str, shape_path_str, output_path_str;
+        std::string source_path_str, shape_path_str, output_path_str, Rmin_str, Rmax_str, nR_str, nPhi_str;
         int         line_index = 0;
         std::string line;
 
-        while (std::getline(pathFile, line) && line_index < 3) {
+        while (std::getline(pathFile, line) && line_index < 7) {
             if (!line.empty() && line[0] != '#') {
                 if (line_index == 0) {
                     source_path_str = line;
@@ -185,6 +189,14 @@ void readPaths(const std::string &readingPath, char *&source_path, char *&shape_
                     shape_path_str = line;
                 } else if (line_index == 2) {
                     output_path_str = line;
+                } else if (line_index == 3) {
+                    Rmin_str = line;
+                } else if (line_index == 4) {
+                    Rmax_str = line;
+                } else if (line_index == 5) {
+                    nR_str = line;
+                } else if (line_index == 6) {
+                    nPhi_str = line;
                 }
                 line_index++;
             }
@@ -199,6 +211,12 @@ void readPaths(const std::string &readingPath, char *&source_path, char *&shape_
 
         output_path = new char[output_path_str.length() + 1];
         std::strcpy(output_path, output_path_str.c_str());
+
+        Rmin = std::stod(Rmin_str);
+        Rmax = std::stod(Rmax_str);
+        nR = std::stoi(nR_str);
+        nPhi = std::stoi(nPhi_str);
+
 
     } else {
         std::cerr << "Unable to open file: " << readingPath << std::endl;

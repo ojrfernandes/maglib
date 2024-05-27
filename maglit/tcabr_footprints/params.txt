@@ -4,3 +4,11 @@
 tcabr_first_wall_m3dc1
 # output_path
 test_reading_01.dat
+# Rmin
+0.470
+# Rmax
+0.488
+# nR
+20
+# nPhi
+20
