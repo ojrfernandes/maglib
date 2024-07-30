@@ -12,7 +12,7 @@ maglit::maglit(const char *source_path, int source_type) : solver(SODE_RK56_CK, 
 
     // set options for fields obtained from this source
     src->get_field_options(&opt);
-    opt.set_option(FIO_TIMESLICE, 0);
+    opt.set_option(FIO_TIMESLICE, 1);
     opt.set_option(FIO_PART, FIO_TOTAL);
 
     // get magnetic field from source
@@ -90,8 +90,21 @@ void maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
     }
     double x[3] = {R, Phi, Z};
     psin_field->eval(x, psin, hint);
-    // printf("psin = %f\n", *psin);
 }
+
+void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
+    int status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psi_field, &opt);
+    if (status != FIO_SUCCESS) {
+        std::cerr << "Error evaluating normalized poloidal flux" << std::endl;
+        psi_field = 0;
+        return;
+    }
+    double x[3] = {R, Phi, Z};
+    psi_field->eval(x, psi, hint);
+}
+
+double aux_x[3];
+double aux_b[3];
 
 int mag_system(double *f, double *x, double t, void *mgl) {
     maglit *tracer = (maglit *)mgl;

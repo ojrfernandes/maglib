@@ -8,9 +8,8 @@
 #include <string>
 #include <unistd.h>
 
-#include "../../sode/sode.cpp"
-#include "../maglit.cpp"
-#include "tcabr_collider.cpp"
+#include "../maglit.h"
+#include "tcabr_collider.h"
 
 typedef struct
 {

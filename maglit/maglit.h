@@ -28,8 +28,10 @@ class maglit {
     void alloc_hint();
     // clear hint allocated memory
     void clear_hint();
-    // evaluate the normalizes poloidal flux
+    // evaluate the normalized poloidal flux
     void psin_eval(double &R, double &Phi, double &Z, double *psin);
+    // evaluate the poloidal flux
+    void psi_eval(double &R, double &Phi, double &Z, double *psi);
 
     // public variables
     bool (*inside)(double R, double Z, double phi, void *aux);
@@ -40,6 +42,7 @@ class maglit {
     fio_source     *src;
     fio_field      *mag_field;
     fio_field      *psin_field;
+    fio_field      *psi_field;
     fio_option_list opt;
     sode            solver;
     fio_hint        hint;
@@ -47,9 +50,9 @@ class maglit {
 };
 
 // dynamical system x: (R,z); t: phi
-double aux_x[3];
-double aux_b[3];
-int    mag_system(double *f, double *x, double t, void *mgl);
-bool   mag_monitor(double *x, double t, void *mgl);
+extern double aux_x[3];
+extern double aux_b[3];
+int           mag_system(double *f, double *x, double t, void *mgl);
+bool          mag_monitor(double *x, double t, void *mgl);
 
 #endif // MAGLIT_H

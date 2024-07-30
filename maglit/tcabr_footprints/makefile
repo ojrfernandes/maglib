@@ -1,7 +1,9 @@
-FIO_DIR=/home/jfernandes/Software/fusion-io/build
+FIO_DIR = /home/jfernandes/Software/fusion-io/build
+MAGLIT_DIR = /home/jfernandes/Software/maglib/maglit
+SODE_DIR = /home/jfernandes/Software/maglib/sode
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2
+CFLAGS = -Wall -fPIC -O2 -g
 
 LD = $(CXX)
 LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib
@@ -19,13 +21,30 @@ LIBS := -L$(FIO_DIR)/lib -lfusionio -lm3dc1 \
 		-Wl,-rpath,$(FIO_DIR)/lib \
 		$(HDF5_LIBS) $(LIBS)
 
-INCLUDE := -I$(FIO_DIR)/include $(HDF5_INCLUDE) $(INCLUDE)
+INCLUDE := -I$(FIO_DIR)/include $(HDF5_INCLUDE) $(INCLUDE) \
+		-I$(MAGLIT_DIR) \
+		-I$(SODE_DIR)
 
-test : test.o
-	$(LD) $(LDFLAGS) $< $(LIBS) -o $@
+# Source files
+SRCS = test.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp tcabr_collider.cpp
 
-test.o : test.cpp
-	$(CXX) $< -c $(CFLAGS) $(INCLUDE) -o $@
+# List of object files
+OBJS = $(SRCS:.cpp=.o)
 
-clean :
-	rm -f *.o *~ test
+# Default target
+test: $(OBJS)
+	$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+
+# Compile source files into object files
+$(MAGLIT_DIR)/%.o: $(MAGLIT_DIR)/%.cpp
+	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(SODE_DIR)/%.o: $(SODE_DIR)/%.cpp
+	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+%.o: %.cpp
+	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+# Clean up
+clean:
+	rm -f $(OBJS) *~ test

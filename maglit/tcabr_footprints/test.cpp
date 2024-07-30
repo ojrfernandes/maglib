@@ -6,10 +6,10 @@ int main() {
     char       *source_path;
     char       *shape_path;
     char       *output_path;
-    double Rmin;
-    double Rmax;
-    int nR;
-    int nPhi;
+    double      Rmin;
+    double      Rmax;
+    int         nR;
+    int         nPhi;
     readPaths(pathsFile, source_path, shape_path, output_path, Rmin, Rmax, nR, nPhi);
 
     // print the parameters
@@ -33,7 +33,7 @@ int main() {
         return 1;
     }
 
-    // define tracer maglit and auxfields objects
+    // define tracer maglit object
     maglit tracer(source_path, FIO_M3DC1_SOURCE);
 
     // configure tracer parameters
@@ -216,7 +216,6 @@ void readPaths(const std::string &readingPath, char *&source_path, char *&shape_
         Rmax = std::stod(Rmax_str);
         nR = std::stoi(nR_str);
         nPhi = std::stoi(nPhi_str);
-
 
     } else {
         std::cerr << "Unable to open file: " << readingPath << std::endl;
