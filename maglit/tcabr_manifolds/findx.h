@@ -2,9 +2,14 @@
 #define FINDX_H
 
 #include "../maglit.h"
+#include <iomanip>
+#include <utility>
 
-double eval_psi(maglit &source, double R, double Z, double Phi);
-void   eval_field_derivative(maglit &source, double R, double Z, double Phi, double *gradient, double hessian[2][2], double h = 1e-6);
-bool   newton_raphson(maglit &source, double &R, double &Z, double &Phi, double tol = 1e-6, int max_iter = 1000);
+// Apply the map to a given point
+std::pair<double, double> apply_map(maglit &source, double R, double Z, double Phi);
+// Function to evaluate the planar map's jacobian
+void eval_jacobian(maglit &source, double R, double Z, double Phi, double h, double jacobian[2][2]);
+// Iteratively find the closest 1 period fixed point from the initial guess
+bool x_point(maglit &source, double &R, double &Z, double &Phi, double tol, int max_iter);
 
 #endif

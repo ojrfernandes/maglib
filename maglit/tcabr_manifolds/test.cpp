@@ -10,16 +10,22 @@ int main() {
     double dphi_max = 0.2;
     tracer.configure(dphi_init, dphi_min, dphi_max);
 
-    double Phi0 = 0.2 * M_PI;
-    double R_xpoint = 0.48;
-    double Z_xpoint = -0.2;
+    double Phi0 = 0;
+    double R_xpoint = 0.46;
+    double Z_xpoint = -0.21;
 
-    int    crossings = 100;
-    double R0 = 0.4698660634246061;
-    double Z0 = -0.2134422706264537;
+    bool found = x_point(tracer, R_xpoint, Z_xpoint, Phi0, 1e-12, 100);
+    if (found) {
+        std::cout << "Found X-point at R = " << R_xpoint << ", Z = " << Z_xpoint << ", phi = " << Phi0 << std::endl;
+    } else {
+        std::cerr << "No X-point found" << std::endl;
+        return 1;
+    }
+
+    int    crossings = 10;
     double phi_max = 2 * M_PI;
 
-    FILE  *f1 = fopen("crossings.dat", "a");
+    FILE  *f1 = fopen("test_xpoint_2.dat", "a");
     int    status = SODE_CONTINUE_GOOD_STEP;
     double Phi = 0;
     for (int i = 0; i < crossings; i++) {
@@ -27,27 +33,19 @@ int main() {
         tracer.alloc_hint();
         Phi = Phi0;
         do {
-            status = tracer.step(R0, Z0, Phi, phi_max, 0);
-            // printf("status: %d\n", status);
+            status = tracer.step(R_xpoint, Z_xpoint, Phi, phi_max, 0);
         } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
-        Phi = Phi0;
-        if (status == SODE_SUCCESS_TIME) {
-            fprintf(f1, "%f  %f  %f\n", R0, Z0, Phi0);
-            printf("SODE_SUCCESS_TIME");
-        } else {
-            printf("SODE_ERROR");
-        }
 
+        if (status == SODE_SUCCESS_TIME) {
+            fprintf(f1, "%.16f  %.16f  %.16f\n", R_xpoint, Z_xpoint, Phi);
+        } else {
+            printf("SODE_ERROR\n");
+        }
+        Phi = Phi0;
         tracer.clear_hint();
     }
-    fclose(f1);
 
-    bool found = newton_raphson(tracer, R_xpoint, Z_xpoint, Phi0);
-    if (found) {
-        std::cout << "Found X-point at R = " << R_xpoint << ", Z = " << Z_xpoint << ", phi = " << Phi0 << std::endl;
-    } else {
-        std::cout << "No X-point found" << std::endl;
-    }
+    fclose(f1);
 
     return 0;
 }

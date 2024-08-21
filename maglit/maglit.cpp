@@ -12,7 +12,7 @@ maglit::maglit(const char *source_path, int source_type) : solver(SODE_RK56_CK, 
 
     // set options for fields obtained from this source
     src->get_field_options(&opt);
-    opt.set_option(FIO_TIMESLICE, 1);
+    opt.set_option(FIO_TIMESLICE, -1);
     opt.set_option(FIO_PART, FIO_TOTAL);
 
     // get magnetic field from source
@@ -39,7 +39,7 @@ void maglit::set_inside(void *aux, bool (*inside)(double R, double Z, double phi
 bool maglit::calc_mag_field(double *x, double *B) {
     int result = mag_field->eval(x, B, hint);
     if (result != FIO_SUCCESS) {
-        std::cerr << "fio mag field returned " << result << std::endl;
+        std::cerr << "Fio mag field returned " << result << std::endl;
         return false;
     } else
         return true;
