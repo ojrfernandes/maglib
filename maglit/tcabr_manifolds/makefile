@@ -8,8 +8,8 @@ CFLAGS = -Wall -fPIC -O2 -g
 LD = $(CXX)
 LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib
 
-INCLUDE = -I/opt/local/include 
-LIBS = -L/opt/local/lib/gcc9 -lgfortran -lstdc++ 
+INCLUDE = -I/opt/local/include -I/usr/include
+LIBS = -L/opt/local/lib/gcc9 -lgfortran -lstdc++ -larmadillo
 
 HDF5_LIBS = -L/home/jfernandes/Software/CMake-hdf5-1.14.0/hdf5-1.14.0/hdf5/lib -lhdf5
 HDF5_INCLUDE = -I/home/jfernandes/Software/CMake-hdf5-1.14.0/hdf5-1.14.0/hdf5/include
@@ -26,7 +26,7 @@ INCLUDE := -I$(FIO_DIR)/include $(HDF5_INCLUDE) $(INCLUDE) \
 		-I$(SODE_DIR)
 
 # Source files
-SRCS = test.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp findx.cpp
+SRCS = test.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp
 
 # List of object files
 OBJS = $(SRCS:.cpp=.o)

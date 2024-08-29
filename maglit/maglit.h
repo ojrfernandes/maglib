@@ -11,6 +11,8 @@ class maglit {
     // opens source and enters additional parameters
     // source_type: FIO_M3DC1_SOURCE, FIO_GEQDSK_SOURCE, FIO_GPEC_SOURCE
     maglit(const char *source_path, int source_type);
+    // optional: sets the inverse map of the dynamical system
+    void inverse_map(bool inverse);
     // optional: defines the inside region of interest
     void set_inside(void *aux, bool (*inside)(double R, double Z, double phi, void *aux));
     // evaluates the magnetic field in cylindrical coordinates
@@ -52,7 +54,11 @@ class maglit {
 // dynamical system x: (R,z); t: phi
 extern double aux_x[3];
 extern double aux_b[3];
-int           mag_system(double *f, double *x, double t, void *mgl);
-bool          mag_monitor(double *x, double t, void *mgl);
+// map of dynamical system x: (R,z); t: phi
+int mag_system(double *f, double *x, double t, void *mgl);
+// inverse map of dynamical system x: (R,z); t: phi
+int inverse_mag_system(double *f, double *x, double t, void *mgl);
+// monitor for inside region of interest
+bool mag_monitor(double *x, double t, void *mgl);
 
 #endif // MAGLIT_H
