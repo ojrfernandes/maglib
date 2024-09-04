@@ -3,13 +3,13 @@
 int main() {
     // read params from input file
     std::string pathsFile = "params.txt";
-    char       *source_path;
-    char       *shape_path;
-    char       *output_path;
-    double      Rmin;
-    double      Rmax;
-    int         nR;
-    int         nPhi;
+    char *source_path;
+    char *shape_path;
+    char *output_path;
+    double Rmin;
+    double Rmax;
+    int nR;
+    int nPhi;
     readPaths(pathsFile, source_path, shape_path, output_path, Rmin, Rmax, nR, nPhi);
 
     // print the parameters
@@ -58,7 +58,7 @@ int main() {
     dataWrite.reserve(nR * nPhi);
 
     // loop over the grid
-    for (int i = 0; i < nPhi / 3; i++) {
+    for (int i = 0; i < nPhi; i++) {
         double Z0 = Zfloor;
         double Z1;
         double phi0 = 2 * M_PI * i / nPhi;
@@ -102,15 +102,15 @@ int main() {
     return 0;
 }
 
-// map coordinates in vessel and get scalar values
+// follow field lines and return scalar values when crossing the walls
 void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {
     R1 = R0;
     Z1 = Z0;
     phi1 = phi0;
-    int     status;
-    double  phi_max = 100 * 2 * M_PI;
-    double  arc = 0;
-    double  psin_value = 5.0;
+    int status;
+    double phi_max = 100 * 2 * M_PI;
+    double arc = 0;
+    double psin_value = 5.0;
     double *psin = &psin_value;
     scalars.psimin = *psin;
     tracer.reset();
@@ -178,7 +178,7 @@ void readPaths(const std::string &readingPath, char *&source_path, char *&shape_
 
     if (pathFile.is_open()) {
         std::string source_path_str, shape_path_str, output_path_str, Rmin_str, Rmax_str, nR_str, nPhi_str;
-        int         line_index = 0;
+        int line_index = 0;
         std::string line;
 
         while (std::getline(pathFile, line) && line_index < 7) {

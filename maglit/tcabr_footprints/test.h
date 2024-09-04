@@ -18,7 +18,7 @@ typedef struct
     double psimin;
 } map_scalars;
 
-// map coordinates in vessel and get scalar values
+// follow field lines and return scalar values when crossing the walls
 void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars);
 // print sode integrator status
 void status_printer(int status);

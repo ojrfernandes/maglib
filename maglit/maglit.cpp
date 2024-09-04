@@ -34,8 +34,6 @@ maglit::maglit(const char *source_path, int source_type) : solver(SODE_RK56_CK, 
 void maglit::inverse_map(bool inverse) {
     if (inverse)
         solver.set_system(inverse_mag_system);
-    else
-        solver.set_system(mag_system);
 }
 
 // optional: set inside region of interest
