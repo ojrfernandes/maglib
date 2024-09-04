@@ -7,15 +7,13 @@
 #include <thread>
 #include <utility>
 
-// Apply map to a given point returning a pair (R, Z)
-std::pair<double, double> apply_map(maglit &source, double R, double Z, double Phi, int nTurns) {
-    // Reset the source and allocate hint
+// Apply the map to a given point
+std::pair<double, double> apply_map(maglit &source, double R, double Z, double Phi) {
     int status = SODE_CONTINUE_GOOD_STEP;
     source.reset();
     source.alloc_hint();
-    double phi_max = nTurns * 2 * M_PI;
+    double phi_max = 2 * M_PI;
 
-    // Apply the map
     do {
         status = source.step(R, Z, Phi, phi_max, 0);
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
@@ -24,7 +22,7 @@ std::pair<double, double> apply_map(maglit &source, double R, double Z, double P
     if (status == SODE_SUCCESS_TIME) {
         return std::make_pair(R, Z);
     } else {
-        std::cerr << "Failed to apply map" << std::endl;
+        std::cerr << "Failed to apply map when evaluating the x-point" << std::endl;
         return std::make_pair(std::nan(""), std::nan(""));
     }
 }
@@ -32,13 +30,11 @@ std::pair<double, double> apply_map(maglit &source, double R, double Z, double P
 // Function to evaluate the planar map's jacobian
 void eval_jacobian(maglit &source, double R, double Z, double Phi, double h, double jacobian[2][2]) {
 
-    // Apply maps to the points (R + h, Z), (R - h, Z), (R, Z + h), (R, Z - h)
-    std::pair<double, double> point_1 = apply_map(source, R + h, Z, Phi, 1);
-    std::pair<double, double> point_2 = apply_map(source, R - h, Z, Phi, 1);
-    std::pair<double, double> point_3 = apply_map(source, R, Z + h, Phi, 1);
-    std::pair<double, double> point_4 = apply_map(source, R, Z - h, Phi, 1);
+    std::pair<double, double> point_1 = apply_map(source, R + h, Z, Phi);
+    std::pair<double, double> point_2 = apply_map(source, R - h, Z, Phi);
+    std::pair<double, double> point_3 = apply_map(source, R, Z + h, Phi);
+    std::pair<double, double> point_4 = apply_map(source, R, Z - h, Phi);
 
-    // Compute the jacobian
     jacobian[0][0] = (point_1.first - point_2.first) / (2 * h);
     jacobian[0][1] = (point_3.first - point_4.first) / (2 * h);
     jacobian[1][0] = (point_1.second - point_2.second) / (2 * h);
@@ -76,7 +72,7 @@ bool x_point(maglit &source, double &R, double &Z, double &Phi, double tol, int 
         inv_diff[1][1] = diff[0][0] / det;
 
         // compute (R1,RZ)
-        std::pair<double, double> R1_Z1 = apply_map(source, R, Z, Phi, 1);
+        std::pair<double, double> R1_Z1 = apply_map(source, R, Z, Phi);
         double R1 = R1_Z1.first;
         double Z1 = R1_Z1.second;
 
@@ -117,9 +113,9 @@ void primarySegment(maglit &source, double R_xpoint, double Z_xpoint, double Phi
     // Compute the eigenvalues and eigenvectors of the jacobian
     arma::cx_vec eigval;
     arma::cx_mat eigvec;
+
     arma::eig_gen(eigval, eigvec, jacobian_arma);
 
-    // Print the eigenvalues and eigenvectors
     std::cout << "Eigenvalues: " << std::endl;
     std::cout << eigval[0].real() << " " << eigval[1].real() << "\n"
               << std::endl;
@@ -157,7 +153,7 @@ void primarySegment(maglit &source, double R_xpoint, double Z_xpoint, double Phi
               << std::endl;
 
     // Apply the map M to the new point: M(R_new, Z_new) = (MR, MZ)
-    std::pair<double, double> M_rz = apply_map(source, R_new, Z_new, Phi, 1);
+    std::pair<double, double> M_rz = apply_map(source, R_new, Z_new, Phi);
     double MR = M_rz.first;
     double MZ = M_rz.second;
 
@@ -175,37 +171,6 @@ void primarySegment(maglit &source, double R_xpoint, double Z_xpoint, double Phi
     }
 };
 
-// Compute distance between two points
-double computeDistance(double R1, double Z1, double R2, double Z2) {
-    return std::sqrt((R1 - R2) * (R1 - R2) + (Z1 - Z2) * (Z1 - Z2));
-}
-
-// Compute angle between two vectors
-double computeAngle(double R0, double Z0, double R1, double Z1, double R2, double Z2) {
-    // compute vector from (R0, Z0) to (R1, Z1)
-    double v1_R = R1 - R0;
-    double v1_Z = Z1 - Z0;
-
-    // compute vector from (R1, Z1) to (R2, Z2)
-    double v2_R = R2 - R1;
-    double v2_Z = Z2 - Z1;
-
-    // compute angle between v1 and v2
-    double dot_product = v1_R * v2_R + v1_Z * v2_Z;
-    double norm_v1 = std::sqrt(v1_R * v1_R + v1_Z * v1_Z);
-    double norm_v2 = std::sqrt(v2_R * v2_R + v2_Z * v2_Z);
-
-    return std::acos(dot_product / (norm_v1 * norm_v2));
-}
-
-// Function to insert a new point in the vector
-void insertPoint(std::vector<double> &R_vec, std::vector<double> &Z_vec, int i) {
-    double R_new = (R_vec[i - 1] + R_vec[i]) / 2.0;
-    double Z_new = (Z_vec[i - 1] + Z_vec[i]) / 2.0;
-    R_vec.insert(R_vec.begin() + i, R_new);
-    Z_vec.insert(Z_vec.begin() + i, Z_new);
-}
-
 // Print a progress bar
 void progressBar(float progress) {
     int barWidth = 50;
@@ -222,53 +187,6 @@ void progressBar(float progress) {
     }
     std::cout << "] " << int(progress * 100.0) << " %\r";
     std::cout.flush();
-}
-
-void newSegment(maglit &tracer, std::vector<double> &R_PrevSeg, std::vector<double> &Z_PrevSeg, std::vector<double> &R_NewSeg, std::vector<double> &Z_NewSeg, double Phi, int nSeg, double l_lim, double theta_lim) {
-    size_t j = 1;
-    while (j < R_PrevSeg.size() - 1) {
-        std::pair<double, double> x_i = apply_map(tracer, R_PrevSeg[j - 1], Z_PrevSeg[j - 1], Phi, nSeg);
-        std::pair<double, double> x_j = apply_map(tracer, R_PrevSeg[j], Z_PrevSeg[j], Phi, nSeg);
-        std::pair<double, double> x_k = apply_map(tracer, R_PrevSeg[j + 1], Z_PrevSeg[j + 1], Phi, nSeg);
-
-        // double l_p = computeDistance(R_PrevSeg[j - 1], Z_PrevSeg[j - 1], R_PrevSeg[j], Z_PrevSeg[j]);
-        double l_i = computeDistance(x_i.first, x_i.second, x_j.first, x_j.second);
-        double l_ii = computeDistance(x_j.first, x_j.second, x_k.first, x_k.second);
-        double l_theta = computeAngle(x_i.first, x_i.second, x_j.first, x_j.second, x_k.first, x_k.second);
-
-        double L_lim;
-        if (l_theta > theta_lim) {
-            L_lim = l_lim * 0.1;
-        } else {
-            L_lim = l_lim;
-        }
-
-        if (l_i > L_lim) {
-            insertPoint(R_PrevSeg, Z_PrevSeg, j);
-            if (j != 1) {
-                j = j - 1;
-            }
-        } else if (l_ii > L_lim) {
-            insertPoint(R_PrevSeg, Z_PrevSeg, j + 1);
-        } else {
-            // std::cout << "passed with:" << l_theta << std::endl;
-            R_NewSeg.push_back(x_i.first);
-            Z_NewSeg.push_back(x_i.second);
-            // std::cout << x_i.first << " " << x_i.second << std::endl;
-            if (j == R_PrevSeg.size() - 2) {
-                R_NewSeg.push_back(x_j.first);
-                Z_NewSeg.push_back(x_j.second);
-                R_NewSeg.push_back(x_k.first);
-                Z_NewSeg.push_back(x_k.second);
-            }
-            j = j + 1;
-        }
-    }
-}
-
-std::pair<double, double> testMap(double R, double Z) {
-    double r = R + 5;
-    return std::make_pair(r, Z);
 }
 
 // test the x_point function
@@ -294,35 +212,44 @@ int main() {
     // std::cout << std::defaultfloat << std::setprecision(6);
 
     // Define the small distance epsilon
-    double epsilon = 1e-5;
+    double epsilon = 1e-7;
     int num_points = 10;
-    std::vector<double> R_primeseg(num_points);
-    std::vector<double> Z_primeseg(num_points);
-    primarySegment(tracer, R_xpoint, Z_xpoint, Phi, epsilon, num_points, R_primeseg, Z_primeseg);
+    std::vector<double> R_vec(num_points);
+    std::vector<double> Z_vec(num_points);
+    primarySegment(tracer, R_xpoint, Z_xpoint, Phi, epsilon, num_points, R_vec, Z_vec);
 
-    std::vector<double> R_newseg, Z_newseg;
-
-    double l_lim = 0.01;
-    double theta_lim = 0.17;
-    double nSeg = 9;
-
-    for (int i = 1; i < nSeg; ++i) {
-        newSegment(tracer, R_primeseg, Z_primeseg, R_newseg, Z_newseg, Phi, i, l_lim, theta_lim);
-        std::ofstream file2("newseg2_rz.dat");
-        file2 << std::fixed << std::setprecision(16);
-        if (file2.is_open()) {
-            for (size_t i = 0; i < R_newseg.size(); ++i) {
-                file2 << R_newseg[i] << " " << Z_newseg[i] << std::endl;
+    // Compute manifold
+    int crossings = 9;
+    double phi_max = 2 * M_PI;
+    double Phi_aux = 0;
+    FILE *f1 = fopen("crossings/crossings_icoil_n3_1_.dat", "a");
+    int status = SODE_CONTINUE_GOOD_STEP;
+    for (int j = 0; j < num_points; j++) {
+        for (int i = 0; i < crossings; i++) {
+            tracer.reset();
+            tracer.alloc_hint();
+            Phi_aux = Phi;
+            do {
+                status = tracer.step(R_vec[j], Z_vec[j], Phi_aux, phi_max, 0);
+            } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
+            Phi_aux = Phi;
+            if (status == SODE_SUCCESS_TIME) {
+                fprintf(f1, "%f  %f  %f\n", R_vec[j], Z_vec[j], Phi_aux);
+            } else {
+                printf("SODE_ERROR\n");
             }
-            file2.close();
+            tracer.clear_hint();
         }
 
-        progressBar((float)i / nSeg);
+        // print progress bar
+        float progress = (float)j / num_points;
+        progressBar(progress);
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     std::cout << "\nDone! \n"
               << std::endl;
+    fclose(f1);
 
     return 0;
 }
