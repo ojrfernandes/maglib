@@ -1,14 +1,14 @@
 # source_path
-/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5
+/home/jfernandes/Software/m3dc1_data/eq000/i_coils/n03/C1.h5
 # shape_path
 tcabr_first_wall_m3dc1
 # output_path
-test_reading_02.dat
+response.dat
 # Rmin
-0.470
+0.504
 # Rmax
-0.488
+0.530
 # nR
-20
+100
 # nPhi
-20
+200

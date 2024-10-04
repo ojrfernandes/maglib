@@ -137,28 +137,28 @@ void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, dou
 void status_printer(int status) {
     switch (status) {
     case SODE_OK:
-        printf("SODE_OK\n");
+        std::cout << "SODE_OK\n";
         break;
     case SODE_SUCCESS_TIME:
-        printf("SODE_SUCCESS_TIME\n");
+        std::cout << "SODE_SUCCESS_TIME\n";
         break;
     case SODE_SUCCESS_MONITOR:
-        printf("SODE_SUCCESS_MONITOR\n");
+        std::cout << "SODE_SUCCESS_MONITOR\n";
         break;
     case SODE_CONTINUE_GOOD_STEP:
-        printf("SODE_CONTINUE_GOOD_STEP\n");
+        std::cout << "SODE_CONTINUE_GOOD_STEP\n";
         break;
     case SODE_CONTINUE_BAD_STEP:
-        printf("SODE_CONTINUE_BAD_STEP\n");
+        std::cout << "SODE_CONTINUE_BAD_STEP\n";
         break;
     case SODE_FAILED:
-        printf("SODE_FAILED\n");
+        std::cout << "SODE_FAILED\n";
         break;
     case SODE_BAD_FUNC:
-        printf("SODE_BAD_FUNC\n");
+        std::cout << "SODE_BAD_FUNC\n";
         break;
     default:
-        printf("Unknown Status\n");
+        std::cout << "Unknown Status\n";
         break;
     }
 }
