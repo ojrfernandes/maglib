@@ -93,6 +93,7 @@ bool x_point(maglit &source, double &R, double &Z, double &Phi, double tol, int 
             return true;
         }
 
+        std::cout << "R: " << R << " Z: " << Z << std::endl;
         // check if iteration limit is reached
         if (iter == max_iter - 1) {
             std::cout << "Newton's method reached maximum number of iterations" << std::endl;
@@ -263,21 +264,17 @@ void newSegment(maglit &tracer, std::vector<double> &R_PrevSeg, std::vector<doub
             }
             j = j + 1;
         }
+        // std::cout << x_i.first << " " << x_i.second << std::endl;
     }
-}
-
-std::pair<double, double> testMap(double R, double Z) {
-    double r = R + 5;
-    return std::make_pair(r, Z);
 }
 
 // test the x_point function
 int main() {
-    char source_path[] = "/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5";
+    char source_path[] = "/home/jfernandes/Software/m3dc1_data/cp_coils/n06/C1.h5";
     maglit tracer(source_path, FIO_M3DC1_SOURCE);
     tracer.inverse_map(false);
-    double R_xpoint = 0.48;
-    double Z_xpoint = -0.2;
+    double R_xpoint = 0.49800405;
+    double Z_xpoint = -0.21860696;
     double Phi = 0;
 
     bool found_xp = x_point(tracer, R_xpoint, Z_xpoint, Phi, 1e-12, 100);
@@ -294,7 +291,7 @@ int main() {
     // std::cout << std::defaultfloat << std::setprecision(6);
 
     // Define the small distance epsilon
-    double epsilon = 1e-5;
+    double epsilon = 1e-4;
     int num_points = 10;
     std::vector<double> R_primeseg(num_points);
     std::vector<double> Z_primeseg(num_points);
@@ -304,11 +301,11 @@ int main() {
 
     double l_lim = 0.01;
     double theta_lim = 0.17;
-    double nSeg = 9;
+    double nSeg = 6;
 
     for (int i = 1; i < nSeg; ++i) {
         newSegment(tracer, R_primeseg, Z_primeseg, R_newseg, Z_newseg, Phi, i, l_lim, theta_lim);
-        std::ofstream file2("newseg2_rz.dat");
+        std::ofstream file2("cp_n06_S.dat");
         file2 << std::fixed << std::setprecision(16);
         if (file2.is_open()) {
             for (size_t i = 0; i < R_newseg.size(); ++i) {

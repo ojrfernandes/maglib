@@ -34,6 +34,8 @@ maglit::maglit(const char *source_path, int source_type) : solver(SODE_RK56_CK, 
 void maglit::inverse_map(bool inverse) {
     if (inverse)
         solver.set_system(inverse_mag_system);
+    else
+        solver.set_system(mag_system);
 }
 
 // optional: set inside region of interest
@@ -82,7 +84,7 @@ void maglit::set_verb() {
 
 // allocate memory for hint
 void maglit::alloc_hint() {
-    int result = (*src).allocate_search_hint(&hint);
+    int result = src->allocate_search_hint(&hint);
     if (hint == nullptr || result != FIO_SUCCESS) {
         std::cerr << "Failed to allocate memory for hint." << std::endl;
         return;
