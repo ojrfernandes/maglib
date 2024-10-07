@@ -6,17 +6,13 @@ int main() {
     char *source_path;
     char *shape_path;
     char *output_path;
-    double Rmin;
-    double Rmax;
-    int nR;
+    int plate;
+    int timeslice;
+    double gridMin;
+    double gridMax;
+    int nGrid;
     int nPhi;
-    readPaths(pathsFile, source_path, shape_path, output_path, Rmin, Rmax, nR, nPhi);
-
-    // print the parameters
-    std::cout << "Rmin: " << Rmin << std::endl;
-    std::cout << "Rmax: " << Rmax << std::endl;
-    std::cout << "nR: " << nR << std::endl;
-    std::cout << "nPhi: " << nPhi << std::endl;
+    readParams(pathsFile, source_path, shape_path, output_path, plate, timeslice, gridMin, gridMax, nGrid, nPhi);
 
     // check if the output file name is unique
     if (access(output_path, F_OK) != -1) {
@@ -34,7 +30,7 @@ int main() {
     }
 
     // define tracer maglit object
-    maglit tracer(source_path, FIO_M3DC1_SOURCE);
+    maglit tracer(source_path, FIO_M3DC1_SOURCE, timeslice);
 
     // configure tracer parameters
     tracer.set_inside(shape, tcabr_inside);
@@ -44,9 +40,6 @@ int main() {
     tracer.configure(dphi_init, dphi_min, dphi_max);
     // tracer.set_verb(); // activate messages
 
-    // vessel floor Z cordinate
-    double Zfloor = -0.24;
-
     // declare scalars type
     map_scalars scalars;
 
@@ -55,24 +48,36 @@ int main() {
 
     // allocate memory to store results
     std::vector<std::string> dataWrite;
-    dataWrite.reserve(nR * nPhi);
+    dataWrite.reserve(nGrid * nPhi);
 
-    // loop over the grid
-    for (int i = 0; i < nPhi; i++) {
-        double Z0 = Zfloor;
-        double Z1;
-        double phi0 = 2 * M_PI * i / nPhi;
-        double phi1;
-        for (int j = 0; j < nR; j++) {
-            double R0 = Rmin + (Rmax - Rmin) * j / nR;
-            double R1;
-            map_wall(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
-            std::ostringstream stringStream;
-            stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
-            dataWrite.push_back(stringStream.str());
-            std::cout << "\n"
-                      << 100.0 * (i * nR + j) / (nR * nPhi) << "%" << std::endl;
-        }
+    if (plate == 0) {
+        // print the parameters
+        std::cout << "Plate: Floor\n";
+        std::cout << "Rmin: " << gridMin << std::endl;
+        std::cout << "Rmax: " << gridMax << std::endl;
+        std::cout << "nR: " << nGrid << std::endl;
+        std::cout << "nPhi: " << nPhi << std::endl;
+
+        // vessel floor Z cordinate
+        double Zfloor = -0.24;
+
+        // run the grid
+        floor_grid(nPhi, nGrid, gridMin, gridMax, Zfloor, tracer, scalars, dataWrite);
+    } else {
+        std::cout << "Plate: Wall\n";
+        std::cout << "Zmin: " << gridMin << std::endl;
+        std::cout << "Zmax: " << gridMax << std::endl;
+        std::cout << "nZ: " << nGrid << std::endl;
+        std::cout << "nPhi: " << nPhi << std::endl;
+
+        // vessel wall R cordinate
+        double Rfloor = 0.435;
+
+        // invert map
+        tracer.inverse_map(true);
+
+        // run the grid
+        wall_grid(nPhi, nGrid, gridMin, gridMax, Rfloor, tracer, scalars, dataWrite);
     }
 
     // create output file
@@ -102,8 +107,48 @@ int main() {
     return 0;
 }
 
+void floor_grid(double nPhi, double nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
+    // loop over the grid
+    for (int i = 0; i < nPhi; i++) {
+        double Z0 = Zfloor;
+        double Z1;
+        double phi0 = 2 * M_PI * i / nPhi;
+        double phi1;
+        for (int j = 0; j < nR; j++) {
+            double R0 = Rmin + (Rmax - Rmin) * j / nR;
+            double R1;
+            evolve_lines(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
+            std::ostringstream stringStream;
+            stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
+            dataWrite.push_back(stringStream.str());
+            std::cout << "\n"
+                      << 100.0 * (i * nR + j) / (nR * nPhi) << "%" << std::endl;
+        }
+    }
+}
+
+void wall_grid(double nPhi, double nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
+    // loop over the grid
+    for (int i = 0; i < nPhi; i++) {
+        double R0 = Rfloor;
+        double R1;
+        double phi0 = 2 * M_PI * i / nPhi;
+        double phi1;
+        for (int j = 0; j < nZ; j++) {
+            double Z0 = Zmin + (Zmax - Zmin) * j / nZ;
+            double Z1;
+            evolve_lines(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
+            std::ostringstream stringStream;
+            stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
+            dataWrite.push_back(stringStream.str());
+            std::cout << "\n"
+                      << 100.0 * (i * nZ + j) / (nZ * nPhi) << "%" << std::endl;
+        }
+    }
+}
+
 // follow field lines and return scalar values when crossing the walls
-void map_wall(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {
+void evolve_lines(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars) {
     R1 = R0;
     Z1 = Z0;
     phi1 = phi0;
@@ -172,16 +217,16 @@ double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1
 }
 
 // read paths to the source, shape and output from a text file along with the initial variables grid parameters
-void readPaths(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path, double &Rmin, double &Rmax, int &nR, int &nPhi) {
+void readParams(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path, int &plate, int &timeslice, double &gridMin, double &gridMax, int &nGrid, int &nPhi) {
 
     std::ifstream pathFile(readingPath);
 
     if (pathFile.is_open()) {
-        std::string source_path_str, shape_path_str, output_path_str, Rmin_str, Rmax_str, nR_str, nPhi_str;
+        std::string source_path_str, shape_path_str, output_path_str, plate_str, timeslice_str, gridMin_str, gridMax_str, nGrid_str, nPhi_str;
         int line_index = 0;
         std::string line;
 
-        while (std::getline(pathFile, line) && line_index < 7) {
+        while (std::getline(pathFile, line) && line_index < 9) {
             if (!line.empty() && line[0] != '#') {
                 if (line_index == 0) {
                     source_path_str = line;
@@ -190,12 +235,16 @@ void readPaths(const std::string &readingPath, char *&source_path, char *&shape_
                 } else if (line_index == 2) {
                     output_path_str = line;
                 } else if (line_index == 3) {
-                    Rmin_str = line;
+                    plate_str = line;
                 } else if (line_index == 4) {
-                    Rmax_str = line;
+                    timeslice_str = line;
                 } else if (line_index == 5) {
-                    nR_str = line;
+                    gridMin_str = line;
                 } else if (line_index == 6) {
+                    gridMax_str = line;
+                } else if (line_index == 7) {
+                    nGrid_str = line;
+                } else if (line_index == 8) {
                     nPhi_str = line;
                 }
                 line_index++;
@@ -212,9 +261,11 @@ void readPaths(const std::string &readingPath, char *&source_path, char *&shape_
         output_path = new char[output_path_str.length() + 1];
         std::strcpy(output_path, output_path_str.c_str());
 
-        Rmin = std::stod(Rmin_str);
-        Rmax = std::stod(Rmax_str);
-        nR = std::stoi(nR_str);
+        plate = std::stoi(plate_str);
+        timeslice = std::stoi(timeslice_str);
+        gridMin = std::stod(gridMin_str);
+        gridMax = std::stod(gridMax_str);
+        nGrid = std::stoi(nGrid_str);
         nPhi = std::stoi(nPhi_str);
 
     } else {

@@ -50,7 +50,7 @@ bool load_shape(const char path[], tcabr_shape *shape) {
     // compute the (R,Z) coordinate of the center point in the vessel
     shape->Rc = 0.5 * (Rmin + Rmax);
     shape->Zc = 0.5 * (Zmin + Zmax);
-    printf("shape Rc, Zc = %f, %f\n", shape->Rc, shape->Zc);
+    // printf("shape Rc, Zc = %f, %f\n", shape->Rc, shape->Zc);
 
     // compute the angle between Zi-Zc and Ri-Rc for every i < np
     for (int i = 0; i < (shape->np); i++) {
@@ -59,6 +59,10 @@ bool load_shape(const char path[], tcabr_shape *shape) {
 
     // set the last value as angularly periodic
     shape->th[shape->np] = shape->th[0] + 2 * M_PI;
+
+    // initialize index to the first sector
+    shape->idx = 0;
+
     fclose(f0);
     return true;
 }
@@ -101,10 +105,11 @@ double cross(double RA, double ZA, double RB, double ZB, double RC, double ZC) {
     double dZ2 = ZC - ZA;
     return dR1 * dZ2 - dR2 * dZ1;
 }
+
 // check if coordinate lies inside the vessel
 bool tcabr_inside(double R, double Z, double phi, void *aux) {
     tcabr_shape *shape = (tcabr_shape *)aux;
-    double       ang = atan2(Z - shape->Zc, R - shape->Rc);
+    double ang = atan2(Z - shape->Zc, R - shape->Rc);
     if (!search_index(ang, shape))
         return false;
 

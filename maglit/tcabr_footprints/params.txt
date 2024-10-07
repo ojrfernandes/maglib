@@ -1,14 +1,18 @@
 # source_path
 /home/jfernandes/Software/m3dc1_data/eq000/i_coils/n03/C1.h5
 # shape_path
-tcabr_first_wall_m3dc1
+tcabr_first_wall_m3dc1.txt
 # output_path
-response.dat
-# Rmin
-0.504
-# Rmax
-0.530
-# nR
+test.dat
+# plate (floor=0; wall=1)
+1
+# timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
+1
+# gridMin
+-0.239
+# gridMax
+-0.2355
+# nGrid
 100
 # nPhi
-200
+100

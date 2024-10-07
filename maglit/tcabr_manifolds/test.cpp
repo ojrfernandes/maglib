@@ -271,7 +271,7 @@ void newSegment(maglit &tracer, std::vector<double> &R_PrevSeg, std::vector<doub
 // test the x_point function
 int main() {
     char source_path[] = "/home/jfernandes/Software/m3dc1_data/cp_coils/n06/C1.h5";
-    maglit tracer(source_path, FIO_M3DC1_SOURCE);
+    maglit tracer(source_path, FIO_M3DC1_SOURCE, 1);
     tracer.inverse_map(false);
     double R_xpoint = 0.49800405;
     double Z_xpoint = -0.21860696;

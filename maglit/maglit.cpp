@@ -1,7 +1,7 @@
 #include "maglit.h"
 
 // maglit class constructor
-maglit::maglit(const char *source_path, int source_type) : solver(SODE_RK56_CK, 2) {
+maglit::maglit(const char *source_path, int source_type, int timeslice) : solver(SODE_RK56_CK, 2) {
     // load source from file
     int result = fio_open_source(&src, source_type, source_path);
     if (result != FIO_SUCCESS) {
@@ -12,7 +12,7 @@ maglit::maglit(const char *source_path, int source_type) : solver(SODE_RK56_CK, 
 
     // set options for fields obtained from this source
     src->get_field_options(&opt);
-    opt.set_option(FIO_TIMESLICE, 1);
+    opt.set_option(FIO_TIMESLICE, timeslice);
     opt.set_option(FIO_PART, FIO_TOTAL);
 
     // get magnetic field from source

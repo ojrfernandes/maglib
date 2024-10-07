@@ -10,7 +10,7 @@ class maglit {
   public:
     // opens source and enters additional parameters
     // source_type: FIO_M3DC1_SOURCE, FIO_GEQDSK_SOURCE, FIO_GPEC_SOURCE
-    maglit(const char *source_path, int source_type);
+    maglit(const char *source_path, int source_type, int timeslice);
     // optional: sets the inverse map of the dynamical system
     void inverse_map(bool inverse);
     // optional: defines the inside region of interest
@@ -40,15 +40,15 @@ class maglit {
     void *aux; // additional variables, e.g. for region monitor
 
   private:
-    bool            verb;
-    fio_source     *src;
-    fio_field      *mag_field;
-    fio_field      *psin_field;
-    fio_field      *psi_field;
+    bool verb;
+    fio_source *src;
+    fio_field *mag_field;
+    fio_field *psin_field;
+    fio_field *psi_field;
     fio_option_list opt;
-    sode            solver;
-    fio_hint        hint;
-    double          x[2]; // auxiliary orbit variable
+    sode solver;
+    fio_hint hint;
+    double x[2]; // auxiliary orbit variable
 };
 
 // dynamical system x: (R,z); t: phi
