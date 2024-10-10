@@ -1,4 +1,5 @@
 #include "test.h"
+#include <omp.h>
 
 int main() {
     // read params from input file
@@ -29,56 +30,73 @@ int main() {
         return 1;
     }
 
-    // define tracer maglit object
-    maglit tracer(source_path, FIO_M3DC1_SOURCE, timeslice);
-
-    // configure tracer parameters
-    tracer.set_inside(shape, tcabr_inside);
-    double dphi_init = 0.01;
-    double dphi_min = 1e-5;
-    double dphi_max = 0.2;
-    tracer.configure(dphi_init, dphi_min, dphi_max);
-    // tracer.set_verb(); // activate messages
-
     // declare scalars type
     map_scalars scalars;
-
-    // print info on terminal
-    std::cout << "Running wall grid\n";
 
     // allocate memory to store results
     std::vector<std::string> dataWrite;
     dataWrite.reserve(nGrid * nPhi);
 
-    if (plate == 0) {
-        // print the parameters
-        std::cout << "Plate: Floor\n";
-        std::cout << "Rmin: " << gridMin << std::endl;
-        std::cout << "Rmax: " << gridMax << std::endl;
-        std::cout << "nR: " << nGrid << std::endl;
-        std::cout << "nPhi: " << nPhi << std::endl;
+    int num_threads = 8;
+    omp_set_dynamic(0);
+    omp_set_num_threads(num_threads);
+    omp_lock_t lock;
+    omp_init_lock(&lock);
 
-        // vessel floor Z cordinate
-        double Zfloor = -0.24;
+#pragma omp parallel
+    {
+        // define tracer maglit object
+        omp_set_lock(&lock);
+        maglit tracer(source_path, FIO_M3DC1_SOURCE, timeslice);
+        tracer.psin_init();
+        omp_unset_lock(&lock);
 
-        // run the grid
-        floor_grid(nPhi, nGrid, gridMin, gridMax, Zfloor, tracer, scalars, dataWrite);
-    } else {
-        std::cout << "Plate: Wall\n";
-        std::cout << "Zmin: " << gridMin << std::endl;
-        std::cout << "Zmax: " << gridMax << std::endl;
-        std::cout << "nZ: " << nGrid << std::endl;
-        std::cout << "nPhi: " << nPhi << std::endl;
+        // configure tracer parameters
+        tracer.set_inside(shape, tcabr_inside);
+        double dphi_init = 0.01;
+        double dphi_min = 1e-5;
+        double dphi_max = 0.2;
+        tracer.configure(dphi_init, dphi_min, dphi_max);
 
-        // vessel wall R cordinate
-        double Rfloor = 0.435;
-
-        // invert map
-        tracer.inverse_map(true);
+        std::vector<std::string> localDataWrite;
+        dataWrite.reserve(nGrid);
 
         // run the grid
-        wall_grid(nPhi, nGrid, gridMin, gridMax, Rfloor, tracer, scalars, dataWrite);
+#pragma omp barrier
+
+        if (plate == 0) {
+            // print the parameters
+            // std::cout << "Plate: Floor\n";
+            // std::cout << "Rmin: " << gridMin << std::endl;
+            // std::cout << "Rmax: " << gridMax << std::endl;
+            // std::cout << "nR: " << nGrid << std::endl;
+            // std::cout << "nPhi: " << nPhi << std::endl;
+
+            // vessel floor Z cordinate
+            double Zfloor = -0.24;
+
+            floor_grid(nPhi, nGrid, gridMin, gridMax, Zfloor, tracer, scalars, dataWrite);
+        } else {
+            // std::cout << "Plate: Wall\n";
+            // std::cout << "Zmin: " << gridMin << std::endl;
+            // std::cout << "Zmax: " << gridMax << std::endl;
+            // std::cout << "nZ: " << nGrid << std::endl;
+            // std::cout << "nPhi: " << nPhi << std::endl;
+
+            // vessel wall R cordinate
+            double Rfloor = 0.435;
+
+            // invert map
+            tracer.inverse_map(true);
+
+            wall_grid(nPhi, nGrid, gridMin, gridMax, Rfloor, tracer, scalars, localDataWrite);
+        }
+#pragma omp critical
+        {
+            dataWrite.insert(dataWrite.end(), localDataWrite.begin(), localDataWrite.end());
+        }
     }
+    omp_destroy_lock(&lock);
 
     // create output file
     std::ofstream f0(output_path);
@@ -107,8 +125,9 @@ int main() {
     return 0;
 }
 
-void floor_grid(double nPhi, double nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
+void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
     // loop over the grid
+#pragma omp for
     for (int i = 0; i < nPhi; i++) {
         double Z0 = Zfloor;
         double Z1;
@@ -121,14 +140,14 @@ void floor_grid(double nPhi, double nR, double Rmin, double Rmax, double Zfloor,
             std::ostringstream stringStream;
             stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
             dataWrite.push_back(stringStream.str());
-            std::cout << "\n"
-                      << 100.0 * (i * nR + j) / (nR * nPhi) << "%" << std::endl;
+            printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nR + j) / (nR * nPhi));
         }
     }
 }
 
-void wall_grid(double nPhi, double nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
-    // loop over the grid
+void wall_grid(int nPhi, int nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
+// loop over the grid
+#pragma omp for
     for (int i = 0; i < nPhi; i++) {
         double R0 = Rfloor;
         double R1;
@@ -141,8 +160,7 @@ void wall_grid(double nPhi, double nZ, double Zmin, double Zmax, double Rfloor, 
             std::ostringstream stringStream;
             stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
             dataWrite.push_back(stringStream.str());
-            std::cout << "\n"
-                      << 100.0 * (i * nZ + j) / (nZ * nPhi) << "%" << std::endl;
+            printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nZ + j) / (nZ * nPhi));
         }
     }
 }

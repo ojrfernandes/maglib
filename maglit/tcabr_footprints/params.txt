@@ -3,7 +3,7 @@
 # shape_path
 tcabr_first_wall_m3dc1.txt
 # output_path
-test.dat
+test_omp.dat
 # plate (floor=0; wall=1)
 1
 # timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
@@ -13,6 +13,6 @@ test.dat
 # gridMax
 -0.2355
 # nGrid
-100
+10
 # nPhi
-100
+10

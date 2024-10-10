@@ -91,42 +91,54 @@ void maglit::alloc_hint() {
     }
 }
 
-// clear hint memory
+// // clear hint memory
 void maglit::clear_hint() {
-    (*src).deallocate_search_hint(&hint);
+    src->deallocate_search_hint(&hint);
+}
+
+// initialize the normalized poloidal flux
+void maglit::psin_init() {
+    int status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field, &opt);
+    if (status != FIO_SUCCESS) {
+        std::cerr << "Error initializing normalized poloidal flux" << std::endl;
+        psin_field = 0;
+        return;
+    }
 }
 
 // evaluate normalized poloidal flux
 void maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
-    int status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field, &opt);
+    double x[3] = {R, Phi, Z};
+    bool result = psin_field->eval(x, psin, hint);
+    if (result != FIO_SUCCESS) {
+        std::cerr << "Fio psin field returned " << result << std::endl;
+    }
+}
+
+// initialize poloidal flux
+void maglit::psi_init() {
+    int status = src->get_field(FIO_POLOIDAL_FLUX, &psi_field, &opt);
     if (status != FIO_SUCCESS) {
-        std::cerr << "Error evaluating normalized poloidal flux" << std::endl;
-        psin_field = 0;
+        std::cerr << "Error initializing poloidal flux" << std::endl;
+        psi_field = 0;
         return;
     }
-    double x[3] = {R, Phi, Z};
-    psin_field->eval(x, psin, hint);
 }
 
 // evaluate poloidal flux
 void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
-    int status = src->get_field(FIO_POLOIDAL_FLUX, &psi_field, &opt);
-    if (status != FIO_SUCCESS) {
-        std::cerr << "Error evaluating poloidal flux" << std::endl;
-        psi_field = 0;
-        return;
-    }
     double x[3] = {R, Phi, Z};
-    psi_field->eval(x, psi, hint);
+    bool result = psi_field->eval(x, psi, hint);
+    if (result != FIO_SUCCESS) {
+        std::cerr << "Fio psi field returned " << result << std::endl;
+    }
 }
-
-// allocate memory for auxiliary variables x and B
-double aux_x[3];
-double aux_b[3];
 
 // map of dynamical system x: (R,z); t: phi
 int mag_system(double *f, double *x, double t, void *mgl) {
     maglit *tracer = (maglit *)mgl;
+    double aux_x[3];
+    double aux_b[3];
     aux_x[0] = x[0];                                     // R
     aux_x[1] = t;                                        // phi
     aux_x[2] = x[1];                                     // z
@@ -143,6 +155,8 @@ int mag_system(double *f, double *x, double t, void *mgl) {
 // inverse map of dynamical system x: (R,z); t: phi
 int inverse_mag_system(double *f, double *x, double t, void *mgl) {
     maglit *tracer = (maglit *)mgl;
+    double aux_x[3];
+    double aux_b[3];
     aux_x[0] = x[0];                                     // R
     aux_x[1] = t;                                        // phi
     aux_x[2] = x[1];                                     // z

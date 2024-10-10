@@ -19,9 +19,9 @@ typedef struct
 } map_scalars;
 
 //
-void floor_grid(double nPhi, double nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite);
+void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite);
 //
-void wall_grid(double nPhi, double nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite);
+void wall_grid(int nPhi, int nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite);
 // follow field lines and return scalar values when crossing the walls
 void evolve_lines(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars);
 // print sode integrator status

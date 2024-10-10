@@ -30,8 +30,12 @@ class maglit {
     void alloc_hint();
     // clear hint allocated memory
     void clear_hint();
+    // initialize the normalized poloidal flux
+    void psin_init();
     // evaluate the normalized poloidal flux
     void psin_eval(double &R, double &Phi, double &Z, double *psin);
+    // initialize the poloidal flux
+    void psi_init();
     // evaluate the poloidal flux
     void psi_eval(double &R, double &Phi, double &Z, double *psi);
 
@@ -51,9 +55,6 @@ class maglit {
     double x[2]; // auxiliary orbit variable
 };
 
-// dynamical system x: (R,z); t: phi
-extern double aux_x[3];
-extern double aux_b[3];
 // map of dynamical system x: (R,z); t: phi
 int mag_system(double *f, double *x, double t, void *mgl);
 // inverse map of dynamical system x: (R,z); t: phi

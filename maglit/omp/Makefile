@@ -3,7 +3,8 @@ MAGLIT_DIR = /home/jfernandes/Software/maglib/maglit
 SODE_DIR = /home/jfernandes/Software/maglib/sode
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2 -g -fopenmp
+CFLAGS = -Wall -fPIC -O2 -g -fopenmp 
+#-fsanitize=thread
 
 LD = $(CXX)
 LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib -fopenmp
@@ -26,7 +27,7 @@ INCLUDE := -I$(FIO_DIR)/include $(HDF5_INCLUDE) $(INCLUDE) \
 		-I$(SODE_DIR)
 
 # Source files
-SRCS = test.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp tcabr_collider.cpp
+SRCS = test.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp ../tcabr_footprints/tcabr_collider.cpp
 
 # List of object files
 OBJS = $(SRCS:.cpp=.o)
