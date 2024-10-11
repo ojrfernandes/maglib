@@ -3,10 +3,11 @@ MAGLIT_DIR = /home/jfernandes/Software/maglib/maglit
 SODE_DIR = /home/jfernandes/Software/maglib/sode
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2 -g -fopenmp
+CFLAGS = -Wall -fPIC -O2 -g -fopenmp 
+#-fsanitize=thread
 
 LD = $(CXX)
-LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib -fopenmp
+LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib -fopenmp 
 
 INCLUDE = -I/opt/local/include 
 LIBS = -L/opt/local/lib/gcc9 -lgfortran -lstdc++ 

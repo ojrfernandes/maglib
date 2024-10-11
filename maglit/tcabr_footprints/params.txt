@@ -1,18 +1,18 @@
 # source_path
-/home/jfernandes/Software/m3dc1_data/eq000/i_coils/n03/C1.h5
+/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5
 # shape_path
 tcabr_first_wall_m3dc1.txt
 # output_path
-test_omp.dat
+test_omp_2.dat
 # plate (floor=0; wall=1)
-1
+0
 # timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
-1
+0
 # gridMin
--0.239
+0.47
 # gridMax
--0.2355
+0.488
 # nGrid
-10
+300
 # nPhi
-10
+300

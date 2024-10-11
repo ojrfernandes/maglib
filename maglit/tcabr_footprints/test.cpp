@@ -34,10 +34,9 @@ int main() {
     map_scalars scalars;
 
     // allocate memory to store results
-    std::vector<std::string> dataWrite;
-    dataWrite.reserve(nGrid * nPhi);
+    std::vector<std::string> dataWrite(nGrid * nPhi);
 
-    int num_threads = 8;
+    int num_threads = 12;
     omp_set_dynamic(0);
     omp_set_num_threads(num_threads);
     omp_lock_t lock;
@@ -58,43 +57,24 @@ int main() {
         double dphi_max = 0.2;
         tracer.configure(dphi_init, dphi_min, dphi_max);
 
-        std::vector<std::string> localDataWrite;
-        dataWrite.reserve(nGrid);
-
         // run the grid
 #pragma omp barrier
 
         if (plate == 0) {
-            // print the parameters
-            // std::cout << "Plate: Floor\n";
-            // std::cout << "Rmin: " << gridMin << std::endl;
-            // std::cout << "Rmax: " << gridMax << std::endl;
-            // std::cout << "nR: " << nGrid << std::endl;
-            // std::cout << "nPhi: " << nPhi << std::endl;
-
             // vessel floor Z cordinate
             double Zfloor = -0.24;
 
             floor_grid(nPhi, nGrid, gridMin, gridMax, Zfloor, tracer, scalars, dataWrite);
         } else {
-            // std::cout << "Plate: Wall\n";
-            // std::cout << "Zmin: " << gridMin << std::endl;
-            // std::cout << "Zmax: " << gridMax << std::endl;
-            // std::cout << "nZ: " << nGrid << std::endl;
-            // std::cout << "nPhi: " << nPhi << std::endl;
-
             // vessel wall R cordinate
             double Rfloor = 0.435;
 
             // invert map
             tracer.inverse_map(true);
 
-            wall_grid(nPhi, nGrid, gridMin, gridMax, Rfloor, tracer, scalars, localDataWrite);
+            wall_grid(nPhi, nGrid, gridMin, gridMax, Rfloor, tracer, scalars, dataWrite);
         }
-#pragma omp critical
-        {
-            dataWrite.insert(dataWrite.end(), localDataWrite.begin(), localDataWrite.end());
-        }
+#pragma omp barrier
     }
     omp_destroy_lock(&lock);
 
@@ -127,39 +107,65 @@ int main() {
 
 void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
     // loop over the grid
-#pragma omp for
+#pragma omp for collapse(2)
     for (int i = 0; i < nPhi; i++) {
-        double Z0 = Zfloor;
-        double Z1;
-        double phi0 = 2 * M_PI * i / nPhi;
-        double phi1;
         for (int j = 0; j < nR; j++) {
             double R0 = Rmin + (Rmax - Rmin) * j / nR;
-            double R1;
+            double phi0 = 2 * M_PI * i / nPhi;
+            double Z0 = Zfloor;
+            double R1, phi1, Z1;
+
+            // evolve lines
             evolve_lines(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
+
+            // Calculate the index for dataWrite
+            int index = i * nR + j;
+
+            // Create the output string
             std::ostringstream stringStream;
-            stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
-            dataWrite.push_back(stringStream.str());
-            printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nR + j) / (nR * nPhi));
+            stringStream << std::fixed << std::setprecision(3)
+                         << R0 << " " << Z0 << " " << phi0 << " "
+                         << R1 << " " << Z1 << " " << phi1 << " "
+                         << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
+
+            // Assign directly to the preallocated vector
+            dataWrite[index] = stringStream.str();
+
+            // Optional: Progress indication
+            if (omp_get_thread_num() == 0) {
+                printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nR + j) / (nR * nPhi));
+            }
         }
     }
 }
 
 void wall_grid(int nPhi, int nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
-// loop over the grid
-#pragma omp for
+    // loop over the grid
+#pragma omp for collapse(2)
     for (int i = 0; i < nPhi; i++) {
-        double R0 = Rfloor;
-        double R1;
-        double phi0 = 2 * M_PI * i / nPhi;
-        double phi1;
         for (int j = 0; j < nZ; j++) {
+            double R0 = Rfloor;
+            double phi0 = 2 * M_PI * i / nPhi;
             double Z0 = Zmin + (Zmax - Zmin) * j / nZ;
-            double Z1;
+            double R1, phi1, Z1;
+
+            // evolve lines
             evolve_lines(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
+
+            // Calculate the index for dataWrite
+            int index = i * nZ + j;
+
+            // Create the output string
             std::ostringstream stringStream;
-            stringStream << std::fixed << std::setprecision(3) << R0 << " " << Z0 << " " << phi0 << " " << R1 << " " << Z1 << " " << phi1 << " " << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
-            dataWrite.push_back(stringStream.str());
+            stringStream << std::fixed << std::setprecision(3)
+                         << R0 << " " << Z0 << " " << phi0 << " "
+                         << R1 << " " << Z1 << " " << phi1 << " "
+                         << scalars.deltaPhi << " " << scalars.length << " " << scalars.psimin << "\n";
+
+            // Assign directly to the preallocated vector
+            dataWrite[index] = stringStream.str();
+
+            // Optional: Progress indication
             printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nZ + j) / (nZ * nPhi));
         }
     }
@@ -173,26 +179,27 @@ void evolve_lines(maglit &tracer, double R0, double Z0, double phi0, double &R1,
     int status;
     double phi_max = 100 * 2 * M_PI;
     double arc = 0;
-    double psin_value = 5.0;
-    double *psin = &psin_value;
-    scalars.psimin = *psin;
+    double psin1 = 5.0;
+    double psin0;
     tracer.reset();
     tracer.alloc_hint();
     do {
         R0 = R1;
         Z0 = Z1;
         phi0 = phi1;
+        psin0 = psin1;
         status = tracer.step(R1, Z1, phi1, phi_max, -1);
         if (status == SODE_CONTINUE_GOOD_STEP) {
             arc += dist(R0, Z0, phi0, R1, Z1, phi1);
-            tracer.psin_eval(R1, phi1, Z1, psin);
+            tracer.psin_eval(R1, phi1, Z1, &psin1);
+            if (psin1 < psin0)
+                psin0 = psin1;
         }
-        if (*psin < scalars.psimin)
-            scalars.psimin = *psin;
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
     tracer.clear_hint();
     scalars.deltaPhi = phi1 - phi0;
     scalars.length = arc;
+    scalars.psimin = psin0;
     // status_printer(status);
 }
 
