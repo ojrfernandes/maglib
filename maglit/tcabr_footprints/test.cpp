@@ -36,7 +36,7 @@ int main() {
     // allocate memory to store results
     std::vector<std::string> dataWrite(nGrid * nPhi);
 
-    int num_threads = 12;
+    int num_threads = 5;
     omp_set_dynamic(0);
     omp_set_num_threads(num_threads);
     omp_lock_t lock;
@@ -47,7 +47,7 @@ int main() {
         // define tracer maglit object
         omp_set_lock(&lock);
         maglit tracer(source_path, FIO_M3DC1_SOURCE, timeslice);
-        tracer.psin_init();
+        // tracer.psin_init();
         omp_unset_lock(&lock);
 
         // configure tracer parameters
@@ -107,7 +107,7 @@ int main() {
 
 void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
     // loop over the grid
-#pragma omp for collapse(2)
+#pragma omp for
     for (int i = 0; i < nPhi; i++) {
         for (int j = 0; j < nR; j++) {
             double R0 = Rmin + (Rmax - Rmin) * j / nR;
@@ -116,7 +116,9 @@ void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, magli
             double R1, phi1, Z1;
 
             // evolve lines
+            tracer.alloc_hint();
             evolve_lines(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
+            tracer.clear_hint();
 
             // Calculate the index for dataWrite
             int index = i * nR + j;
@@ -132,16 +134,14 @@ void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, magli
             dataWrite[index] = stringStream.str();
 
             // Optional: Progress indication
-            if (omp_get_thread_num() == 0) {
-                printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nR + j) / (nR * nPhi));
-            }
+            printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nR + j) / (nR * nPhi));
         }
     }
 }
 
 void wall_grid(int nPhi, int nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
     // loop over the grid
-#pragma omp for collapse(2)
+#pragma omp for
     for (int i = 0; i < nPhi; i++) {
         for (int j = 0; j < nZ; j++) {
             double R0 = Rfloor;
@@ -182,7 +182,7 @@ void evolve_lines(maglit &tracer, double R0, double Z0, double phi0, double &R1,
     double psin1 = 5.0;
     double psin0;
     tracer.reset();
-    tracer.alloc_hint();
+    // tracer.alloc_hint();
     do {
         R0 = R1;
         Z0 = Z1;
@@ -196,7 +196,7 @@ void evolve_lines(maglit &tracer, double R0, double Z0, double phi0, double &R1,
                 psin0 = psin1;
         }
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
-    tracer.clear_hint();
+    // tracer.clear_hint();
     scalars.deltaPhi = phi1 - phi0;
     scalars.length = arc;
     scalars.psimin = psin0;
