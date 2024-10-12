@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <omp.h>
 #include <string>
 #include <unistd.h>
 
@@ -28,7 +29,5 @@ void evolve_lines(maglit &tracer, double R0, double Z0, double phi0, double &R1,
 void status_printer(int status);
 // compute the distance integrated over the magnetic line
 double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1);
-// read paths to the source, shape and output from a text file along with the initial variables grid parameters
-void readParams(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path, int &plate, int &timeslice, double &gridMin, double &gridMax, int &nGrid, int &nPhi);
 
 #endif

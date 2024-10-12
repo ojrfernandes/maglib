@@ -1,9 +1,15 @@
 #include "test.h"
-#include <omp.h>
 
-int main() {
-    // read params from input file
-    std::string pathsFile = "params.txt";
+class input_values {
+  public:
+    // Constructor to initialize reading_path
+    input_values(const std::string &readingPath);
+    // Destructor to clean up dynamically allocated memory
+    ~input_values();
+    // read paths to the source, shape and output from a text file along with the initial grid parameters
+    bool readInputFile();
+
+    // Variables to store the paths and parameters
     char *source_path;
     char *shape_path;
     char *output_path;
@@ -13,41 +19,128 @@ int main() {
     double gridMax;
     int nGrid;
     int nPhi;
-    readParams(pathsFile, source_path, shape_path, output_path, plate, timeslice, gridMin, gridMax, nGrid, nPhi);
 
-    // check if the output file name is unique
-    if (access(output_path, F_OK) != -1) {
-        std::cerr << "There is a file with the same name saved to the chosen directory. Please change the output file name to avoid overwriting your data.\n"
-                  << std::endl;
+  private:
+    std::string reading_path; // File path
+};
+
+// Constructor
+input_values::input_values(const std::string &readingPath) : source_path(nullptr), shape_path(nullptr), output_path(nullptr), reading_path(readingPath) {}
+
+// Destructor to free allocated memory
+input_values::~input_values() {
+    delete[] source_path;
+    delete[] shape_path;
+    delete[] output_path;
+}
+
+// read paths to the source, shape and output from a text file along with the initial grid parameters
+bool input_values::readInputFile() {
+    std::ifstream pathFile(this->reading_path);
+
+    if (!pathFile.is_open()) {
+        std::cerr << "Unable to open file: " << this->reading_path << std::endl;
+        return false;
+    }
+
+    std::string line;
+    int line_index = 0;
+
+    while (std::getline(pathFile, line)) {
+        if (!line.empty() && line[0] != '#') { // Ignore empty lines and comments starting with #
+            switch (line_index) {
+            case 0:
+                // Allocate memory for source_path and copy the string
+                source_path = new char[line.length() + 1];
+                std::strcpy(source_path, line.c_str());
+                break;
+            case 1:
+                // Allocate memory for shape_path and copy the string
+                shape_path = new char[line.length() + 1];
+                std::strcpy(shape_path, line.c_str());
+                break;
+            case 2:
+                // Allocate memory for output_path and copy the string
+                output_path = new char[line.length() + 1];
+                std::strcpy(output_path, line.c_str());
+                // Check if the output file already exists
+                if (access(output_path, F_OK) != -1) {
+                    std::cerr << "There is a file with the same name saved to the chosen directory. "
+                              << "Please change the output file name to avoid overwriting your data."
+                              << std::endl;
+                    return false; // Exit the function to avoid overwriting
+                }
+                break;
+            case 3:
+                plate = std::stoi(line);
+                break;
+            case 4:
+                timeslice = std::stoi(line);
+                break;
+            case 5:
+                gridMin = std::stod(line);
+                break;
+            case 6:
+                gridMax = std::stod(line);
+                break;
+            case 7:
+                nGrid = std::stoi(line);
+                break;
+            case 8:
+                nPhi = std::stoi(line);
+                break;
+            default:
+                std::cerr << "Unexpected line index: " << line_index << std::endl;
+                return false;
+            }
+            line_index++;
+        }
+    }
+
+    if (line_index < 9) {
+        std::cerr << "File does not contain enough data. Expected 9 values, found " << line_index << "." << std::endl;
+        return false;
+    }
+
+    pathFile.close();
+    return true;
+}
+
+int main() {
+    // read params from input file
+    std::string pathsFile = "params.txt";
+
+    input_values input(pathsFile);
+    bool rStatus = input.readInputFile();
+    if (!rStatus) {
+        std::cerr << "Error reading input file." << std::endl;
         return 1;
     }
 
     // load file containing vessel shape
     tcabr_shape *shape = new tcabr_shape;
-    if (!load_shape(shape_path, shape)) {
+    if (!load_shape(input.shape_path, shape)) {
         std::cerr << "Error on loading vessel shape.\n"
                   << std::endl;
         return 1;
     }
 
-    // declare scalars type
-    map_scalars scalars;
-
     // allocate memory to store results
-    std::vector<std::string> dataWrite(nGrid * nPhi);
+    std::vector<std::string> dataWrite(input.nGrid * input.nPhi);
 
-    int num_threads = 5;
-    omp_set_dynamic(0);
+    int num_threads = omp_get_max_threads();
+    omp_set_dynamic(1);
     omp_set_num_threads(num_threads);
     omp_lock_t lock;
     omp_init_lock(&lock);
 
 #pragma omp parallel
     {
+        // declare scalars type
+        map_scalars scalars;
         // define tracer maglit object
         omp_set_lock(&lock);
-        maglit tracer(source_path, FIO_M3DC1_SOURCE, timeslice);
-        // tracer.psin_init();
+        maglit tracer(input.source_path, FIO_M3DC1_SOURCE, input.timeslice);
         omp_unset_lock(&lock);
 
         // configure tracer parameters
@@ -60,11 +153,11 @@ int main() {
         // run the grid
 #pragma omp barrier
 
-        if (plate == 0) {
+        if (input.plate == 0) {
             // vessel floor Z cordinate
             double Zfloor = -0.24;
 
-            floor_grid(nPhi, nGrid, gridMin, gridMax, Zfloor, tracer, scalars, dataWrite);
+            floor_grid(input.nPhi, input.nGrid, input.gridMin, input.gridMax, Zfloor, tracer, scalars, dataWrite);
         } else {
             // vessel wall R cordinate
             double Rfloor = 0.435;
@@ -72,16 +165,15 @@ int main() {
             // invert map
             tracer.inverse_map(true);
 
-            wall_grid(nPhi, nGrid, gridMin, gridMax, Rfloor, tracer, scalars, dataWrite);
+            wall_grid(input.nPhi, input.nGrid, input.gridMin, input.gridMax, Rfloor, tracer, scalars, dataWrite);
         }
-#pragma omp barrier
     }
     omp_destroy_lock(&lock);
 
     // create output file
-    std::ofstream f0(output_path);
+    std::ofstream f0(input.output_path);
     if (!f0.is_open()) {
-        std::cerr << "Failed to open file at" << output_path << std::endl;
+        std::cerr << "Failed to open file at" << input.output_path << std::endl;
         return 1;
     }
 
@@ -98,16 +190,14 @@ int main() {
 
     // free allocated memory
     free_shape(shape);
-    delete[] source_path;
-    delete[] shape_path;
-    delete[] output_path;
+    input.~input_values();
 
     return 0;
 }
 
 void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
     // loop over the grid
-#pragma omp for
+#pragma omp for schedule(dynamic)
     for (int i = 0; i < nPhi; i++) {
         for (int j = 0; j < nR; j++) {
             double R0 = Rmin + (Rmax - Rmin) * j / nR;
@@ -141,7 +231,7 @@ void floor_grid(int nPhi, int nR, double Rmin, double Rmax, double Zfloor, magli
 
 void wall_grid(int nPhi, int nZ, double Zmin, double Zmax, double Rfloor, maglit &tracer, map_scalars &scalars, std::vector<std::string> &dataWrite) {
     // loop over the grid
-#pragma omp for
+#pragma omp for schedule(dynamic)
     for (int i = 0; i < nPhi; i++) {
         for (int j = 0; j < nZ; j++) {
             double R0 = Rfloor;
@@ -150,7 +240,9 @@ void wall_grid(int nPhi, int nZ, double Zmin, double Zmax, double Rfloor, maglit
             double R1, phi1, Z1;
 
             // evolve lines
+            tracer.alloc_hint();
             evolve_lines(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
+            tracer.clear_hint();
 
             // Calculate the index for dataWrite
             int index = i * nZ + j;
@@ -179,28 +271,33 @@ void evolve_lines(maglit &tracer, double R0, double Z0, double phi0, double &R1,
     int status;
     double phi_max = 100 * 2 * M_PI;
     double arc = 0;
-    double psin1 = 5.0;
-    double psin0;
+    double psin0 = 5.0;
+    double *psin1 = &psin0;
+    scalars.psimin = *psin1;
     tracer.reset();
-    // tracer.alloc_hint();
     do {
         R0 = R1;
         Z0 = Z1;
         phi0 = phi1;
-        psin0 = psin1;
         status = tracer.step(R1, Z1, phi1, phi_max, -1);
         if (status == SODE_CONTINUE_GOOD_STEP) {
             arc += dist(R0, Z0, phi0, R1, Z1, phi1);
-            tracer.psin_eval(R1, phi1, Z1, &psin1);
-            if (psin1 < psin0)
-                psin0 = psin1;
+            tracer.psin_eval(R1, phi1, Z1, psin1);
+            if (*psin1 < scalars.psimin) {
+                scalars.psimin = *psin1;
+            }
         }
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
-    // tracer.clear_hint();
     scalars.deltaPhi = phi1 - phi0;
     scalars.length = arc;
-    scalars.psimin = psin0;
-    // status_printer(status);
+}
+
+// computes the connection_length
+double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1) {
+    double dx = R1 * cos(phi1) - R0 * cos(phi0);
+    double dy = R1 * sin(phi1) - R0 * sin(phi0);
+    double dz = Z1 - Z0;
+    return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 // print the status of the integrator
@@ -230,70 +327,5 @@ void status_printer(int status) {
     default:
         std::cout << "Unknown Status\n";
         break;
-    }
-}
-
-// computes the connection_length
-double dist(double R0, double Z0, double phi0, double R1, double Z1, double phi1) {
-    double dx = R1 * cos(phi1) - R0 * cos(phi0);
-    double dy = R1 * sin(phi1) - R0 * sin(phi0);
-    double dz = Z1 - Z0;
-    return sqrt(dx * dx + dy * dy + dz * dz);
-}
-
-// read paths to the source, shape and output from a text file along with the initial variables grid parameters
-void readParams(const std::string &readingPath, char *&source_path, char *&shape_path, char *&output_path, int &plate, int &timeslice, double &gridMin, double &gridMax, int &nGrid, int &nPhi) {
-
-    std::ifstream pathFile(readingPath);
-
-    if (pathFile.is_open()) {
-        std::string source_path_str, shape_path_str, output_path_str, plate_str, timeslice_str, gridMin_str, gridMax_str, nGrid_str, nPhi_str;
-        int line_index = 0;
-        std::string line;
-
-        while (std::getline(pathFile, line) && line_index < 9) {
-            if (!line.empty() && line[0] != '#') {
-                if (line_index == 0) {
-                    source_path_str = line;
-                } else if (line_index == 1) {
-                    shape_path_str = line;
-                } else if (line_index == 2) {
-                    output_path_str = line;
-                } else if (line_index == 3) {
-                    plate_str = line;
-                } else if (line_index == 4) {
-                    timeslice_str = line;
-                } else if (line_index == 5) {
-                    gridMin_str = line;
-                } else if (line_index == 6) {
-                    gridMax_str = line;
-                } else if (line_index == 7) {
-                    nGrid_str = line;
-                } else if (line_index == 8) {
-                    nPhi_str = line;
-                }
-                line_index++;
-            }
-        }
-        pathFile.close();
-
-        source_path = new char[source_path_str.length() + 1];
-        std::strcpy(source_path, source_path_str.c_str());
-
-        shape_path = new char[shape_path_str.length() + 1];
-        std::strcpy(shape_path, shape_path_str.c_str());
-
-        output_path = new char[output_path_str.length() + 1];
-        std::strcpy(output_path, output_path_str.c_str());
-
-        plate = std::stoi(plate_str);
-        timeslice = std::stoi(timeslice_str);
-        gridMin = std::stod(gridMin_str);
-        gridMax = std::stod(gridMax_str);
-        nGrid = std::stoi(nGrid_str);
-        nPhi = std::stoi(nPhi_str);
-
-    } else {
-        std::cerr << "Unable to open file: " << readingPath << std::endl;
     }
 }
