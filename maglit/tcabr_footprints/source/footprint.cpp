@@ -6,7 +6,7 @@ footprint::footprint(const double &plate, const double &gridMin, const double &g
     this->gridMax = gridMax;
     this->nGrid = nGrid;
     this->nPhi = nPhi;
-    this->outputData.resize(nGrid * nPhi, std::vector<double>(9));
+    this->outputData.resize(nGrid * nPhi, std::vector<double>(5));
     ;
 }
 
@@ -52,12 +52,8 @@ void footprint::runGrid(maglit &tracer) {
             outputData[index][0] = R0;
             outputData[index][1] = Z0;
             outputData[index][2] = phi0;
-            outputData[index][3] = R1;
-            outputData[index][4] = Z1;
-            outputData[index][5] = phi1;
-            outputData[index][6] = scalars.deltaPhi;
-            outputData[index][7] = scalars.length;
-            outputData[index][8] = scalars.psimin;
+            outputData[index][3] = scalars.length;
+            outputData[index][4] = scalars.psimin;
 
             // Print progress bar only in the first thread (thread 0)
             if (omp_get_thread_num() == 0) {
@@ -92,7 +88,6 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
             }
         }
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
-    scalars.deltaPhi = phi1 - phi0;
     scalars.length = arc;
 }
 

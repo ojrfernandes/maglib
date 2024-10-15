@@ -5,15 +5,15 @@ tcabr_first_wall_m3dc1.txt
 # output_path
 footprints/test.dat
 # number of threads
-3
+6
 # plate (floor=0; wall=1)
-0
+1
 # timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
 0
 # gridMin
-0.47
+-0.215
 # gridMax
-0.488
+-0.208
 # nGrid
 50
 # nPhi

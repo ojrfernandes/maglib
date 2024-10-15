@@ -14,7 +14,6 @@ class footprint {
   private:
     typedef struct
     {
-        double deltaPhi;
         double length;
         double psimin;
     } map_scalars;
