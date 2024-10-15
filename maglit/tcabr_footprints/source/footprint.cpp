@@ -59,8 +59,11 @@ void footprint::runGrid(maglit &tracer) {
             outputData[index][7] = scalars.length;
             outputData[index][8] = scalars.psimin;
 
-            // Optional: Progress indication
-            printf("Thread %d: progress = %f\n", omp_get_thread_num(), 100.0 * (i * nGrid + j) / (nGrid * nPhi));
+            // Print progress bar only in the first thread (thread 0)
+            if (omp_get_thread_num() == 0) {
+                float progress = (float)(i * nGrid + j) / (nGrid * nPhi);
+                progressBar(progress);
+            }
         }
     }
 }
@@ -98,4 +101,22 @@ double footprint::connection_length(double R0, double Z0, double phi0, double R1
     double dy = R1 * sin(phi1) - R0 * sin(phi0);
     double dz = Z1 - Z0;
     return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+// Print a progress bar
+void footprint::progressBar(float progress) {
+    int barWidth = 50;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos)
+            std::cout << "=";
+        else if (i == pos)
+            std::cout << ">";
+        else
+            std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
 }

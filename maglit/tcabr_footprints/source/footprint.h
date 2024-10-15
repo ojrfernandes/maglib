@@ -21,6 +21,7 @@ class footprint {
 
     void evolve_line(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars);
     double connection_length(double R0, double Z0, double phi0, double R1, double Z1, double phi1);
+    void progressBar(float progress);
 
     double gridMin;
     double gridMax;
