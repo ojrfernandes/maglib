@@ -28,26 +28,23 @@ class manifold {
     point apply_map(double R, double Z, double Phi, int nTurns);
     point pivot();
 
-    int stability;      // 0: forward, 1: backward
-    double phi;         // toroidal angle
-    double epsilon;     // distance from the x-point
-    int max_insertions; // Max limit for insertions to avoid infinite loops
-
-    int s_factor = 1;               // sign factor for the manifold stability
-    double tol = 1e-14;             // tolerance for Newton's method
-    double h = 1e-5;                // step size for numerical differentiation
-    double precision_limit = 1e-14; // precision limit for floating point comparisons
-    int max_iter = 50;              // maximum number of iterations for Newton's method
-    int overlap_limit = 10;         // maximum number of overlaps before increasing theta_lim
-    int overlap_counter = 0;        // counter for overlapping points
+    int stability;    // 0: forward, 1: backward
+    int s_factor = 1; // sign factor for the manifold stability
+    int max_iter;     // maximum number of iterations for Newton's method
+    double phi;       // toroidal angle
+    double tol;       // tolerance for Newton's method
+    double epsilon;   // distance from the x-point
+    double h;         // step size for numerical differentiation
 
     maglit tracer;
 };
 
 manifold::manifold(const char *source_path, const int timeslice, double phi, int stability)
     : stability(stability), phi(phi), tracer(source_path, FIO_M3DC1_SOURCE, timeslice) {
+    this->max_iter = 100;
+    this->tol = 1e-14;
+    this->h = 1e-5;
     this->epsilon = 1e-6;
-    this->max_insertions = 50;
 
     switch (stability) {
     case 0:
@@ -79,7 +76,7 @@ point manifold::apply_map(double R, double Z, double Phi, int nTurns) {
     if (status == SODE_SUCCESS_TIME) {
         return {R, Z};
     } else {
-        std::cerr << "Failed to apply map at (R, Z) = (" << R << ", " << Z << ")" << std::endl;
+        std::cerr << "Failed to apply map" << std::endl;
         return {std::nan(""), std::nan("")};
     }
 }
@@ -159,9 +156,8 @@ bool manifold::find_xPoint(double R, double Z) {
 point manifold::pivot() {
     double R_xPoint = this->xPoint.R;
     double Z_xPoint = this->xPoint.Z;
-    double jacobian[2][2];
-
     // Evaluate the jacobian at the x-point
+    double jacobian[2][2];
     this->eval_jacobian(R_xPoint, Z_xPoint, this->phi, this->h, jacobian);
     std::cout << "Jacobian at the x-point: " << std::endl;
     std::cout << "[" << jacobian[0][0] << " " << jacobian[0][1] << "]" << std::endl;
@@ -236,32 +232,14 @@ void manifold::primarySegment(std::vector<point> &segment, size_t num_points) {
 
 // Insert a new point in the vector by linear interpolation
 void manifold::insertPoint(std::vector<point> &segment, size_t index) {
-    if (index == 0 || index >= segment.size()) {
-        std::cerr << "Error: Invalid index for insertPoint." << std::endl;
-        return;
-    }
-
-    double dR = segment[index].R - segment[index - 1].R;
-    double dZ = segment[index].Z - segment[index - 1].Z;
-
-    // Only insert a point if the distance between the two points is larger than the precision limit
-    if (std::sqrt(dR * dR + dZ * dZ) > this->precision_limit) {
-        point new_point;
-        new_point.R = (segment[index - 1].R + segment[index].R) / 2;
-        new_point.Z = (segment[index - 1].Z + segment[index].Z) / 2;
-        segment.insert(segment.begin() + index, new_point);
-    } else {
-        this->overlap_counter++;
-        std::cerr << "Warning: Skipping insertion due to floating point precision limits." << std::endl;
-    }
+    point new_point;
+    new_point.R = (segment[index - 1].R + segment[index].R) / 2;
+    new_point.Z = (segment[index - 1].Z + segment[index].Z) / 2;
+    segment.insert(segment.begin() + index, new_point);
 }
 
 void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim) {
     size_t j = 1;
-    double theta_lim_aux = theta_lim; // Store the original theta limit
-    int insertion_count = 0;          // Counter for insertions in the current segment
-    this->overlap_counter = 0;        // Reset the overlap counter
-
     while (j < prev_seg.size() - 1) {
 
         // Apply map to the points
@@ -274,96 +252,66 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
         double l_ii = this->computeDistance(x_j.R, x_j.Z, x_k.R, x_k.Z);
         double l_theta = this->computeAngle(x_i.R, x_i.Z, x_j.R, x_j.Z, x_k.R, x_k.Z);
 
-        // Angular condition: Check if angle exceeds threshold
-        if (l_theta > theta_lim_aux) {
-            if (l_i > l_ii) {
-                this->insertPoint(prev_seg, j);
-                insertion_count++;
-                if (j != 1) {
-                    j = j - 1;
-                }
-            } else {
-                this->insertPoint(prev_seg, j + 1);
-                insertion_count++;
-            }
+        // Check if the angle is too large
+        double L_lim;
+        if (l_theta > theta_lim) {
+            L_lim = l_lim * 0.1;
+        } else {
+            L_lim = l_lim;
         }
-        // Distance condition for l_i
-        else if (l_i > l_lim) {
+
+        // if (l_theta > theta_lim) {
+        //     if (l_i > l_ii) {
+        //         this->insertPoint(prev_seg, j);
+        //         if (j != 1) {
+        //             j = j - 1;
+        //         }
+        //     } else {
+        //         this->insertPoint(prev_seg, j + 1);
+        //     }
+        // }
+
+        // Check if the points are too far apart
+        if (l_i > L_lim) {
             this->insertPoint(prev_seg, j);
-            insertion_count++;
             if (j != 1) {
                 j = j - 1;
             }
-        }
-        // Distance condition for l_ii
-        else if (l_ii > l_lim) {
+        } else if (l_ii > L_lim) {
             this->insertPoint(prev_seg, j + 1);
-            insertion_count++;
-        }
-        // If conditions are met, add the point to the new segment
-        else {
+        } else {
             new_seg.push_back(x_i);
             if (j == prev_seg.size() - 2) {
                 new_seg.push_back(x_j);
                 new_seg.push_back(x_k);
             }
             j = j + 1;
-            insertion_count = 0;
         }
-        // std::cout << " insertions: " << insertion_count << std::endl;
-        //
-        if (this->overlap_counter > 10) {
-            theta_lim_aux *= 1.25;
-            // this->overlap_counter = 0;
-        }
-        //
-        if (insertion_count >= this->max_insertions) {
-            std::cerr << "Warning: Maximum number of insertions reached. Stopping refinement at this segment." << std::endl;
-            break;
-        }
+        // std::cout << "  x_j: " << x_j.R << " " << x_j.Z << std::endl;
     }
 }
 
 // Compute distance between two points
 double manifold::computeDistance(double R1, double Z1, double R2, double Z2) {
-    double dR = R1 - R2;
-    double dZ = Z1 - Z2;
-    return std::sqrt(dR * dR + dZ * dZ);
+    return std::sqrt((R1 - R2) * (R1 - R2) + (Z1 - Z2) * (Z1 - Z2));
 }
 
 // Compute angle between two vectors
 double manifold::computeAngle(double R0, double Z0, double R1, double Z1, double R2, double Z2) {
-    // Compute vector from (R0, Z0) to (R1, Z1)
+    // compute vector from (R0, Z0) to (R1, Z1)
     double v1_R = R1 - R0;
     double v1_Z = Z1 - Z0;
 
-    // Compute vector from (R1, Z1) to (R2, Z2)
+    // compute vector from (R1, Z1) to (R2, Z2)
     double v2_R = R2 - R1;
     double v2_Z = Z2 - Z1;
 
-    // Compute dot product of v1 and v2
+    // compute angle between v1 and v2
     double dot_product = v1_R * v2_R + v1_Z * v2_Z;
-
-    // Compute norms (magnitudes) of v1 and v2
     double norm_v1 = std::sqrt(v1_R * v1_R + v1_Z * v1_Z);
     double norm_v2 = std::sqrt(v2_R * v2_R + v2_Z * v2_Z);
 
-    // Check for zero-length vectors to avoid division by zero
-    if (norm_v1 == 0.0 || norm_v2 == 0.0) {
-        return 0.0; // Angle is 0 if any vector is zero (e.g., points are the same)
-    }
-
-    // Compute cosine of the angle and clamp to avoid precision issues
-    double cos_theta = dot_product / (norm_v1 * norm_v2);
-
-    // Clamp value to the valid range [-1, 1] to avoid floating-point errors
-    if (cos_theta > 1.0)
-        cos_theta = 1.0;
-    if (cos_theta < -1.0)
-        cos_theta = -1.0;
-
-    // Return the angle in radians
-    return std::acos(cos_theta);
+    return std::acos(dot_product / (norm_v1 * norm_v2));
 }
 
 // Print a progress bar
@@ -415,10 +363,11 @@ int main() {
     double nSeg = 10;
 
     std::vector<point> new_segment;
+    std::vector<point> prev_segment = primary_segment;
 
     for (int i = 1; i < nSeg; ++i) {
         // create new segment
-        manifold.newSegment(primary_segment, new_segment, Phi, i, l_lim, theta_lim);
+        manifold.newSegment(prev_segment, new_segment, Phi, i, l_lim, theta_lim);
 
         // append new segment to the output file
         std::ofstream file2("i_n03_U.dat", std::ios::app);
@@ -434,6 +383,7 @@ int main() {
         }
 
         // empty new segment
+        // prev_segment = new_segment;
         new_segment.clear();
 
         // progress bar

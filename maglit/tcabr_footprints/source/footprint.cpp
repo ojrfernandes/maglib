@@ -42,7 +42,7 @@ void footprint::runGrid(maglit &tracer) {
 
             // evolve lines
             tracer.alloc_hint();
-            evolve_line(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
+            this->evolve_line(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
             tracer.clear_hint();
 
             // Calculate the index for dataWrite
@@ -58,7 +58,7 @@ void footprint::runGrid(maglit &tracer) {
             // Print progress bar only in the first thread (thread 0)
             if (omp_get_thread_num() == 0) {
                 float progress = (float)(i * nGrid + j) / (nGrid * nPhi);
-                progressBar(progress);
+                this->progressBar(progress);
             }
         }
     }
@@ -81,7 +81,7 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
         phi0 = phi1;
         status = tracer.step(R1, Z1, phi1, phi_max, -1);
         if (status == SODE_CONTINUE_GOOD_STEP) {
-            arc += connection_length(R0, Z0, phi0, R1, Z1, phi1);
+            arc += this->connection_length(R0, Z0, phi0, R1, Z1, phi1);
             tracer.psin_eval(R1, phi1, Z1, psin1);
             if (*psin1 < scalars.psimin) {
                 scalars.psimin = *psin1;

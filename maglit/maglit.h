@@ -30,18 +30,15 @@ class maglit {
     void alloc_hint();
     // clear hint allocated memory
     void clear_hint();
-    // initialize the normalized poloidal flux
-    void psin_init();
     // evaluate the normalized poloidal flux
     void psin_eval(double &R, double &Phi, double &Z, double *psin);
-    // initialize the poloidal flux
-    void psi_init();
     // evaluate the poloidal flux
     void psi_eval(double &R, double &Phi, double &Z, double *psi);
 
     // public variables
     bool (*inside)(double R, double Z, double phi, void *aux);
-    void *aux; // additional variables, e.g. for region monitor
+    void *aux;          // additional variables, e.g. for region monitor
+    int inv_factor = 1; // factor for inverse map
 
   private:
     bool verb;

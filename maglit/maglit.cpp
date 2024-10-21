@@ -1,7 +1,7 @@
 #include "maglit.h"
 
 // maglit class constructor
-maglit::maglit(const char *source_path, int source_type, int timeslice) : solver(SODE_RK56_CK, 2) {
+maglit::maglit(const char *source_path, int source_type, const int timeslice) : solver(SODE_RK56_CK, 2) {
     // load source from file
     int result = fio_open_source(&src, source_type, source_path);
     if (result != FIO_SUCCESS) {
@@ -32,10 +32,13 @@ maglit::maglit(const char *source_path, int source_type, int timeslice) : solver
 
 // optional: sets the inverse map of the dynamical system
 void maglit::inverse_map(bool inverse) {
-    if (inverse)
-        solver.set_system(inverse_mag_system);
-    else
-        solver.set_system(mag_system);
+    switch (inverse) {
+    case true:
+        inv_factor = -1;
+        break;
+    case false:
+        inv_factor = 1;
+    }
 }
 
 // optional: set inside region of interest
@@ -136,26 +139,8 @@ int mag_system(double *f, double *x, double t, void *mgl) {
     aux_x[2] = x[1];                                     // z
     bool success = tracer->calc_mag_field(aux_x, aux_b); // (B_R, B_phi, B_z)
     if (success) {
-        f[0] = aux_x[0] * aux_b[0] / aux_b[1];
-        f[1] = aux_x[0] * aux_b[2] / aux_b[1];
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-// inverse map of dynamical system x: (R,z); t: phi
-int inverse_mag_system(double *f, double *x, double t, void *mgl) {
-    maglit *tracer = (maglit *)mgl;
-    double aux_x[3];
-    double aux_b[3];
-    aux_x[0] = x[0];                                     // R
-    aux_x[1] = t;                                        // phi
-    aux_x[2] = x[1];                                     // z
-    bool success = tracer->calc_mag_field(aux_x, aux_b); // (B_R, B_phi, B_z)
-    if (success) {
-        f[0] = -aux_x[0] * aux_b[0] / aux_b[1];
-        f[1] = -aux_x[0] * aux_b[2] / aux_b[1];
+        f[0] = (aux_x[0] * aux_b[0] / aux_b[1]) * tracer->inv_factor;
+        f[1] = (aux_x[0] * aux_b[2] / aux_b[1]) * tracer->inv_factor;
         return 0;
     } else {
         return 1;
