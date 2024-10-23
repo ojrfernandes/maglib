@@ -2,28 +2,28 @@
 #
 #
 # source_path
-/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5
+/home/jfernandes/Software/m3dc1_data/eq003/i_coils/n03/C1.h5
 # output_path
 manifolds/test.dat
 # manifold stability (stable=0; unstable=1)
 0
 # timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
-0
+1
 # toroidal angle
 0
 # X-Point R coordinate guess
-0.46950445
+0.49817845
 # X-Point Z coordinate guess
--0.21327174
+-0.21636795
 #
 #
 ############################## REFINEMENT PARAMETERS ##############################
 #
 #
 # primary segment's distance from X-point
-1e-6
+1e-4
 # number of mapped segments
-9
+6
 # distance treshold
 0.01
 # algle treshold (radians)

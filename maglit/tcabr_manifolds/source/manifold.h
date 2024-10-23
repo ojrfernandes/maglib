@@ -17,7 +17,7 @@ struct point {
 class manifold {
   public:
     // Constructor
-    manifold(const char *source_path, const int timeslice, double phi, int stability);
+    manifold(const char *source_path, const int timeslice, double phi, int stability, double epsilon);
     // Iteratively find the closest 1 period fixed point from the initial guess
     bool find_xPoint(double rGuess, double zGuess);
     // Compute the primary segment

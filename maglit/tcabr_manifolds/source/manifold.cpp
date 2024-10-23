@@ -1,9 +1,8 @@
 #include "manifold.h"
 
 // Constructor
-manifold::manifold(const char *source_path, const int timeslice, double phi, int stability)
-    : stability(stability), phi(phi), tracer(source_path, FIO_M3DC1_SOURCE, timeslice) {
-    this->epsilon = 1e-6;
+manifold::manifold(const char *source_path, const int timeslice, double phi, int stability, double epsilon)
+    : stability(stability), phi(phi), epsilon(epsilon), tracer(source_path, FIO_M3DC1_SOURCE, timeslice) {
 
     // Set the inverse map based on the stability
     switch (stability) {
