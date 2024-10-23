@@ -27,7 +27,7 @@ int main() {
     // print x-point
     std::cout << std::fixed << std::setprecision(16) << "\n"
               << "x-point found at: " << "\n"
-              << "R: " << input.R_xPoint << " Z: " << input.Z_xPoint << "\n"
+              << "R: " << manifold.xPoint.R << " Z: " << manifold.xPoint.Z << "\n"
               << std::endl;
 
     size_t num_points = 10;             // number of points in the primary segment

@@ -2,9 +2,9 @@
 #
 #
 # source_path
-/home/jfernandes/Software/m3dc1_data/eq003/i_coils/n03/C1.h5
+/home/jfernandes/Software/m3dc1_data/eq022/i_coils/n03/C1.h5
 # output_path
-manifolds/test.dat
+manifolds/eq022_S.dat
 # manifold stability (stable=0; unstable=1)
 0
 # timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
@@ -21,9 +21,9 @@ manifolds/test.dat
 #
 #
 # primary segment's distance from X-point
-1e-4
+1e-6
 # number of mapped segments
-6
+8
 # distance treshold
 0.01
 # algle treshold (radians)
