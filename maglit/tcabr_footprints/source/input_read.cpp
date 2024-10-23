@@ -1,17 +1,17 @@
-#include "input_values.h"
+#include "input_read.h"
 
 // Constructor
-input_values::input_values(const std::string &readingPath) : source_path(nullptr), shape_path(nullptr), output_path(nullptr), reading_path(readingPath) {}
+input_read::input_read(const std::string &readingPath) : source_path(nullptr), shape_path(nullptr), output_path(nullptr), reading_path(readingPath) {}
 
 // Destructor to free allocated memory
-input_values::~input_values() {
+input_read::~input_read() {
     delete[] source_path;
     delete[] shape_path;
     delete[] output_path;
 }
 
 // read paths to the source, shape and output from a text file along with the initial grid parameters
-bool input_values::readInputFile() {
+bool input_read::readInputFile() {
     std::ifstream pathFile(this->reading_path);
 
     if (!pathFile.is_open()) {

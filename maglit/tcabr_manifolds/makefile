@@ -1,6 +1,8 @@
 FIO_DIR = /home/jfernandes/Software/fusion-io/build
 MAGLIT_DIR = /home/jfernandes/Software/maglib/maglit
 SODE_DIR = /home/jfernandes/Software/maglib/sode
+SOURCE_DIR = /home/jfernandes/Software/maglib/maglit/tcabr_manifolds/source
+OBJ_DIR = $(SOURCE_DIR)/obj
 
 CXX = mpicxx
 CFLAGS = -Wall -fPIC -O2 -g
@@ -26,25 +28,30 @@ INCLUDE := -I$(FIO_DIR)/include $(HDF5_INCLUDE) $(INCLUDE) \
 		-I$(SODE_DIR)
 
 # Source files
-SRCS = test.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp
+SRCS = $(SOURCE_DIR)/run.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp $(SOURCE_DIR)/input_read.cpp $(SOURCE_DIR)/manifold.cpp
 
 # List of object files
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(OBJ_DIR)/run.o $(OBJ_DIR)/maglit.o $(OBJ_DIR)/sode.o $(OBJ_DIR)/input_read.o $(OBJ_DIR)/manifold.o
 
 # Default target
-test: $(OBJS)
+run: $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
 # Compile source files into object files
-$(MAGLIT_DIR)/%.o: $(MAGLIT_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(SOURCE_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
-$(SODE_DIR)/%.o: $(SODE_DIR)/%.cpp
+# Compile maglit.cpp into object file
+$(OBJ_DIR)/maglit.o: $(MAGLIT_DIR)/maglit.cpp
+	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
-%.o: %.cpp
+# Compile sode.cpp into object file
+$(OBJ_DIR)/sode.o: $(SODE_DIR)/sode.cpp
+	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 # Clean up
 clean:
-	rm -f $(OBJS) *~ test
+	rm -f $(OBJS) *~ run

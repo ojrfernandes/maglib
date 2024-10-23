@@ -1,17 +1,17 @@
-#ifndef INPUT_VALUES_H
-#define INPUT_VALUES_H
+#ifndef INPUT_READ_H
+#define INPUT_READ_H
 
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
 
-class input_values {
+class input_read {
   public:
     // Constructor to initialize reading_path
-    input_values(const std::string &readingPath);
+    input_read(const std::string &readingPath);
     // Destructor to clean up dynamically allocated memory
-    ~input_values();
+    ~input_read();
     // read paths to the source, shape and output from a text file along with the initial grid parameters
     bool readInputFile();
 
@@ -31,4 +31,4 @@ class input_values {
     std::string reading_path; // File path
 };
 
-#endif // INPUT_VALUES_H
+#endif // INPUT_READ_H

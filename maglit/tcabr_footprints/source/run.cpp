@@ -1,13 +1,12 @@
-#include "../../maglit.h"
 #include "footprint.h"
-#include "input_values.h"
+#include "input_read.h"
 #include "tcabr_collider.h"
 
 int main() {
     // read params from input file
     std::string pathsFile = "params.txt";
 
-    input_values input(pathsFile);
+    input_read input(pathsFile);
     bool readStatus = input.readInputFile();
     if (!readStatus) {
         std::cerr << "Error reading input file." << std::endl;

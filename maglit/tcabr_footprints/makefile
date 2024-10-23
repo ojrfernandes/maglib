@@ -29,10 +29,10 @@ INCLUDE := -I$(FIO_DIR)/include $(HDF5_INCLUDE) $(INCLUDE) \
 		-I$(SODE_DIR)
 
 # Source files
-SRCS = $(SOURCE_DIR)/run.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp $(SOURCE_DIR)/tcabr_collider.cpp $(SOURCE_DIR)/input_values.cpp $(SOURCE_DIR)/footprint.cpp
+SRCS = $(SOURCE_DIR)/run.cpp $(MAGLIT_DIR)/maglit.cpp $(SODE_DIR)/sode.cpp $(SOURCE_DIR)/tcabr_collider.cpp $(SOURCE_DIR)/input_read.cpp $(SOURCE_DIR)/footprint.cpp
 
 # List of object files
-OBJS = $(OBJ_DIR)/run.o $(OBJ_DIR)/maglit.o $(OBJ_DIR)/sode.o $(OBJ_DIR)/tcabr_collider.o $(OBJ_DIR)/input_values.o $(OBJ_DIR)/footprint.o
+OBJS = $(OBJ_DIR)/run.o $(OBJ_DIR)/maglit.o $(OBJ_DIR)/sode.o $(OBJ_DIR)/tcabr_collider.o $(OBJ_DIR)/input_read.o $(OBJ_DIR)/footprint.o
 
 # Default target
 run: $(OBJS)

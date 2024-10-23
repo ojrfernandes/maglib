@@ -26,6 +26,8 @@ class maglit {
     void reset();
     // run to print detailed messages
     void set_verb();
+    // run to print warning messages
+    void set_warnings();
     // allocate search hint
     void alloc_hint();
     // clear hint allocated memory
@@ -41,7 +43,8 @@ class maglit {
     int inv_factor = 1; // factor for inverse map
 
   private:
-    bool verb;
+    bool verb = false;
+    bool warnings = false;
     fio_source *src;
     fio_field *mag_field;
     fio_field *psin_field;
@@ -54,8 +57,6 @@ class maglit {
 
 // map of dynamical system x: (R,z); t: phi
 int mag_system(double *f, double *x, double t, void *mgl);
-// inverse map of dynamical system x: (R,z); t: phi
-int inverse_mag_system(double *f, double *x, double t, void *mgl);
 // monitor for inside region of interest
 bool mag_monitor(double *x, double t, void *mgl);
 

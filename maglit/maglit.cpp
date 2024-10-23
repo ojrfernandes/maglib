@@ -52,7 +52,9 @@ void maglit::set_inside(void *aux, bool (*inside)(double R, double Z, double phi
 bool maglit::calc_mag_field(double *x, double *B) {
     int result = mag_field->eval(x, B, hint);
     if (result != FIO_SUCCESS) {
-        std::cerr << "Fio mag field returned " << result << std::endl;
+        if (this->warnings) {
+            std::cerr << "Fio mag field returned " << result << std::endl;
+        }
         return false;
     } else
         return true;
@@ -85,6 +87,11 @@ void maglit::set_verb() {
     solver.set_verb();
 }
 
+// set warning mode
+void maglit::set_warnings() {
+    this->warnings = true;
+}
+
 // allocate memory for hint
 void maglit::alloc_hint() {
     int result = src->allocate_search_hint(&hint);
@@ -109,7 +116,7 @@ void maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
     }
     double x[3] = {R, Phi, Z};
     bool result = psin_field->eval(x, psin, hint);
-    if (result != FIO_SUCCESS) {
+    if (result != FIO_SUCCESS && this->warnings) {
         std::cerr << "Fio psin field returned " << result << std::endl;
     }
 }
@@ -124,7 +131,7 @@ void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
     }
     double x[3] = {R, Phi, Z};
     bool result = psi_field->eval(x, psi, hint);
-    if (result != FIO_SUCCESS) {
+    if (result != FIO_SUCCESS && this->warnings) {
         std::cerr << "Fio psi field returned " << result << std::endl;
     }
 }

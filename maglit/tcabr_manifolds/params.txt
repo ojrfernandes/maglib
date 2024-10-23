@@ -1,0 +1,30 @@
+################################ BASIC PARAMETERS #################################
+#
+#
+# source_path
+/home/jfernandes/Software/maglib_local/maglit/our_m3dc1_data/i_coils/n03/C1.h5
+# output_path
+manifolds/test.dat
+# manifold stability (stable=0; unstable=1)
+0
+# timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
+0
+# toroidal angle
+0
+# X-Point R coordinate guess
+0.46950445
+# X-Point Z coordinate guess
+-0.21327174
+#
+#
+############################## REFINEMENT PARAMETERS ##############################
+#
+#
+# primary segment's distance from X-point
+1e-6
+# number of mapped segments
+9
+# distance treshold
+0.01
+# algle treshold (radians)
+0.35
