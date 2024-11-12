@@ -18,6 +18,10 @@ class lobe {
 
     // get boundary curve of the lobe between two points for equilibrium and perturbed sets
     void getBoundaries(const point &p1, const point &p2, curve &equilibrium, curve &perturbed);
+    // get perimeter of the lobe
+    void getPerimeter();
+    // get area of the lobe
+    void getArea();
 };
 
 // Class constructor
@@ -87,6 +91,48 @@ void lobe::getBoundaries(const point &p1, const point &p2, curve &equilibrium, c
     }
 }
 
+// get perimeter of the lobe
+void lobe::getPerimeter() {
+    // check if curveBoundary has at least 3 points
+    if (curveBoundary.curvePoints.size() < 3) {
+        this->perimeter = 0;
+        std::cerr << "Error: The lobe's boudary curve has less than 3 points." << std::endl;
+        return;
+    }
+    // check if curveBoundary is closed
+    if (curveBoundary.curvePoints.front().distanceTo(curveBoundary.curvePoints.back()) > 1e-14) {
+        this->perimeter = 0;
+        std::cerr << "Error: The lobe's boudary curve is not closed." << std::endl;
+    }
+    // calculate the perimeter
+    this->perimeter = 0;
+    for (size_t i = 0; i < curveBoundary.curvePoints.size() - 1; ++i) {
+        this->perimeter += curveBoundary.curvePoints[i].distanceTo(curveBoundary.curvePoints[i + 1]);
+    }
+}
+
+// get area of the lobe by shoelace formula
+void lobe::getArea() {
+    // check if curveBoundary has at least 3 points
+    if (curveBoundary.curvePoints.size() < 3) {
+        this->area = 0;
+        std::cerr << "Error: The lobe's boudary curve has less than 3 points." << std::endl;
+        return;
+    }
+    // check if curveBoundary is closed
+    if (curveBoundary.curvePoints.front().distanceTo(curveBoundary.curvePoints.back()) > 1e-14) {
+        this->area = 0;
+        std::cerr << "Error: The lobe's boudary curve is not closed." << std::endl;
+    }
+    // calculate the area
+    this->area = 0.0;
+    for (size_t i = 0; i < curveBoundary.curvePoints.size() - 1; ++i) {
+        this->area += curveBoundary.curvePoints[i].R * curveBoundary.curvePoints[i + 1].Z -
+                      curveBoundary.curvePoints[i + 1].R * curveBoundary.curvePoints[i].Z;
+    }
+    this->area = std::abs(this->area) / 2.0;
+}
+
 int main() {
     std::string equilibriumFile = "/home/jfernandes/Software/maglib/maglit/tcabr_manifolds/manifolds/equilibrium/eq022_S.dat";
     std::string perturbedFile = "/home/jfernandes/Software/maglib/maglit/tcabr_manifolds/manifolds/response/eq022_S.dat";
@@ -107,7 +153,12 @@ int main() {
     }
 
     lobe lobetest;
-    lobetest.getBoundaries(intersection[407], intersection[408], equilibrium, perturbed);
+    lobetest.getBoundaries(intersection[408], intersection[409], equilibrium, perturbed);
+    lobetest.getPerimeter();
+    lobetest.getArea();
+
+    std::cout << "Perimeter: " << lobetest.perimeter << std::endl;
+    std::cout << "Area: " << lobetest.area << std::endl;
 
     // Write the boundary points to a file
     std::ofstream outFile2("boundary.dat");
