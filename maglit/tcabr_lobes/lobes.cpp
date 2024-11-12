@@ -1,28 +1,4 @@
-#include "intersections.h"
-
-class lobe {
-  public:
-    // Default constructor
-    lobe() = default;
-    // class constructor with boundary points
-    lobe(const point &p1, const point &p2);
-
-    // intersection points baoundin the lobe
-    point pBoundary_1, pBoundary_2;
-    // center coordinate of the lobe
-    point center;
-    // equilibrium and perturbed curves bounding the lobe
-    curve cBoundary_eq, cBoundary_ptb, curveBoundary;
-    // area and perimeter of the lobe
-    double area, perimeter;
-
-    // get boundary curve of the lobe between two points for equilibrium and perturbed sets
-    void getBoundaries(const point &p1, const point &p2, curve &equilibrium, curve &perturbed);
-    // get perimeter of the lobe
-    void getPerimeter();
-    // get area of the lobe
-    void getArea();
-};
+#include "lobes.h"
 
 // Class constructor
 lobe::lobe(const point &p1, const point &p2) : pBoundary_1(p1), pBoundary_2(p2) {
@@ -30,7 +6,9 @@ lobe::lobe(const point &p1, const point &p2) : pBoundary_1(p1), pBoundary_2(p2) 
 }
 
 // get boundary curve of the lobe between two points for equilibrium and perturbed sets
-void lobe::getBoundaries(const point &p1, const point &p2, curve &equilibrium, curve &perturbed) {
+void lobe::getBoundaries(curve &equilibrium, curve &perturbed) {
+    point p1 = this->pBoundary_1;
+    point p2 = this->pBoundary_2;
     // Start with the boundary points
     this->cBoundary_eq.curvePoints.push_back(p1);
     this->cBoundary_ptb.curvePoints.push_back(p1);
@@ -131,40 +109,4 @@ void lobe::getArea() {
                       curveBoundary.curvePoints[i + 1].R * curveBoundary.curvePoints[i].Z;
     }
     this->area = std::abs(this->area) / 2.0;
-}
-
-int main() {
-    std::string equilibriumFile = "/home/jfernandes/Software/maglib/maglit/tcabr_manifolds/manifolds/equilibrium/eq022_S.dat";
-    std::string perturbedFile = "/home/jfernandes/Software/maglib/maglit/tcabr_manifolds/manifolds/response/eq022_S.dat";
-
-    curve equilibrium(equilibriumFile);
-    curve perturbed(perturbedFile);
-
-    std::cout << "Equilibrium points: " << equilibrium.curvePoints.size() << std::endl;
-    std::cout << "Perturbed points: " << perturbed.curvePoints.size() << std::endl;
-
-    // perturbed.xPoint = point(0.46950445, -0.21327174);
-    std::vector<point> intersection = perturbed.intersectionsWith(equilibrium);
-
-    // Write the intersection points to a file
-    std::ofstream outFile("intersection.dat");
-    for (const auto &point : intersection) {
-        outFile << point.R << " " << point.Z << std::endl;
-    }
-
-    lobe lobetest;
-    lobetest.getBoundaries(intersection[408], intersection[409], equilibrium, perturbed);
-    lobetest.getPerimeter();
-    lobetest.getArea();
-
-    std::cout << "Perimeter: " << lobetest.perimeter << std::endl;
-    std::cout << "Area: " << lobetest.area << std::endl;
-
-    // Write the boundary points to a file
-    std::ofstream outFile2("boundary.dat");
-    for (const auto &point : lobetest.curveBoundary.curvePoints) {
-        outFile2 << point.R << " " << point.Z << std::endl;
-    }
-
-    return 0;
 }
