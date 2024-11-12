@@ -5,7 +5,7 @@ SOURCE_DIR = /home/jfernandes/Software/maglib/maglit/tcabr_footprints/source
 OBJ_DIR = $(SOURCE_DIR)/obj
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2 -g -fopenmp 
+CFLAGS = -Wall -fPIC -O2 -fopenmp 
 #-fsanitize=thread
 
 LD = $(CXX)

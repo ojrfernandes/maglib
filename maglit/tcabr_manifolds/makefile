@@ -5,7 +5,7 @@ SOURCE_DIR = /home/jfernandes/Software/maglib/maglit/tcabr_manifolds/source
 OBJ_DIR = $(SOURCE_DIR)/obj
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2 -g
+CFLAGS = -Wall -fPIC -O2
 
 LD = $(CXX)
 LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib
