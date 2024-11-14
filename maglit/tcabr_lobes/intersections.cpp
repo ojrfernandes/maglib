@@ -160,11 +160,12 @@ bool curve::loadFromFile(const std::string &filename, const size_t numPoints) {
 std::vector<point> curve::intersectionsWith(curve &otherCurve) {
     std::vector<point> intersections;
 
+    size_t jInit = 0;
     // Loop over consecutive pairs of points from the two sets
     for (size_t i = 0; i < this->curvePoints.size() - 1; ++i) {
         segment thisSegment(this->curvePoints[i], this->curvePoints[i + 1]);
 
-        for (size_t j = 0; j < otherCurve.curvePoints.size() - 1; ++j) {
+        for (size_t j = jInit; j < otherCurve.curvePoints.size() - 1; ++j) {
             segment otherSegment(otherCurve.curvePoints[j], otherCurve.curvePoints[j + 1]);
 
             // Check if the bounding boxes of the two segments overlap
@@ -174,6 +175,7 @@ std::vector<point> curve::intersectionsWith(curve &otherCurve) {
                 // Find the actual intersection point (not done yet)
                 point intersection = thisSegment.findIntersectionWith(otherSegment);
                 intersections.push_back(intersection);
+                jInit = j; // Start from the last intersection point
             }
         }
     }
