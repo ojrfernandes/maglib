@@ -1,5 +1,6 @@
 #ifndef INTERSECTIONS_H
 #define INTERSECTIONS_H
+#define INTERSECTIONS_V 241114 // version (yy.mm.dd)
 
 #include <algorithm>
 #include <cmath>

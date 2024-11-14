@@ -1,5 +1,6 @@
 #ifndef LOBES_H
 #define LOBES_H
+#define LOBES_V 241114 // version (yy.mm.dd)
 
 #include "intersections.h"
 

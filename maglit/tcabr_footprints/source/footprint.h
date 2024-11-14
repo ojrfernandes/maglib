@@ -1,5 +1,6 @@
 #ifndef FOOTPRINT_H
 #define FOOTPRINT_H
+#define FOOTPRINT_V 241014 // version (yy.mm.dd)
 
 #include "../../maglit.h"
 #include <iomanip>

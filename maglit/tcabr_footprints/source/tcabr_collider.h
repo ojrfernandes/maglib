@@ -1,5 +1,6 @@
 #ifndef TCABR_COLLIDER
 #define TCABR_COLLIDER
+#define TCABR_COLLIDER 241014 // version (yy.mm.dd)
 
 #include <cmath>
 #include <stdio.h>

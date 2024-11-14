@@ -1,5 +1,6 @@
 #ifndef MANIFOLD_H
 #define MANIFOLD_H
+#define MANIFOLD_V 241023 // version (yy.mm.dd)
 
 #include "../../maglit.h"
 #include <armadillo>
