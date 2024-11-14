@@ -11,7 +11,7 @@ int main() {
     std::cout << "Equilibrium points: " << equilibrium.curvePoints.size() << std::endl;
     std::cout << "Perturbed points: " << perturbed.curvePoints.size() << std::endl;
 
-    // perturbed.xPoint = point(0.46950445, -0.21327174);
+    // Find the intersection points between the equilibrium and perturbed curves
     std::vector<point> intersection = perturbed.intersectionsWith(equilibrium);
 
     // Write the intersection points to a file with 15 decimal places
@@ -20,18 +20,15 @@ int main() {
         intersectionFile << std::setprecision(15) << intersection[i].R << " " << intersection[i].Z << std::endl;
     }
 
-    std::ofstream centerFile("center.dat");
+    std::ofstream midpointFile("midpoint.dat");
     for (size_t i = 0; i < intersection.size() - 1; ++i) {
-        lobe lobe_i(intersection[i], intersection[i + 1]);
-        lobe_i.getBoundaries(equilibrium, perturbed);
-        lobe_i.getPerimeter();
-        lobe_i.getArea();
+        lobe lobe_i(intersection[i], intersection[i + 1], equilibrium, perturbed);
         std::cout << "Lobe " << i << " perimeter: " << lobe_i.perimeter
                   << " area: " << lobe_i.area
-                  << " center: (" << lobe_i.center.R << " " << lobe_i.center.Z << ")"
+                  << " midpoint: (" << lobe_i.midpoint.R << " " << lobe_i.midpoint.Z << ")"
                   << std::endl;
-        // write center of the lobe to a file
-        centerFile << std::setprecision(15) << lobe_i.center.R << " " << lobe_i.center.Z << std::endl;
+        // write midpoint of the lobe to a file
+        midpointFile << std::setprecision(15) << lobe_i.midpoint.R << " " << lobe_i.midpoint.Z << std::endl;
     }
 
     return 0;

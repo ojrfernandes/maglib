@@ -1,8 +1,36 @@
 #include "lobes.h"
 
 // Class constructor
-lobe::lobe(const point &p1, const point &p2) : pBoundary_1(p1), pBoundary_2(p2) {
-    this->center = point((p1.R + p2.R) / 2, (p1.Z + p2.Z) / 2);
+lobe::lobe(const point &p1, const point &p2, curve &equilibrium, curve &perturbed) : pBoundary_1(p1), pBoundary_2(p2), equilibrium(equilibrium), perturbed(perturbed) {
+    // has to be called first
+    this->getBoundaries(this->equilibrium, this->perturbed);
+    // has to be called after getBoundaries
+    this->getMidpoint();
+    this->getPerimeter();
+    this->getArea();
+}
+
+// get midpoint of the lobe over equilibrium curve
+void lobe::getMidpoint() {
+    // check if curveBoundary has at least 3 points
+    if (this->cBoundary_eq.curvePoints.size() < 3) {
+        std::cerr << "Error: The lobe's boudary curve has less than 3 points." << std::endl;
+        return;
+    }
+    // check if curveBoundary is closed
+    if (cBoundary_eq.curvePoints.front().distanceTo(cBoundary_eq.curvePoints.back()) > 1e-14) {
+        std::cerr << "Error: The lobe's boudary curve is not closed." << std::endl;
+    }
+    // calculate the midpoint
+    double R = 0.0, Z = 0.0;
+    for (size_t i = 0; i < cBoundary_eq.curvePoints.size() - 1; ++i) {
+        R += cBoundary_eq.curvePoints[i].R;
+        Z += cBoundary_eq.curvePoints[i].Z;
+    }
+    R /= cBoundary_eq.curvePoints.size() - 1;
+    Z /= cBoundary_eq.curvePoints.size() - 1;
+
+    this->midpoint = point(R, Z);
 }
 
 // get boundary curve of the lobe between two points for equilibrium and perturbed sets
@@ -65,7 +93,7 @@ void lobe::getBoundaries(curve &equilibrium, curve &perturbed) {
     if (cBoundary_ptb.curvePoints.size() > 2) {
         curveBoundary.curvePoints.insert(curveBoundary.curvePoints.end(),
                                          std::next(cBoundary_ptb.curvePoints.rbegin()), // skip the last element
-                                         cBoundary_ptb.curvePoints.rend());             // skip last element
+                                         cBoundary_ptb.curvePoints.rend());
     }
 }
 
