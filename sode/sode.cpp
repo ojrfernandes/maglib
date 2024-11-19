@@ -34,19 +34,19 @@ sode::sode(sode_type type, int dim) {
 }
 
 sode::~sode() {
-    delete (x0);
-    delete (x1);
-    delete (x2);
-    delete (b1);
-    delete (b2);
-    delete (c);
+    delete[] (x0);
+    delete[] (x1);
+    delete[] (x2);
+    delete[] (b1);
+    delete[] (b2);
+    delete[] (c);
 
     for (int i = 0; i < s; i++) {
-        delete (a[i]);
-        delete (k[i]);
+        delete[] (a[i]);
+        delete[] (k[i]);
     }
-    delete (a);
-    delete (k);
+    delete[] (a);
+    delete[] (k);
 }
 
 void sode::configure(double h_init, double h_min, double h_max) {
