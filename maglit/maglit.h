@@ -1,6 +1,6 @@
 #ifndef MAGLIT_H
 #define MAGLIT_H
-#define MAGLIT_V 241023 // version (yy.mm.dd)
+#define MAGLIT_V 241119 // version (yy.mm.dd)
 
 #include "../sode/sode.h"
 #include <fusion_io.h>

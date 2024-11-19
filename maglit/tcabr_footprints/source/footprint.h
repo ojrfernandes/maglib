@@ -1,6 +1,6 @@
 #ifndef FOOTPRINT_H
 #define FOOTPRINT_H
-#define FOOTPRINT_V 241014 // version (yy.mm.dd)
+#define FOOTPRINT_V 241119 // version (yy.mm.dd)
 
 #include "../../maglit.h"
 #include <iomanip>
@@ -23,11 +23,11 @@ class footprint {
     double connection_length(double R0, double Z0, double phi0, double R1, double Z1, double phi1);
     void progressBar(float progress);
 
+    int plate;
     double gridMin;
     double gridMax;
     int nGrid;
     int nPhi;
-    int plate;
 };
 
 #endif // FOOTPRINT_H

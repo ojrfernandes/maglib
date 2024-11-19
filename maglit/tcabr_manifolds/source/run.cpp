@@ -65,8 +65,8 @@ int main() {
     }
 
     // Done!
-    std::cout << "\nDone! \n"
-              << std::endl;
+    std::cout << "\nDone! \n";
+    std::cout << "Program finished successfully." << std::endl;
 
     return 0;
 }

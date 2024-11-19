@@ -11,7 +11,6 @@ manifold::manifold(const char *source_path, const int timeslice, double phi, int
         break;
     case 1:
         tracer.inverse_map(true);
-        this->s_factor = -1;
         break;
     }
 }

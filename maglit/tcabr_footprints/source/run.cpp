@@ -73,6 +73,10 @@ int main() {
     // close output file
     f0.close();
 
+    // print success message
+    std::cout << "\nOutput file saved successfully.\n";
+    std::cout << "Program finished successfully." << std::endl;
+
     // free allocated memory
     free_shape(shape);
 

@@ -38,6 +38,7 @@ void maglit::inverse_map(bool inverse) {
         break;
     case false:
         inv_factor = 1;
+        break;
     }
 }
 

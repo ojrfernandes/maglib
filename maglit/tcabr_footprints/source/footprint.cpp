@@ -1,13 +1,7 @@
 #include "footprint.h"
 
-footprint::footprint(const double &plate, const double &gridMin, const double &gridMax, const int &nGrid, const int &nPhi) {
-    this->plate = plate;
-    this->gridMin = gridMin;
-    this->gridMax = gridMax;
-    this->nGrid = nGrid;
-    this->nPhi = nPhi;
+footprint::footprint(const double &plate, const double &gridMin, const double &gridMax, const int &nGrid, const int &nPhi) : plate(plate), gridMin(gridMin), gridMax(gridMax), nGrid(nGrid), nPhi(nPhi) {
     this->outputData.resize(nGrid * nPhi, std::vector<double>(5));
-    ;
 }
 
 void footprint::runGrid(maglit &tracer) {
