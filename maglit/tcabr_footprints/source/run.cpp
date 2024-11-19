@@ -13,14 +13,8 @@ int main() {
         return 1;
     }
 
-    // load file containing vessel shape
-    tcabr_shape *shape = new tcabr_shape;
-    bool shapeStatus = load_shape(input.shape_path, shape);
-    if (!shapeStatus) {
-        std::cerr << "Error on loading vessel shape.\n"
-                  << std::endl;
-        return 1;
-    }
+    // initialize shape object
+    tcabr_shape shape(input.shape_path);
 
     // create footprint object
     footprint footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
@@ -39,7 +33,7 @@ int main() {
         omp_unset_lock(&lock); // unlock
 
         // configure tracer parameters
-        tracer.set_inside(shape, tcabr_inside);
+        tracer.set_inside(shape, &tcabr_shape::tcabr_inside);
         tracer.configure(0.01, 1e-5, 0.2);
 
 #pragma omp barrier
@@ -76,9 +70,6 @@ int main() {
     // print success message
     std::cout << "\nOutput file saved successfully.\n";
     std::cout << "Program finished successfully." << std::endl;
-
-    // free allocated memory
-    free_shape(shape);
 
     return 0;
 }

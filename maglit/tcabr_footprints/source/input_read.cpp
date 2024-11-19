@@ -1,13 +1,11 @@
 #include "input_read.h"
 
 // Constructor
-input_read::input_read(const std::string &readingPath) : source_path(nullptr), shape_path(nullptr), output_path(nullptr), reading_path(readingPath) {}
+input_read::input_read(const std::string &readingPath) : source_path(nullptr), reading_path(readingPath) {}
 
 // Destructor to free allocated memory
 input_read::~input_read() {
     delete[] source_path;
-    delete[] shape_path;
-    delete[] output_path;
 }
 
 // read paths to the source, shape and output from a text file along with the initial grid parameters
@@ -31,16 +29,14 @@ bool input_read::readInputFile() {
                 std::strcpy(source_path, line.c_str());
                 break;
             case 1:
-                // Allocate memory for shape_path and copy the string
-                shape_path = new char[line.length() + 1];
-                std::strcpy(shape_path, line.c_str());
+                // Copy the string to shape_path
+                shape_path = line;
                 break;
             case 2:
-                // Allocate memory for output_path and copy the string
-                output_path = new char[line.length() + 1];
-                std::strcpy(output_path, line.c_str());
+                // Copy the string to output_path
+                output_path = line;
                 // Check if the output file already exists
-                if (access(output_path, F_OK) != -1) {
+                if (access(output_path.c_str(), F_OK) != -1) {
                     std::cerr << "There is a file with the same name saved to the chosen directory. "
                               << "Please change the output file name to avoid overwriting your data."
                               << std::endl;

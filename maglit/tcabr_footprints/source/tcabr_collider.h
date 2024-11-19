@@ -1,29 +1,40 @@
 #ifndef TCABR_COLLIDER
 #define TCABR_COLLIDER
-#define TCABR_COLLIDER_V 241014 // version (yy.mm.dd)
+#define TCABR_COLLIDER_V 241119 // version (yy.mm.dd)
 
 #include <cmath>
-#include <stdio.h>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
-typedef struct {
-    int np;     // number of nodes
-    double *R;  // node coords
-    double *Z;  //
-    double Rc;  // center coords
-    double Zc;  //
-    double *th; // sector angles
-    int idx;    // current index
-} tcabr_shape;
+class tcabr_shape {
+  public:
+    // class default constructor
+    tcabr_shape() = default;
+    // class constructor loading shape from file
+    tcabr_shape(const std::string path) {
+        load_shape(path);
+    }
 
-// load vessel shape from file
-bool load_shape(const char path[], tcabr_shape *shape);
-// free allocated memory
-void free_shape(tcabr_shape *shape);
-// search the index of a given angle
-bool search_index(double ang, tcabr_shape *shape);
-// calculate AB x AC
-double cross(double RA, double ZA, double RB, double ZB, double RC, double ZC);
-// check if coordinate lies inside the vessel
-bool tcabr_inside(double R, double Z, double phi, void *aux);
+    // check if coordinate lies inside the vessel
+    bool tcabr_inside(double R, double Z, double phi, void *aux);
+
+  private:
+    // load vessel shape from file
+    bool load_shape(const std::string path);
+    // search the index of a given angle
+    bool search_index(double ang);
+    // calculate AB x AC
+    double cross(double RA, double ZA, double RB, double ZB, double RC, double ZC);
+
+    int np;                 // number of nodes
+    int idx;                // current index
+    std::vector<double> R;  // node coords
+    std::vector<double> Z;  //
+    double Rc;              // center coords
+    double Zc;              //
+    std::vector<double> th; // sector angles
+};
 
 #endif

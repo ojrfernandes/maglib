@@ -5,11 +5,11 @@ SOURCE_DIR = /home/jfernandes/Software/maglib/maglit/tcabr_footprints/source
 OBJ_DIR = $(SOURCE_DIR)/obj
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2 -fopenmp 
+CFLAGS = -Wall -fPIC -O2 -fopenmp -g -fsanitize=address
 #-fsanitize=thread
 
 LD = $(CXX)
-LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib -fopenmp 
+LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib -fopenmp -g -fsanitize=address
 
 INCLUDE = -I/opt/local/include 
 LIBS = -L/opt/local/lib/gcc9 -lgfortran -lstdc++ 

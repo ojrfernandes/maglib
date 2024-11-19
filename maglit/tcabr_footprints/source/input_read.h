@@ -18,8 +18,8 @@ class input_read {
 
     // Variables to store the paths and parameters
     char *source_path;
-    char *shape_path;
-    char *output_path;
+    std::string shape_path;
+    std::string output_path;
     int num_theads;
     int plate;
     int timeslice;
