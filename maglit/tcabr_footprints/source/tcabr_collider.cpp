@@ -99,13 +99,19 @@ double tcabr_shape::cross(double RA, double ZA, double RB, double ZB, double RC,
 // check if coordinate lies inside the vessel
 bool tcabr_shape::tcabr_inside(double R, double Z, double phi, void *aux) {
     tcabr_shape *shape = (tcabr_shape *)aux;
+
+    // compute the angle between Z-Zc and R-Rc
     double ang = atan2(Z - shape->Zc, R - shape->Rc);
     if (!search_index(ang))
         return false;
 
+    // determine the next index with periodic wrap-around
+    size_t next_idx = (shape->idx == shape->np - 1) ? 0 : shape->idx + 1;
+
+    // cross-product calculation
     double axb = cross(shape->R[shape->idx],
                        shape->Z[shape->idx],
-                       shape->R[shape->idx + 1],
-                       shape->Z[shape->idx + 1], R, Z);
+                       shape->R[next_idx],
+                       shape->Z[next_idx], R, Z);
     return (axb >= 0);
 }
