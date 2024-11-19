@@ -42,13 +42,6 @@ void maglit::inverse_map(bool inverse) {
     }
 }
 
-// optional: set inside region of interest
-void maglit::set_inside(void *aux, bool (*inside)(double R, double Z, double phi, void *aux)) {
-    this->aux = aux;
-    this->inside = inside;
-    solver.set_monitor(mag_monitor);
-}
-
 // evaluate magnetic field B at point x
 bool maglit::calc_mag_field(double *x, double *B) {
     int result = mag_field->eval(x, B, hint);
@@ -156,7 +149,7 @@ int mag_system(double *f, double *x, double t, void *mgl) {
 }
 
 // monitor for inside region of interest
-bool mag_monitor(double *x, double t, void *mgl) {
+bool maglit::mag_monitor(double *x, double t, void *mgl) {
     maglit *tracer = (maglit *)mgl;
     // x: (R,z); t: phi
     return tracer->inside(x[0], x[1], t, tracer->aux);
