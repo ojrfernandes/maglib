@@ -2,19 +2,15 @@
 #
 #
 # source_path
-/home/jfernandes/Software/m3dc1_data/eq022/i_coils/n03/C1.h5
+/home/jfernandes/Software/fusion-io/examples/data/m3dc1/C1.h5
 # output_path
-manifolds/eq022_S.dat
+manifolds/example.dat
 # manifold stability (stable=0; unstable=1)
 0
 # timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
 1
 # toroidal angle
 0
-# X-Point R coordinate guess
-0.49817845
-# X-Point Z coordinate guess
--0.21636795
 #
 #
 ############################## REFINEMENT PARAMETERS ##############################
@@ -23,7 +19,7 @@ manifolds/eq022_S.dat
 # primary segment's distance from X-point
 1e-6
 # number of mapped segments
-8
+15
 # distance treshold
 0.01
 # algle treshold (radians)
