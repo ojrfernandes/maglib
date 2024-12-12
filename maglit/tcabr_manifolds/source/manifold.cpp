@@ -30,7 +30,7 @@ point manifold::apply_map(double R, double Z, double Phi, int nTurns) {
     int status = SODE_CONTINUE_GOOD_STEP;
     tracer.reset();
     tracer.alloc_hint();
-    double phi_max = nTurns * 2 * M_PI;
+    double phi_max = Phi + nTurns * 2 * M_PI;
 
     // Apply the map
     do {

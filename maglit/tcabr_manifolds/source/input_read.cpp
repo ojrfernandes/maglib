@@ -1,12 +1,7 @@
 #include "input_read.h"
 
 // Constructor
-input_read::input_read(const std::string &readingPath) : source_path(nullptr), reading_path(readingPath) {}
-
-// Destructor to free allocated memory
-input_read::~input_read() {
-    delete[] source_path;
-}
+input_read::input_read(const std::string &readingPath) : reading_path(readingPath) {}
 
 // read paths to the source, shape and output from a text file along with the initial grid parameters
 bool input_read::readInputFile() {
@@ -24,12 +19,9 @@ bool input_read::readInputFile() {
         if (!line.empty() && line[0] != '#') { // Ignore empty lines and comments starting with #
             switch (line_index) {
             case 0:
-                // Allocate memory for source_path and copy the string
-                source_path = new char[line.length() + 1];
-                std::strcpy(source_path, line.c_str());
+                source_path = line;
                 break;
             case 1:
-                // Allocate memory for output_path and copy the string
                 output_path = line;
                 // Check if the output file already exists
                 if (access(output_path.c_str(), F_OK) != -1) {
@@ -47,6 +39,8 @@ bool input_read::readInputFile() {
                 break;
             case 4:
                 Phi = std::stod(line);
+                // Convert Phi from degrees to radians
+                Phi *= M_PI / 180;
                 break;
             case 5:
                 epsilon = std::stod(line);
@@ -92,7 +86,7 @@ bool input_read::readHDF5File() {
 
     try {
         // Open the HDF5 file
-        hid_t file = H5Fopen(source_path, H5F_ACC_RDONLY, H5P_DEFAULT);
+        hid_t file = H5Fopen(source_path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
 
         // Open the datasets
         hid_t xnullDataset = H5Dopen(file, "scalars/xnull", H5P_DEFAULT);

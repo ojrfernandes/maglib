@@ -15,7 +15,7 @@ int main() {
     }
 
     // create manifold object
-    manifold manifold(input.source_path, input.timeslice, input.Phi, input.stability, input.epsilon);
+    manifold manifold(input.source_path.c_str(), input.timeslice, input.Phi, input.stability, input.epsilon);
 
     // find the x-point
     bool found_xp = manifold.find_xPoint(input.R_xPoint, input.Z_xPoint);
