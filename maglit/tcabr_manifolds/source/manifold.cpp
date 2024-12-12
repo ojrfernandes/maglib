@@ -8,6 +8,7 @@ manifold::manifold(const char *source_path, const int timeslice, double phi, int
     switch (stability) {
     case 0:
         tracer.inverse_map(false);
+        this->s_factor = 1;
         break;
     case 1:
         tracer.inverse_map(true);

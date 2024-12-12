@@ -1,10 +1,11 @@
 #ifndef FOOTPRINT_H
 #define FOOTPRINT_H
-#define FOOTPRINT_V 241119 // version (yy.mm.dd)
+#define FOOTPRINT_V 241212 // version (yy.mm.dd)
 
 #include "../../maglit.h"
 #include <iomanip>
 #include <omp.h>
+#include <thread>
 
 class footprint {
   public:

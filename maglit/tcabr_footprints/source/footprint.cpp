@@ -22,8 +22,8 @@ void footprint::runGrid(maglit &tracer) {
 
 // loop over the grid
 #pragma omp for schedule(dynamic)
-    for (int i = 0; i < nPhi; i++) {
-        for (int j = 0; j < nGrid; j++) {
+    for (int j = 0; j < nPhi; j++) {
+        for (int i = 0; i < nGrid; i++) {
 
             if (plate == 0) {
                 R0 = gridMin + (gridMax - gridMin) * j / nGrid;
@@ -51,8 +51,9 @@ void footprint::runGrid(maglit &tracer) {
 
             // Print progress bar only in the first thread (thread 0)
             if (omp_get_thread_num() == 0) {
-                float progress = (float)(i * nGrid + j) / (nGrid * nPhi);
+                float progress = (float)(j * nGrid + i) / (nGrid * nPhi);
                 this->progressBar(progress);
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
     }
