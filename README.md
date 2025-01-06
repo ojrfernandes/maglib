@@ -5,8 +5,8 @@ Maglib is a library designed for computational tasks in plasma physics, leveragi
 ### Fusion-IO Dependency
 maglib requires an installation of Fusion-IO, an interface for extracting data from various plasma simulation codes. Fusion-IO was developed by Nate Ferraro at the Princeton Plasma Physics Laboratory and can be found at the [Fusion-IO GitHub Repository](https://github.com/nferraro/fusion-io).
 
-⚠️ Compatibility Warning
-This program **is not fully** compatible with the latest versions of Fusion-IO. For the best results, we recommend using a Fusion-IO version from around July 2023. Commit 022a77f is our recommentation.
+⚠️ Compatibility Warning:
+This program **is not** compatible with the latest versions of Fusion-IO. For the best results, we recommend using a Fusion-IO version from around July 2023. Commit 022a77f is our recommentation.
 
 To clone the compatible version, run:
 ```bash 
