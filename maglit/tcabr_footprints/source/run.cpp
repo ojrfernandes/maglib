@@ -19,28 +19,24 @@ int main() {
     // create footprint object
     footprint footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
 
-    // set omp parameters
-    omp_lock_t lock;
-    omp_set_dynamic(1);
+    // set omp parametera
     omp_set_num_threads(input.num_theads);
-    omp_init_lock(&lock);
+
+    std::vector<maglit> tracer;
+    tracer.reserve(input.num_theads);
+    for (int i = 0; i < input.num_theads; ++i) {
+        // Construct a maglit object directly in the vector
+        tracer.emplace_back(input.source_path, FIO_M3DC1_SOURCE, input.timeslice);
+        // Configure the newly created maglit object
+        tracer.back().set_inside(shape, &tcabr_shape::tcabr_inside);
+        tracer.back().configure(0.01, 1e-5, 0.2);
+    }
 
 #pragma omp parallel
     {
-        // define tracer maglit object
-        omp_set_lock(&lock); // lock to avoid concurrent hdf5 read
-        maglit tracer(input.source_path, FIO_M3DC1_SOURCE, input.timeslice);
-        omp_unset_lock(&lock); // unlock
-
-        // configure tracer parameters
-        tracer.set_inside(shape, &tcabr_shape::tcabr_inside);
-        tracer.configure(0.01, 1e-5, 0.2);
-
-#pragma omp barrier
-
-        footprint.runGrid(tracer);
+        int tid = omp_get_thread_num();
+        footprint.runGrid(tracer[tid]);
     }
-    omp_destroy_lock(&lock);
 
     // create output file
     std::cout << "\n Saving output file at " << input.output_path << std::endl;

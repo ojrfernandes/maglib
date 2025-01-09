@@ -18,7 +18,7 @@ class lobe {
     // equilibrium and perturbed curves bounding the lobe
     curve cBoundary_eq, cBoundary_ptb, curveBoundary;
     // area and perimeter of the lobe
-    double area, perimeter, magAxisiAngle;
+    double area, perimeter, hParameter;
 
   private:
     // get boundary curve of the lobe between two points for equilibrium and perturbed sets
@@ -27,6 +27,8 @@ class lobe {
     void getPerimeter();
     // get area of the lobe
     void getArea();
+    // get h parameter of the lobe
+    void getHParameter();
     // get midpoint of the lobe
     void getMidpoint();
 

@@ -2,15 +2,15 @@
 #
 #
 # source_path
-/home/jfernandes/Software/m3dc1_data/eq003/i_coils/n03/C1.h5
+/home/jfernandes/Software/m3dc1_data/eq000/cp_coils/n03/C1.h5
 # output_path
-manifolds/test_270.dat
+/home/jfernandes/Software/results/manifolds/eq000_cp03_S.dat
 # manifold stability (stable=0; unstable=1)
 0
 # timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
 1
 # toroidal angle (deg)
-270
+0
 #
 #
 ############################## REFINEMENT PARAMETERS ##############################
@@ -19,8 +19,8 @@ manifolds/test_270.dat
 # primary segment's distance from X-point
 1e-6
 # number of mapped segments
-6
+8
 # distance treshold
-0.01
+0.005
 # algle treshold (radians)
 0.35

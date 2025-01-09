@@ -8,6 +8,7 @@ lobe::lobe(const point &p1, const point &p2, curve &equilibrium, curve &perturbe
     this->getMidpoint();
     this->getPerimeter();
     this->getArea();
+    this->getHParameter();
 }
 
 // get midpoint of the lobe over equilibrium curve
@@ -16,10 +17,6 @@ void lobe::getMidpoint() {
     if (this->cBoundary_eq.curvePoints.size() < 3) {
         std::cerr << "Error: The lobe's boudary curve has less than 3 points." << std::endl;
         return;
-    }
-    // check if curveBoundary is closed
-    if (cBoundary_eq.curvePoints.front().distanceTo(cBoundary_eq.curvePoints.back()) > 1e-14) {
-        std::cerr << "Error: The lobe's boudary curve is not closed." << std::endl;
     }
     // calculate the midpoint
     double R = 0.0, Z = 0.0;
@@ -137,4 +134,10 @@ void lobe::getArea() {
                       curveBoundary.curvePoints[i + 1].R * curveBoundary.curvePoints[i].Z;
     }
     this->area = std::abs(this->area) / 2.0;
+}
+
+// get h parameter of the lobe
+void lobe::getHParameter() {
+    double baseLength = this->pBoundary_1.distanceTo(this->pBoundary_2);
+    this->hParameter = 2 * this->area / baseLength;
 }

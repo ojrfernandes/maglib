@@ -1,7 +1,7 @@
 #include "maglit.h"
 
 // maglit class constructor
-maglit::maglit(const char *source_path, int source_type, const int timeslice) : solver(SODE_RK56_CK, 2) {
+maglit::maglit(const char *source_path, int source_type, const int timeslice) : src(nullptr), mag_field(nullptr), psin_field(nullptr), psi_field(nullptr), solver(SODE_RK56_CK, 2) {
     // load source from file
     int result = fio_open_source(&src, source_type, source_path);
     if (result != FIO_SUCCESS) {
@@ -28,6 +28,25 @@ maglit::maglit(const char *source_path, int source_type, const int timeslice) : 
 
     // configure precision of solution
     solver.configure(1e-8, 1e-12, 1e-15, 0.9);
+}
+
+maglit::~maglit() {
+    if (mag_field != nullptr) {
+        fio_close_field(&mag_field);
+        mag_field = nullptr;
+    }
+    if (psin_field != nullptr) {
+        fio_close_field(&psin_field);
+        psin_field = nullptr;
+    }
+    if (psi_field != nullptr) {
+        fio_close_field(&psi_field);
+        psi_field = nullptr;
+    }
+    if (src != nullptr) {
+        fio_close_source(&src);
+        src = nullptr;
+    }
 }
 
 // optional: sets the inverse map of the dynamical system
