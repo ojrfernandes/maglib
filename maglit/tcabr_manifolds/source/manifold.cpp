@@ -279,7 +279,7 @@ void manifold::insertPoint(std::vector<point> &segment, size_t index) {
 void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim) {
 
     size_t j = 1;                     // Start at the second point
-    double theta_lim_aux = theta_lim; // Cropy of the angle limit
+    double theta_lim_aux = theta_lim; // Copy of the angle limit
     int insertion_count = 0;          // Counter for insertions in the current segment
 
     while (j < prev_seg.size() - 1) {

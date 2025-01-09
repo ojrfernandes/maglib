@@ -5,7 +5,7 @@ SOURCE_DIR = /home/jfernandes/Software/maglib/maglit/tcabr_footprints/source
 OBJ_DIR = $(SOURCE_DIR)/obj
 
 CXX = mpicxx
-CFLAGS = -Wall -fPIC -O2 -fopenmp
+CFLAGS = -Wall -fPIC -O2 -fopenmp 
 
 LD = $(CXX)
 LDFLAGS = -fPIC -Wl,-rpath,/opt/local/lib -fopenmp

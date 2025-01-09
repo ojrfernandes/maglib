@@ -13,6 +13,8 @@ class maglit {
     // source_type: FIO_M3DC1_SOURCE, FIO_GEQDSK_SOURCE, FIO_GPEC_SOURCE
     maglit(const char *source_path, int source_type, int timeslice);
 
+    // destructor
+    ~maglit();
     // member functions
     // optional: sets the inverse map of the dynamical system
     void inverse_map(bool inverse);
