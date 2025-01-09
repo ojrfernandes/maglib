@@ -17,7 +17,7 @@ int main() {
     tcabr_shape shape(input.shape_path);
 
     // create footprint object
-    footprint footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
+    footprint tcabr_footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
 
     // set omp parametera
     omp_set_num_threads(input.num_theads);
@@ -32,14 +32,8 @@ int main() {
         tracer.back().configure(0.01, 1e-5, 0.2);
     }
 
-#pragma omp parallel
-    {
-        int tid = omp_get_thread_num();
-        footprint.runGrid(tracer[tid]);
-    }
-
     // create output file
-    std::cout << "\n Saving output file at " << input.output_path << std::endl;
+    std::cout << "\n Opening output file at " << input.output_path << std::endl;
     std::ofstream f0(input.output_path);
     if (!f0.is_open()) {
         std::cerr << "Failed to open file at " << input.output_path << std::endl;
@@ -51,14 +45,11 @@ int main() {
        << "phi0" << std::string(15, ' ') << "length" << std::string(13, ' ')
        << "psiMin\n";
 
-    // Write output file data
-    for (const auto &row : footprint.outputData) {
-        f0 << std::fixed << std::setprecision(16)
-           << row[0] << " " << row[1] << " " << row[2]
-           << " " << row[3] << " " << row[4] << "\n";
+#pragma omp parallel
+    {
+        int tid = omp_get_thread_num();
+        tcabr_footprint.runGrid(tracer[tid], f0);
     }
-
-    footprint.outputData.shrink_to_fit();
 
     // close output file
     f0.close();

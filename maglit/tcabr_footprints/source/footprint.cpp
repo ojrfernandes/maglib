@@ -1,10 +1,9 @@
 #include "footprint.h"
 
-footprint::footprint(const double &plate, const double &gridMin, const double &gridMax, const int &nGrid, const int &nPhi) : plate(plate), gridMin(gridMin), gridMax(gridMax), nGrid(nGrid), nPhi(nPhi) {
-    this->outputData.resize(nGrid * nPhi, std::vector<double>(5));
+footprint::footprint(const double &plate, const double &gridMin, const double &gridMax, const int &nGrid, const int &nPhi) : plate(plate), nGrid(nGrid), nPhi(nPhi), gridMin(gridMin), gridMax(gridMax) {
 }
 
-void footprint::runGrid(maglit &tracer) {
+void footprint::runGrid(maglit &tracer, std::ofstream &output_file) {
     map_scalars scalars;
     double R0, Z0;
 
@@ -20,11 +19,14 @@ void footprint::runGrid(maglit &tracer) {
         break;
     }
 
-// loop over the grid
+    // Thread-local buffer
+    const size_t bufferSize = 500; // Flush every 500 entries
+    std::vector<double> localBuffer;
+    localBuffer.reserve(bufferSize * 5); // Reserve space for efficiency
+
 #pragma omp for schedule(dynamic)
     for (int i = 0; i < nPhi; i++) {
         for (int j = 0; j < nGrid; j++) {
-
             if (plate == 0) {
                 R0 = gridMin + (gridMax - gridMin) * j / nGrid;
             } else {
@@ -34,28 +36,48 @@ void footprint::runGrid(maglit &tracer) {
             double phi0 = 2 * M_PI * i / nPhi;
             double R1, phi1, Z1;
 
-            // evolve lines
             tracer.alloc_hint();
             this->evolve_line(tracer, R0, Z0, phi0, R1, Z1, phi1, scalars);
             tracer.clear_hint();
 
-            // Calculate the index for dataWrite
-            int index = i * nGrid + j;
+            // Append to the thread-local buffer
+            localBuffer.push_back(R0);
+            localBuffer.push_back(Z0);
+            localBuffer.push_back(phi0);
+            localBuffer.push_back(scalars.length);
+            localBuffer.push_back(scalars.psimin);
 
-            // Assign the values directly into the preallocated matrix
-            outputData[index][0] = R0;
-            outputData[index][1] = Z0;
-            outputData[index][2] = phi0;
-            outputData[index][3] = scalars.length;
-            outputData[index][4] = scalars.psimin;
+            // Flush if buffer is full
+            if (localBuffer.size() >= bufferSize * 5) {
+                std::lock_guard<std::mutex> lock(file_mutex);
+                for (size_t k = 0; k < localBuffer.size(); k += 5) {
+                    output_file << std::fixed << std::setprecision(16)
+                                << localBuffer[k] << " "
+                                << localBuffer[k + 1] << " "
+                                << localBuffer[k + 2] << " "
+                                << localBuffer[k + 3] << " "
+                                << localBuffer[k + 4] << "\n";
+                }
+                localBuffer.clear();
+            }
 
-            // Print progress bar only in the first thread (thread 0)
             if (omp_get_thread_num() == 0) {
                 float progress = (float)(i * nGrid + j) / (nGrid * nPhi);
                 this->progressBar(progress);
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
+    }
+
+    // Flush remaining buffer at the end of the loop
+    std::lock_guard<std::mutex> lock(file_mutex);
+    for (size_t k = 0; k < localBuffer.size(); k += 5) {
+        output_file << std::fixed << std::setprecision(16)
+                    << localBuffer[k] << " "
+                    << localBuffer[k + 1] << " "
+                    << localBuffer[k + 2] << " "
+                    << localBuffer[k + 3] << " "
+                    << localBuffer[k + 4] << "\n";
     }
 }
 

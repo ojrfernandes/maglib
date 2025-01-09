@@ -4,14 +4,14 @@
 
 #include "../../maglit.h"
 #include <iomanip>
+#include <mutex>
 #include <omp.h>
 #include <thread>
 
 class footprint {
   public:
     footprint(const double &plate, const double &gridMin, const double &gridMax, const int &nGrid, const int &nPhi);
-    void runGrid(maglit &tracer);
-    std::vector<std::vector<double>> outputData;
+    void runGrid(maglit &tracer, std::ofstream &output_file);
 
   private:
     typedef struct
@@ -24,11 +24,9 @@ class footprint {
     double connection_length(double R0, double Z0, double phi0, double R1, double Z1, double phi1);
     void progressBar(float progress);
 
-    int plate;
-    double gridMin;
-    double gridMax;
-    int nGrid;
-    int nPhi;
+    int plate, nGrid, nPhi;
+    double gridMin, gridMax;
+    std::mutex file_mutex;
 };
 
 #endif // FOOTPRINT_H
