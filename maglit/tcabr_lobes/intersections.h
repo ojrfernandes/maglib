@@ -1,6 +1,6 @@
 #ifndef INTERSECTIONS_H
 #define INTERSECTIONS_H
-#define INTERSECTIONS_V 241114 // version (yy.mm.dd)
+#define INTERSECTIONS_V 250120 // version (yy.mm.dd)
 
 #include <algorithm>
 #include <cmath>
@@ -27,6 +27,8 @@ class point {
     point(double r, double z) : R(r), Z(z) {}
     // Method to calculate the Euclidean distance between two points
     double distanceTo(const point &other) const;
+    // Method to calculate the angle between two points with respect to a given origin point
+    double angleTo(const point &other, const point &origin) const;
 
   private:
     // Customizable tolerance for floating-point comparison
@@ -76,7 +78,7 @@ class curve {
     // Default constructor
     curve() = default;
     // Class constructor load from file
-    curve(const std::string &filename);
+    curve(const std::string &filename, const size_t numPoints);
     // Method to find the intersection points with another curve
     std::vector<point> intersectionsWith(curve &other);
 

@@ -1,9 +1,9 @@
 #include "intersections.h"
 
 // Curve class constructor
-curve::curve(const std::string &filename) {
+curve::curve(const std::string &filename, const size_t numPoints) {
     // Load curve from file
-    if (!loadFromFile(filename)) {
+    if (!loadFromFile(filename, numPoints)) {
         std::cerr << "Error: Could not load curve from file " << filename << std::endl;
     }
 }
@@ -25,6 +25,33 @@ bool boundingBox::contains(const point &p) const {
 // Calculate the Euclidean distance between two points
 double point::distanceTo(const point &other) const {
     return std::sqrt(std::pow(R - other.R, 2) + std::pow(Z - other.Z, 2));
+}
+
+// Calculate the angle between two points with respect to a given origin point
+double point::angleTo(const point &other, const point &origin) const {
+    // Calculate the vectors from the origin to the two points
+    double x1 = this->R - origin.R;
+    double y1 = this->Z - origin.Z;
+    double x2 = other.R - origin.R;
+    double y2 = other.Z - origin.Z;
+
+    // Calculate the dot product
+    double dotProduct = x1 * x2 + y1 * y2;
+
+    // Calculate the magnitudes of the vectors
+    double mag1 = std::sqrt(x1 * x1 + y1 * y1);
+    double mag2 = std::sqrt(x2 * x2 + y2 * y2);
+
+    // Calculate the cosine of the angle
+    double cosTheta = dotProduct / (mag1 * mag2);
+
+    // Clamp the cosine value to the range [-1, 1] to avoid NaN from acos
+    cosTheta = std::max(-1.0, std::min(1.0, cosTheta));
+
+    // Calculate the angle in radians
+    double angle = std::acos(cosTheta);
+
+    return angle;
 }
 
 // Helper function to find the orientation of the ordered triplet (p, q, r)
@@ -163,9 +190,11 @@ std::vector<point> curve::intersectionsWith(curve &otherCurve) {
     size_t jInit = 0;
     // Loop over consecutive pairs of points from the two sets
     for (size_t i = 0; i < this->curvePoints.size() - 1; ++i) {
+        // for (size_t i = this->curvePoints.size() - 1; i > 0; --i) {
         segment thisSegment(this->curvePoints[i], this->curvePoints[i + 1]);
 
-        for (size_t j = jInit; j < otherCurve.curvePoints.size() - 1; ++j) {
+        for (size_t j = 0; j < otherCurve.curvePoints.size() - 1; ++j) {
+            // for (size_t j = otherCurve.curvePoints.size() - 1; j > 0; --j) {
             segment otherSegment(otherCurve.curvePoints[j], otherCurve.curvePoints[j + 1]);
 
             // Check if the bounding boxes of the two segments overlap

@@ -1,7 +1,7 @@
 #include "lobes.h"
 
 // Class constructor
-lobe::lobe(const point &p1, const point &p2, curve &equilibrium, curve &perturbed) : pBoundary_1(p1), pBoundary_2(p2), equilibrium(equilibrium), perturbed(perturbed) {
+lobe::lobe(const point &p1, const point &p2, curve &equilibrium, curve &perturbed, const point &mAxis, const point &xPoint) : pBoundary_1(p1), pBoundary_2(p2), equilibrium(equilibrium), perturbed(perturbed), magAxis(mAxis), xPoint(xPoint) {
     // has to be called first
     this->getBoundaries(this->equilibrium, this->perturbed);
     // has to be called after getBoundaries
@@ -9,6 +9,7 @@ lobe::lobe(const point &p1, const point &p2, curve &equilibrium, curve &perturbe
     this->getPerimeter();
     this->getArea();
     this->getHParameter();
+    this->getReferenceAngle(); // has to be called after getMidpoint
 }
 
 // get midpoint of the lobe over equilibrium curve
@@ -140,4 +141,11 @@ void lobe::getArea() {
 void lobe::getHParameter() {
     double baseLength = this->pBoundary_1.distanceTo(this->pBoundary_2);
     this->hParameter = 2 * this->area / baseLength;
+}
+
+// get the angle between the lobe's midpoint and the X-point with respect to the magnetic axis
+void lobe::getReferenceAngle() {
+    // this->referencePoint.R = (this->pBoundary_2.R - this->pBoundary_1.R) / 2.0;
+    // this->referencePoint.Z = (this->pBoundary_2.Z - this->pBoundary_1.Z) / 2.0;
+    this->referenceAngle = midpoint.angleTo(this->xPoint, this->magAxis);
 }
