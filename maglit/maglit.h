@@ -9,23 +9,24 @@
 
 class maglit {
   public:
+    // maglit class constructor
     // opens source and enters additional parameters
     // source_type: FIO_M3DC1_SOURCE, FIO_GEQDSK_SOURCE, FIO_GPEC_SOURCE
     maglit(const char *source_path, int source_type, int timeslice);
 
-    // destructor
+    // class destructor
     ~maglit();
-    // member functions
-    // optional: sets the inverse map of the dynamical system
+
+    // set the inverse map of the dynamical system
     void inverse_map(bool inverse);
-    // evaluates the magnetic field in cylindrical coordinates
+    // evaluate the magnetic field in cylindrical coordinates
     bool calc_mag_field(double *x, double *B); // x:(R, phi, Z)
-    // configure solvers step control parameter
+    // configure solver's step control parameter
     void configure(double dphi_init, double dphi_min, double dphi_max);
     // performs step up to phi_max or if inside changes
     // dir = -1 (true->false), 0 (dont monitor), 1 (false->true)
     int step(double &R, double &Z, double &phi, double phi_max, int dir);
-    // run before start new line
+    // reset integrator (run before start new field line)
     void reset();
     // run to print detailed messages
     void set_verb();
@@ -59,16 +60,16 @@ class maglit {
     int inv_factor = 1;                                         // factor for inverse map
 
   private:
-    bool verb = false;
-    bool warnings = false;
-    fio_source *src;
-    fio_field *mag_field;
-    fio_field *psin_field;
-    fio_field *psi_field;
-    fio_option_list opt;
-    sode solver;
-    fio_hint hint;
-    double x[2]; // auxiliary orbit variable
+    bool verb = false;     // verbose mode
+    bool warnings = false; // warning mode
+    fio_source *src;       // fusion-io data source
+    fio_field *mag_field;  // fusion-io magnetic field
+    fio_field *psin_field; // fusion-io normalized poloidal flux
+    fio_field *psi_field;  // fusion-io poloidal flux
+    fio_option_list opt;   // fusion-io field options
+    sode solver;           // solver for the dynamical system
+    fio_hint hint;         // fusion-io hint for finite element search
+    double x[2];           // auxiliary orbit variable
 };
 
 // map of dynamical system x: (R,z); t: phi

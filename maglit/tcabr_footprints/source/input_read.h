@@ -17,16 +17,16 @@ class input_read {
     bool readInputFile();
 
     // Variables to store the paths and parameters
-    char *source_path;
-    std::string shape_path;
-    std::string output_path;
-    int num_theads;
-    int plate;
-    int timeslice;
-    double gridMin;
-    double gridMax;
-    int nGrid;
-    int nPhi;
+    char *source_path;       // path to the source file
+    std::string shape_path;  // path to the first wall shape file
+    std::string output_path; // path to the output file
+    int num_theads;          // number of threads to be used
+    int plate;               // mapped divertor plate (floor=0; wall=1)
+    int timeslice;           // timeslice to be read from the source file
+    double gridMin;          // minimum value for the y coordinate (R or Z) of the grid
+    double gridMax;          // maximum value for the y coordinate (R or Z) of the grid
+    int nGrid;               // number of grid points in the y coordinate (R or Z) of the grid
+    int nPhi;                // number of grid points in the phi coordinate of the grid
 
   private:
     std::string reading_path; // File path

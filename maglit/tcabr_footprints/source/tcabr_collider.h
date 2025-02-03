@@ -30,9 +30,9 @@ class tcabr_shape {
 
     int np;                 // number of nodes
     int idx;                // current index
-    std::vector<double> R;  // node coords
+    std::vector<double> R;  // node coordinates
     std::vector<double> Z;  //
-    double Rc;              // center coords
+    double Rc;              // center coordinates
     double Zc;              //
     std::vector<double> th; // sector angles
 };

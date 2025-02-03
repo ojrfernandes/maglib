@@ -9,7 +9,7 @@
 #include <thread>
 #include <utility>
 
-// Define a point structure
+// Structure to store a point in the R-Z plane
 struct point {
     double R;
     double Z;
@@ -30,7 +30,7 @@ class manifold {
     // Set warning flag
     void setWarnings();
 
-    point xPoint; // x-point
+    point xPoint; // x-point coordinates
 
   private:
     // Evaluate the jacobian of the map at a given point
@@ -43,7 +43,7 @@ class manifold {
     double computeAngle(double R0, double Z0, double R1, double Z1, double R2, double Z2);
     // Apply map to a given point returning a Point (R, Z)
     point apply_map(double R, double Z, double Phi, int nTurns);
-    // Find the pivot point for the primary segment
+    // Find the pivot point for the fisrt primary segment
     point pivot();
 
     // User defined parameters

@@ -1,5 +1,6 @@
 #include "sode.h"
 
+// constructor
 sode::sode(sode_type type, int dim) {
     this->type = type;
     this->dim = dim;
@@ -33,6 +34,7 @@ sode::sode(sode_type type, int dim) {
     }
 }
 
+// destructor
 sode::~sode() {
     delete[] (x0);
     delete[] (x1);
@@ -49,12 +51,15 @@ sode::~sode() {
     delete[] (k);
 }
 
+// set initial stepsize and bounds
 void sode::configure(double h_init, double h_min, double h_max) {
     this->h_init = h_init;
     this->h_min = h_min;
     this->h_max = h_max;
     this->h = h_min;
 }
+
+// set tolerances and damping factor
 void sode::configure(double tol_sol, double tol_mon, double tol_end, double damp) {
     this->tol_sol = tol_sol;
     this->tol_mon = tol_mon;
@@ -62,19 +67,23 @@ void sode::configure(double tol_sol, double tol_mon, double tol_end, double damp
     this->damp = damp;
 }
 
+// define dynamical system
 void sode::set_system(int (*system)(double *f, double *x, double t, void *aux)) {
     this->system = system;
 }
 
+// set function to detect user defined changes in the orbit
 void sode::set_monitor(bool (*monitor)(double *x, double t, void *aux)) {
     this->monitor = monitor;
 }
 
+// reset integrator (run before computing new orbits)
 void sode::reset() {
     this->h = h_min;
     this->bisecting = false;
 }
 
+// evolve iteratively system up to t_end or up to a change in monitor
 int sode::evolve(double *x, double *t, double t_end, int chg_mon, void *aux) {
     if (verb)
         printf("sode::evolve\n");
@@ -182,6 +191,7 @@ void sode::set_verb() {
     this->verb = true;
 }
 
+// calculate the k's for the runge-kutta method
 int sode::calc_ks(double *x, double t, void *aux) {
     int status = 0;
     for (int i = 0; i < s; i++) {
@@ -199,19 +209,21 @@ int sode::calc_ks(double *x, double t, void *aux) {
         return SODE_OK;
 }
 
+// combine two vectors
 void sode::vector_combine(double *x_comb, double a, double b,
                           double *xa, double *xb, int size) {
     for (int i = 0; i < size; i++)
         x_comb[i] = a * xa[i] + b * xb[i];
 }
 
+// copy vector x to x_copy
 void sode::vector_copy(double *x_copy, double *x, int size) {
     for (int i = 0; i < size; i++)
         x_copy[i] = x[i];
 }
 
-double
-sode::vector_dist_chbyv(double *xa, double *xb, int size) {
+// calculate the Chebyshev distance between two vectors
+double sode::vector_dist_chbyv(double *xa, double *xb, int size) {
     double dist = 0;
     for (int i = 0; i < size; i++) {
         if (fabs(xa[i] - xb[i]) > dist)
@@ -220,6 +232,7 @@ sode::vector_dist_chbyv(double *xa, double *xb, int size) {
     return dist;
 }
 
+// allocate Butcher table for Fehlberg 5(6) method
 void sode::alloc_56FB() {
     q = 5;
     s = 6;
@@ -276,6 +289,7 @@ void sode::alloc_56FB() {
         k[i] = new double[dim];
 }
 
+// allocate Butcher table for Cash-Karp 5(6) method
 void sode::alloc_56CK() {
     q = 5;
     s = 6;
@@ -332,6 +346,7 @@ void sode::alloc_56CK() {
         k[i] = new double[dim];
 }
 
+// allocate Butcher table for Dormand-Prince 7(8) method
 void sode::alloc_RK78() {
     q = 7;
     s = 13;

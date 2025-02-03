@@ -1,6 +1,6 @@
 #include "maglit.h"
 
-// maglit class constructor
+// constructor
 maglit::maglit(const char *source_path, int source_type, const int timeslice) : src(nullptr), mag_field(nullptr), psin_field(nullptr), psi_field(nullptr), solver(SODE_RK56_CK, 2) {
     // load source from file
     int result = fio_open_source(&src, source_type, source_path);
@@ -30,6 +30,7 @@ maglit::maglit(const char *source_path, int source_type, const int timeslice) : 
     solver.configure(1e-8, 1e-12, 1e-15, 0.9);
 }
 
+// destructor
 maglit::~maglit() {
     if (mag_field != nullptr) {
         fio_close_field(&mag_field);

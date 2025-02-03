@@ -20,17 +20,17 @@ class input_read {
     bool readHDF5File();
 
     // Variables to store the paths and parameters
-    std::string source_path;
-    std::string output_path;
-    int timeslice;
-    int stability;
-    double Phi;
-    double R_xPoint;
-    double Z_xPoint;
-    double epsilon;
-    double l_lim;
-    double theta_lim;
-    double nSeg;
+    std::string source_path; // path to the source file
+    std::string output_path; // path to the output file
+    int timeslice;           // timeslice to be read from the source file
+    int stability;           // stability of the manifold (stable or unstable)
+    double Phi;              // toroidal angle coordinate for of the poincaré section
+    double R_xPoint;         // R coordinate of the x-point
+    double Z_xPoint;         // Z coordinate of the x-point
+    double epsilon;          // first primary segment distance to the x-point
+    double l_lim;            // distance treshold for the refinement process
+    double theta_lim;        // angle treshold for the refinement process
+    double nSeg;             // number of primary segments to be mapped
 
   private:
     std::string reading_path; // File path

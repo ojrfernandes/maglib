@@ -22,10 +22,13 @@ typedef enum { SODE_OK,
 
 class sode {
   public:
+    // class constructor
     sode(sode_type type, int dim);
+    // class destructor
     ~sode();
     // configure stepsizes
     void configure(double h_init, double h_min, double h_max);
+    // configure tolerances
     void configure(double tol_sol, double tol_mon, double tol_end, double damp);
     // define dynamical system
     void set_system(int (*system)(double *f, double *x, double t, void *aux));
@@ -36,6 +39,7 @@ class sode {
     // evolve iteratively system up to t_end or up to a change in monitor
     // (-1: true->false, 0: don't monitor, 1:false->true)
     int evolve(double *x, double *t, double t_end, int chg_mon, void *aux);
+    // set verbosity
     void set_verb();
 
   private:
@@ -68,13 +72,20 @@ class sode {
     double *x1; // higher order solution
     double *x2; // low order solution
 
+    // calculate the k's for the runge-kutta method
     int calc_ks(double *x, double t, void *aux);
+    // combine two vectors
     void vector_combine(double *x_comb, double a, double b,
                         double *xa, double *xb, int size);
+    // copy vector x to x_copy
     void vector_copy(double *x_copy, double *x, int size);
+    // calculate the Chebyshev distance between two vectors
     double vector_dist_chbyv(double *xa, double *xb, int size);
+    // allocate Butcher table for Fehlberg 5(6) method
     void alloc_56FB();
+    // allocate Butcher table for Cash-Karp 5(6) method
     void alloc_56CK();
+    // allocate Butcher table for Dormand-Prince 7(8) method
     void alloc_RK78();
 };
 
