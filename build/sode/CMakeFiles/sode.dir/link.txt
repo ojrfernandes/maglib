@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsode.a  CMakeFiles/sode.dir/sode.cpp.o
+/usr/bin/ranlib libsode.a

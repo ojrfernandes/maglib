@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmaglit.a  CMakeFiles/maglit.dir/maglit.cpp.o
+/usr/bin/ranlib libmaglit.a

@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/jfernandes/maglib/sode/sode.cpp
+sode.h
+/home/jfernandes/maglib/sode/sode.h
+
+/home/jfernandes/maglib/sode/sode.h
+math.h
+-
+stdio.h
+-
+stdlib.h
+-
+
