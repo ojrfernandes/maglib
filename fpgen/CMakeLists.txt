@@ -58,3 +58,6 @@ endif()
 
 # Link to libraries
 target_link_libraries(fpgen PRIVATE ${LIBS})
+
+# Copy the input file to the build directory
+file(COPY ${CMAKE_SOURCE_DIR}/fpgen/params.txt DESTINATION ${CMAKE_BINARY_DIR}/fpgen)

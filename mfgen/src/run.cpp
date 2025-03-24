@@ -14,6 +14,13 @@ int main() {
         return 1;
     }
 
+    // read xnull and znull from the HDF5 file
+    bool readHDF5 = input.readHDF5File();
+    if (!readHDF5) {
+        std::cerr << "Error reading HDF5 file." << std::endl;
+        return 1;
+    }
+
     // create manifold object
     manifold manifold(input.source_path.c_str(), input.timeslice, input.Phi, input.stability, input.epsilon);
 

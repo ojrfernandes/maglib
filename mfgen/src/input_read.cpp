@@ -3,76 +3,68 @@
 // Constructor
 input_read::input_read(const std::string &readingPath) : reading_path(readingPath) {}
 
-// read paths to the source, shape and output from a text file along with the initial grid parameters
 bool input_read::readInputFile() {
-    std::ifstream pathFile(this->reading_path);
-
-    if (!pathFile.is_open()) {
-        std::cerr << "Unable to open file: " << this->reading_path << std::endl;
-        return false;
-    }
-
+    std::ifstream file(this->reading_path);
     std::string line;
-    int line_index = 0;
 
-    while (std::getline(pathFile, line)) {
-        if (!line.empty() && line[0] != '#') { // Ignore empty lines and comments starting with #
-            switch (line_index) {
-            case 0:
-                source_path = line;
-                break;
-            case 1:
-                output_path = line;
-                // Check if the output file already exists
-                if (access(output_path.c_str(), F_OK) != -1) {
-                    std::cerr << "There is a file with the same name saved to the chosen directory. "
-                              << "Please change the output file name to avoid overwriting your data."
-                              << std::endl;
-                    return false; // Exit the function to avoid overwriting
-                }
-                break;
-            case 2:
-                stability = std::stoi(line);
-                break;
-            case 3:
-                timeslice = std::stoi(line);
-                break;
-            case 4:
-                Phi = std::stod(line);
-                // Convert Phi from degrees to radians
-                Phi *= M_PI / 180;
-                break;
-            case 5:
-                epsilon = std::stod(line);
-                break;
-            case 6:
-                nSeg = std::stoi(line);
-                break;
-            case 7:
-                l_lim = std::stod(line);
-                break;
-            case 8:
-                theta_lim = std::stod(line);
-                break;
-            default:
-                std::cerr << "Unexpected line index: " << line_index << std::endl;
-                return false;
-            }
-            line_index++;
+    if (!file) {
+        std::cerr << "Error: Unable to open file: " << reading_path << std::endl;
+        return false;
+    }
+
+    while (std::getline(file, line)) {
+        // Ignore empty lines and comments
+        if (line.empty() || line[0] == '#') {
+            continue;
         }
-    }
 
-    if (line_index < 9) {
-        std::cerr << "File does not contain enough data. Expected 10 values, found " << line_index << "." << std::endl;
-        return false;
-    }
+        std::istringstream iss(line);
+        std::string key, equals, value;
 
-    pathFile.close();
+        if (!(iss >> key >> equals)) {
+            std::cerr << "Error: Invalid line (missing key or '=' symbol): " << line << std::endl;
+            continue;
+        }
 
-    // call readHDF5File to read xnull and znull from the HDF5 file
-    if (!readHDF5File()) {
-        std::cerr << "Error reading xnull and znull from the HDF5 file." << std::endl;
-        return false;
+        if (equals != "=") {
+            std::cerr << "Error: Invalid format (expected '=' after key): " << line << std::endl;
+            continue;
+        }
+
+        // Read the rest of the line as value, ignoring anything after '#'
+        std::getline(iss, value, '#');
+
+        // Trim whitespace from value
+        size_t start = value.find_first_not_of(" \t");
+        size_t end = value.find_last_not_of(" \t");
+        if (start != std::string::npos) {
+            value = value.substr(start, end - start + 1);
+        } else {
+            value.clear();
+        }
+
+        // Assign values to corresponding variables
+        if (key == "source_path") {
+            this->source_path = value;
+        } else if (key == "output_path") {
+            this->output_path = value;
+        } else if (key == "stability") {
+            this->stability = std::stoi(value);
+        } else if (key == "timeslice") {
+            this->timeslice = std::stoi(value);
+        } else if (key == "Phi") {
+            this->Phi = std::stod(value);
+        } else if (key == "epsilon") {
+            this->epsilon = std::stod(value);
+        } else if (key == "l_lim") {
+            this->l_lim = std::stod(value);
+        } else if (key == "theta_lim") {
+            this->theta_lim = std::stod(value);
+        } else if (key == "nSeg") {
+            this->nSeg = std::stoi(value);
+        } else {
+            std::cerr << "Error: Invalid key: " << key << std::endl;
+        }
     }
 
     return true;

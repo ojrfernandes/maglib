@@ -1,59 +1,32 @@
 #include "hdf5.h"
+#include "input_read.h"
 #include "lobe.h"
 #include <iomanip>
 
-// read coordinates of xmag and zmag from hdf5 file
-point magAxis(const std::string &hdf5File) {
-    // paths to the xmag and zmag datasets in the HDF5 file
-    const std::string xmagPath = "scalars/xmag";
-    const std::string zmagPath = "scalars/zmag";
-
-    // Open the HDF5 file
-    hid_t file = H5Fopen(hdf5File.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-
-    // Open the datasets
-    hid_t xmagDataset = H5Dopen(file, xmagPath.c_str(), H5P_DEFAULT);
-    hid_t zmagDataset = H5Dopen(file, zmagPath.c_str(), H5P_DEFAULT);
-
-    // Get the dataspace of the datasets
-    hid_t xmagSpace = H5Dget_space(xmagDataset);
-    hid_t zmagSpace = H5Dget_space(zmagDataset);
-
-    // Get the number of elements in the datasets
-    hsize_t xmagSize;
-    hsize_t zmagSize;
-    H5Sget_simple_extent_dims(xmagSpace, &xmagSize, nullptr);
-    H5Sget_simple_extent_dims(zmagSpace, &zmagSize, nullptr);
-
-    // Read the data into vectors
-    std::vector<double> xmagData(xmagSize);
-    std::vector<double> zmagData(zmagSize);
-
-    H5Dread(xmagDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, xmagData.data());
-    H5Dread(zmagDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, zmagData.data());
-
-    // save the xmag and zmag values to R_xmag and Z_xmag
-    point magAxis(xmagData[0], zmagData[0]);
-
-    // Close datasets and file
-    H5Dclose(xmagDataset);
-    H5Dclose(zmagDataset);
-    H5Fclose(file);
-
-    return magAxis;
-}
-
 int main() {
-    std::string hdf5File = "/home/jfernandes/m3dc1_data/eq022/i_coils/n03/C1.h5";
-    std::string equilibriumFile = "/home/jfernandes/results/manifolds/equilibrium/eq022_EQ.dat";
-    std::string perturbedFile = "/home/jfernandes/results/manifolds/response/eq022_i03_S.dat";
+    // read params from input file
+    std::string pathsFile = "params.txt";
 
-    point magAxisCoord = magAxis(hdf5File);
+    // read input file
+    input_read input(pathsFile);
+    bool readStatus = input.readInputFile();
+    if (!readStatus) {
+        std::cerr << "Error reading input file." << std::endl;
+        return 1;
+    }
 
+    // read xmag and zmag from the HDF5 file
+    bool hdf5Status = input.readHDF5File();
+    if (!hdf5Status) {
+        std::cerr << "Error reading HDF5 file." << std::endl;
+        return 1;
+    }
+
+    point magAxisCoord(input.xmag, input.zmag);
     std::cout << "magAxisCoord: " << magAxisCoord.R << " " << magAxisCoord.Z << std::endl;
 
-    curve equilibrium(equilibriumFile, 0);
-    curve perturbed(perturbedFile, 800);
+    curve equilibrium(input.equilibriumFile, 0);
+    curve perturbed(input.perturbedFile, 800);
 
     std::cout << "Equilibrium points: " << equilibrium.curvePoints.size() << std::endl;
     std::cout << "Perturbed points: " << perturbed.curvePoints.size() << std::endl;
@@ -66,12 +39,12 @@ int main() {
     std::cout << "xPoint: " << xPoint.R << " " << xPoint.Z << std::endl;
 
     // Write the intersection points to a file with 15 decimal places
-    std::ofstream intersectionFile("/home/jfernandes/maglib/maglit/tcabr_lobes/cmaketest_its.dat");
+    std::ofstream intersectionFile(input.intersectionFile);
     for (size_t i = 0; i < intersection.size(); ++i) {
         intersectionFile << std::setprecision(15) << intersection[i].R << " " << intersection[i].Z << std::endl;
     }
 
-    std::ofstream lobeFile("/home/jfernandes/maglib/maglit/tcabr_lobes/cmaketest.dat");
+    std::ofstream lobeFile(input.lobeFile);
 
     // Write the header to the lobe file
     lobeFile << "#Rmid Zmid polAngle Perimeter Area H-Parameter" << std::endl;

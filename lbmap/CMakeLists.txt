@@ -33,6 +33,7 @@ set(SRCS
     ${SOURCE_DIR}/run.cpp
     ${SOURCE_DIR}/intersections.cpp
     ${SOURCE_DIR}/lobe.cpp
+    ${SOURCE_DIR}/input_read.cpp
 )
 
 # Add the executable
@@ -43,3 +44,6 @@ target_include_directories(lbmap PUBLIC ${HDF5_DIR}/include)
 
 # Link to libraries
 target_link_libraries(lbmap PRIVATE ${LIBS})
+
+# Copy the input file to the build directory
+file(COPY ${CMAKE_SOURCE_DIR}/lbmap/params.txt DESTINATION ${CMAKE_BINARY_DIR}/lbmap)

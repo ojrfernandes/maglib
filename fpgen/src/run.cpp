@@ -20,13 +20,13 @@ int main() {
     footprint footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
 
     // set omp parametera
-    omp_set_num_threads(input.num_theads);
+    omp_set_num_threads(input.num_threads);
 
     std::vector<maglit> tracer;
-    tracer.reserve(input.num_theads);
-    for (int i = 0; i < input.num_theads; ++i) {
+    tracer.reserve(input.num_threads);
+    for (int i = 0; i < input.num_threads; ++i) {
         // Construct a maglit object directly in the vector
-        tracer.emplace_back(input.source_path, FIO_M3DC1_SOURCE, input.timeslice);
+        tracer.emplace_back(input.source_path.c_str(), FIO_M3DC1_SOURCE, input.timeslice);
         // Configure the newly created maglit object
         tracer.back().set_inside(shape, &tcabr_shape::tcabr_inside);
         tracer.back().configure(0.01, 1e-5, 0.2);

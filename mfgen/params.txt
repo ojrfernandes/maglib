@@ -1,26 +1,16 @@
-################################ BASIC PARAMETERS #################################
+################# MFGEN #################
 #
+#=============== INPUT PARAMETERS
+        source_path = /home/jfernandes/m3dc1_data/eq000/cp_coils/n03/C1.h5
+        output_path = /home/jfernandes/maglib/testmf.dat
+#        
+        stability = 0                   # stable manifold = 0, unstable manifold = 1
+        timeslice = 1                   # equilibrium = -1, vacuum = 0, plasma_resp = 1 
+        Phi = 0                         # poicaré section toroidal coordinate (deg)
 #
-# source_path
-/home/jfernandes/Software/m3dc1_data/eq000/cp_coils/n03/C1.h5
-# output_path
-/home/jfernandes/Software/results/manifolds/eq000_cp03_S.dat
-# manifold stability (stable=0; unstable=1)
-0
-# timeslice (equilibrium=-1; vacuum=0; plasma_resp=1) 
-1
-# toroidal angle (deg)
-0
+#=============== REFINEMENT PARAMETERS
 #
-#
-############################## REFINEMENT PARAMETERS ##############################
-#
-#
-# primary segment's distance from X-point
-1e-6
-# number of mapped segments
-8
-# distance treshold
-0.005
-# algle treshold (radians)
-0.35
+        epsilon = 1e-6                  # primary segment's distance from X-point
+        nSeg = 8                        # number of primary segments to be mapped
+        l_lim = 0.005                   # distance treshold for the refinement process
+        theta_lim = 0.35                # angle treshold for the refinement process
