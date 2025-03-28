@@ -1,2 +1,3 @@
 build
 .vscode
+magplot/magplot/__pycache__
