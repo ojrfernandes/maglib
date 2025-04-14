@@ -4,7 +4,7 @@
 int main() {
 
     // read params from input file
-    std::string pathsFile = "params.txt";
+    std::string pathsFile = "mf_input.txt";
 
     // read input file
     input_read input(pathsFile);

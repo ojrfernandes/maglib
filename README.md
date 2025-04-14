@@ -14,7 +14,7 @@ git clone https://github.com/nferraro/fusion-io.git
 cd fusion-io
 git checkout 022a77f
 ```
-Keep in mind that Fusion-IO CMake install has been implemented prior to this version, hence, manual instalation is necessary. 
+Keep in mind that Fusion-IO CMake install has been implemented **after** to this version, hence, manual instalation is necessary. 
 
 ## Sode 
 The Sode module (Solver for Ordinary Differential Equations) provides a general purpose integrator for systems of ordinary differential equations, including various adaptative Runge-Kutta methods.

@@ -1,0 +1,10 @@
+################# LBMAP #################
+#
+#=============== INPUT PARAMETERS
+        hdf5File = C1.h5
+        equilibriumFile = eq022_EQ.dat
+        perturbedFile = eq022_i03_S.dat
+#
+#=============== OUTPUT PARAMETERS
+        intersectionFile = its_out.dat
+        lobeFile = lb_out.dat

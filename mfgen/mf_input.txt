@@ -1,8 +1,8 @@
 ################# MFGEN #################
 #
 #=============== INPUT PARAMETERS
-        source_path = /home/jfernandes/m3dc1_data/eq000/cp_coils/n03/C1.h5
-        output_path = /home/jfernandes/maglib/testmf.dat
+        source_path = C1.h5
+        output_path = mf_out.dat
 #        
         stability = 0                   # stable manifold = 0, unstable manifold = 1
         timeslice = 1                   # equilibrium = -1, vacuum = 0, plasma_resp = 1 

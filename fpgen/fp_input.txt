@@ -1,9 +1,9 @@
 ################################ FPGEN #################################
 #
 #=============== STRING PARAMETERS
-        source_path = /home/jfernandes/m3dc1_data/eq000/cp_coils/n01/C1.h5
-        shape_path = /home/jfernandes/maglib/fpgen/tcabr_first_wall_m3dc1.txt
-        output_path = /home/jfernandes/results/maglib/testfp.dat
+        source_path = C1.h5
+        shape_path = tcabr_first_wall.txt
+        output_path = fp_out.dat
 #
 #=============== NUMERIC PARAMETERS        
 #       

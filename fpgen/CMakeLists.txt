@@ -36,6 +36,8 @@ set(LIBS
     -llapack
     -lm3dc1
     -lfusionio
+    -fopenmp
+    -lgomp
 )
 
 # Source files
@@ -49,15 +51,9 @@ set(SRCS
 # Add the executable
 add_executable(fpgen ${SRCS})
 
-# Enable OpenMP
-find_package(OpenMP REQUIRED)
-if(OpenMP_CXX_FLAGS)
-    target_compile_options(fpgen PRIVATE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(fpgen PRIVATE OpenMP::OpenMP_CXX)
-endif()
-
-# Link to libraries
+# Link to libraries (include OpenMP here)
 target_link_libraries(fpgen PRIVATE ${LIBS})
 
+
 # Copy the input file to the build directory
-file(COPY ${CMAKE_SOURCE_DIR}/fpgen/params.txt DESTINATION ${CMAKE_BINARY_DIR}/fpgen)
+file(COPY ${CMAKE_SOURCE_DIR}/fpgen/fp_input.txt DESTINATION ${CMAKE_BINARY_DIR}/fpgen)

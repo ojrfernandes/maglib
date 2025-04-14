@@ -46,4 +46,4 @@ target_include_directories(lbmap PUBLIC ${HDF5_DIR}/include)
 target_link_libraries(lbmap PRIVATE ${LIBS})
 
 # Copy the input file to the build directory
-file(COPY ${CMAKE_SOURCE_DIR}/lbmap/params.txt DESTINATION ${CMAKE_BINARY_DIR}/lbmap)
+file(COPY ${CMAKE_SOURCE_DIR}/lbmap/lb_input.txt DESTINATION ${CMAKE_BINARY_DIR}/lbmap)

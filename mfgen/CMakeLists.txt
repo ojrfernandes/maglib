@@ -53,4 +53,4 @@ add_executable(mfgen ${SRCS})
 target_link_libraries(mfgen PRIVATE ${LIBS})
 
 # Copy the input file to the build directory
-file(COPY ${CMAKE_SOURCE_DIR}/mfgen/params.txt DESTINATION ${CMAKE_BINARY_DIR}/mfgen)
+file(COPY ${CMAKE_SOURCE_DIR}/mfgen/mf_input.txt DESTINATION ${CMAKE_BINARY_DIR}/mfgen)
