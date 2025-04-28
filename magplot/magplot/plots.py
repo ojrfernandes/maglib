@@ -81,6 +81,8 @@ def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet",
     cmap_cap.set_under("white")
     cmap_f.set_under("white")
 
+    if which_plot not in ["cl", "psi", "au", "all"]:
+        raise ValueError("Invalid plot type. Use 'cl' for connection length, 'psi' for psi min, 'au' for arbitrary units, or 'all'.")
 
     #### Connection Length plot ####
     if which_plot == "all" or which_plot == "cl":
