@@ -16,6 +16,18 @@ int main() {
     // initialize shape object
     tcabr_shape shape(input.shape_path);
 
+    std::cout << "\nInput parameters:" << std::endl;
+    std::cout << "source_path: " << input.source_path << std::endl;
+    std::cout << "shape_path: " << input.shape_path << std::endl;
+    std::cout << "output_path: " << input.output_path << std::endl;
+    std::cout << "num_threads: " << input.num_threads << std::endl;
+    std::cout << "plate: " << input.plate << std::endl;
+    std::cout << "timeslice: " << input.timeslice << std::endl;
+    std::cout << "gridMin: " << input.gridMin << std::endl;
+    std::cout << "gridMax: " << input.gridMax << std::endl;
+    std::cout << "nGrid: " << input.nGrid << std::endl;
+    std::cout << "nPhi: " << input.nPhi << std::endl;
+
     // create footprint object
     footprint footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
 

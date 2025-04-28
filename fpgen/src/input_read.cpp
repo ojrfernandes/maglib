@@ -50,10 +50,17 @@ bool input_read::readInputFile() {
             this->shape_path = value;
         } else if (key == "output_path") {
             this->output_path = value;
+            // check if there is a saved file with the same name
+            std::ifstream f0(this->output_path);
+            if (f0.is_open()) {
+                std::cerr << "Warning: File " << this->output_path << " already exists. Please, change your output file name to avoid overwriting your data." << std::endl;
+                return false;
+            }
+            f0.close();
         } else if (key == "num_threads") {
             this->num_threads = std::stoi(value);
         } else if (key == "plate") {
-            this->plate == std::stoi(value);
+            this->plate = std::stoi(value);
         } else if (key == "timeslice") {
             this->timeslice = std::stoi(value);
         } else if (key == "nGrid") {
