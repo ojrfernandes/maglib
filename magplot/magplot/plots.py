@@ -6,7 +6,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.ticker import FuncFormatter
 
 
-def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet", cmap_key=10, figsize=(10, 5), sizef=1, dpi=80, norm_f=6, v_min=None, v_max=None):
+def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet", cmap_key=10, figsize=(10, 5), sizef=1, dpi=80, norm_f=6, v_min=None, v_max=None, savefig=None):
     """
     Function to plot footprints evaluated by the maglib code fpgen.
     
@@ -36,6 +36,8 @@ def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet",
         Minimum value for the normalized colormap in arbitrary units. Default is None.
     v_max : float
         Maximum value for the normalized colormap in arbitrary units. Default is None.
+    savefig : str
+        Path to save the figure(s). If None, figure(s) will not be saved. Default is None.
 
     Returns
     -------
@@ -100,6 +102,11 @@ def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet",
             raise ValueError("Invalid x-axis type. Use 'rad' for radians or 'deg' for degrees.")
         plt.ylabel("$R$ ( m )")
 
+        # Save figure if savefig is provided
+        if savefig is not None:
+            plt.savefig(f'{savefig}_cl.png', dpi=dpi, bbox_inches='tight')
+            print(f"Figure saved as {savefig}_cl.png")
+
         # Show plot
         plt.show(block=False)
 
@@ -119,6 +126,11 @@ def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet",
         else:
             raise ValueError("Invalid x-axis type. Use 'rad' for radians or 'deg' for degrees.")
         plt.ylabel("$R$ ( m )")
+
+        # Save figure if savefig is provided
+        if savefig is not None:
+            plt.savefig(f'{savefig}_psi.png', dpi=dpi, bbox_inches='tight')
+            print(f"Figure saved as {savefig}_psi.png")
 
         # Show plot
         plt.show(block=False)
@@ -152,6 +164,11 @@ def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet",
         else:
             raise ValueError("Invalid x-axis type. Use 'rad' for radians or 'deg' for degrees.")
         plt.ylabel("$R$ ( m )")
+
+        # Save figure if savefig is provided
+        if savefig is not None:
+            plt.savefig(f'{savefig}_au.png', dpi=dpi, bbox_inches='tight')
+            print(f"Figure saved as {savefig}_au.png")
 
         # Show plot
         plt.show(block=False)
