@@ -6,6 +6,8 @@ int main() {
     // read params from input file
     std::string pathsFile = "fp_input.txt";
 
+    std::cout << "\nReading input file..."
+              << std::endl;
     input_read input(pathsFile);
     bool readStatus = input.readInputFile();
     if (!readStatus) {
@@ -29,10 +31,20 @@ int main() {
     std::cout << "nPhi: " << input.nPhi << std::endl;
 
     // create footprint object
+    std::cout << "\nCreating footprint object..."
+              << std::endl;
     footprint footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
 
     // set omp parametera
     omp_set_num_threads(input.num_threads);
+
+    if (input.num_threads > 1) {
+        std::cout << "\nA maglit object must be created for each thread. \nYou shall see the same messages printed a number of times. \nThis may take some time. \n\nDON'T PANIC"
+                  << std::endl;
+    } else {
+        std::cout << "\nCreating maglit object...\n"
+                  << std::endl;
+    }
 
     std::vector<maglit> tracer;
     tracer.reserve(input.num_threads);
@@ -43,6 +55,12 @@ int main() {
         tracer.back().set_inside(shape, &tcabr_shape::tcabr_inside);
         tracer.back().configure(0.01, 1e-5, 0.2);
     }
+
+    std::cout << "\nMaglit object(s) created successfully."
+              << std::endl;
+
+    std::cout << "\nRunning grid...\n"
+              << std::endl;
 
 #pragma omp parallel
     {

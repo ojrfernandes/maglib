@@ -1,6 +1,6 @@
 #ifndef MANIFOLD_H
 #define MANIFOLD_H
-#define MANIFOLD_V 241212 // version (yy.mm.dd)
+#define MANIFOLD_V 250505 // version (yy.mm.dd)
 
 #include "../../maglit/maglit.h"
 #include <armadillo>
@@ -26,7 +26,7 @@ class manifold {
     // Compute a refined new segment from a previous segment
     void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
     // Print a progress bar
-    void progressBar(float progress);
+    void progressBar(int j, int nSeg);
     // Set warning flag
     void setWarnings();
 

@@ -353,8 +353,11 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
 }
 
 // Print a progress bar
-void manifold::progressBar(float progress) {
+void manifold::progressBar(int j, int nSeg) {
     int barWidth = 50;
+    float progress = static_cast<float>(j) / nSeg;
+
+    std::cout << "\nComputing primary segment " << j + 1 << " of " << nSeg << "...\n";
 
     std::cout << "[";
     int pos = barWidth * progress;
@@ -366,6 +369,6 @@ void manifold::progressBar(float progress) {
         else
             std::cout << " ";
     }
-    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout << "] " << int(progress * 100.0) << " %\r\n";
     std::cout.flush();
 }

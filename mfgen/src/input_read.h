@@ -1,6 +1,6 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-#define INPUT_READ_V 250324 // version (yy.mm.dd)
+#define INPUT_READ_V 250505 // version (yy.mm.dd)
 
 #include <fstream>
 #include <hdf5.h>
@@ -29,7 +29,7 @@ class input_read {
     double epsilon;          // first primary segment distance to the x-point
     double l_lim;            // distance treshold for the refinement process
     double theta_lim;        // angle treshold for the refinement process
-    double nSeg;             // number of primary segments to be mapped
+    int nSeg;                // number of primary segments to be mapped
 
   private:
     std::string reading_path; // File path

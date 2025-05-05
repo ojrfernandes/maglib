@@ -16,7 +16,7 @@ void footprint::runGrid(maglit &tracer) {
     default:
         // nGrid = nZ; gridMin = Zmin; gridMax = Zmax
         R0 = 0.435;               // rFloor
-        tracer.inverse_map(true); // mat must be inverted
+        tracer.inverse_map(true); // map must be inverted
         break;
     }
 

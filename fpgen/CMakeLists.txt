@@ -4,6 +4,9 @@
 # Set the project name and C++ standard
 project(fpgen)
 
+# Find OpenMP
+find_package(OpenMP REQUIRED)
+
 # Specify directories
 set(MAGLIT_DIR "${CMAKE_SOURCE_DIR}/maglit")
 set(SODE_DIR "${CMAKE_SOURCE_DIR}/sode")
@@ -52,7 +55,7 @@ set(SRCS
 add_executable(fpgen ${SRCS})
 
 # Link to libraries (include OpenMP here)
-target_link_libraries(fpgen PRIVATE ${LIBS})
+target_link_libraries(fpgen PRIVATE ${LIBS} OpenMP::OpenMP_CXX)
 
 
 # Copy the input file to the build directory

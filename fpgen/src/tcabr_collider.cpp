@@ -82,7 +82,7 @@ bool tcabr_shape::search_index(double ang) {
             this->idx++;
         return search_index(ang);
     } else {
-        std::cerr << "tcabr::search_index undefined behavior" << std::endl;
+        // std::cerr << "Warning: tcabr::search_index undefined behavior" << std::endl;
         return false;
     }
 }
