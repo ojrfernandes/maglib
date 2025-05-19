@@ -24,8 +24,8 @@ class input_read {
     int timeslice;           // timeslice to be read from the source file
     int stability;           // stability of the manifold (stable or unstable)
     double Phi;              // toroidal angle coordinate for of the poincaré section
-    double R_xPoint;         // R coordinate of the x-point
-    double Z_xPoint;         // Z coordinate of the x-point
+    double R_xPoint = 0;     // R coordinate of the x-point
+    double Z_xPoint = 0;     // Z coordinate of the x-point
     double epsilon;          // first primary segment distance to the x-point
     double l_lim;            // distance treshold for the refinement process
     double theta_lim;        // angle treshold for the refinement process

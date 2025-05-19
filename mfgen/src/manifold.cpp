@@ -99,6 +99,9 @@ bool manifold::find_xPoint(double R, double Z) {
         // Compute T(Rn, Zn)
         point T_Pn = this->apply_map(R, Z, this->phi, 1);
 
+        std::cout << "Iteration " << iter + 1 << std::endl;
+        std::cout << std::setprecision(16) << " R = " << R << ", Z = " << Z << std::endl;
+
         // Update the position
         double delta_R = T_Pn.R - (jacobian[0][0] * R + jacobian[0][1] * Z);
         double delta_Z = T_Pn.Z - (jacobian[1][0] * R + jacobian[1][1] * Z);
@@ -108,6 +111,10 @@ bool manifold::find_xPoint(double R, double Z) {
         // Check if the increment is small enough
         double dR = R - T_Pn.R;
         double dZ = Z - T_Pn.Z;
+
+        std::cout << "error = " << std::sqrt(dR * dR + dZ * dZ) << "\n"
+                  << std::endl;
+
         if (std::sqrt(dR * dR + dZ * dZ) < this->tol) {
             this->xPoint = {R, Z};
             return true;

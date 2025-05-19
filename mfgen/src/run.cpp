@@ -28,19 +28,25 @@ int main() {
     std::cout << "l_lim: " << input.l_lim << std::endl;
     std::cout << "theta_lim: " << input.theta_lim << std::endl;
 
-    // read xnull and znull from the HDF5 file
-    std::cout << "\nReading xnull and znull from the HDF5 file..."
-              << std::endl;
-    bool readHDF5 = input.readHDF5File();
-    if (!readHDF5) {
-        std::cerr << "Error reading HDF5 file." << std::endl;
-        return 1;
-    }
+    if (input.R_xPoint == 0 && input.Z_xPoint == 0) {
+        // read xnull and znull from the HDF5 file
+        std::cout << "\nReading xnull and znull from the HDF5 file..."
+                  << std::endl;
+        bool readHDF5 = input.readHDF5File();
+        if (!readHDF5) {
+            std::cerr << "Error reading HDF5 file." << std::endl;
+            return 1;
+        }
 
-    // print xnull and znull
-    std::cout << "\nXnull and Znull read from HDF5 file:" << std::endl;
-    std::cout << "xnull: " << input.R_xPoint << std::endl;
-    std::cout << "znull: " << input.Z_xPoint << std::endl;
+        // print xnull and znull
+        std::cout << "\nXnull and Znull read from HDF5 file:" << std::endl;
+        std::cout << "xnull: " << input.R_xPoint << std::endl;
+        std::cout << "znull: " << input.Z_xPoint << std::endl;
+    } else {
+        std::cout << "\nUsing xnull and znull from input file:" << std::endl;
+        std::cout << "xnull: " << input.R_xPoint << std::endl;
+        std::cout << "znull: " << input.Z_xPoint << std::endl;
+    }
 
     // create manifold object
     std::cout << "\nCreating manifold object...\n"

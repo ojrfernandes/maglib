@@ -69,6 +69,10 @@ bool input_read::readInputFile() {
             this->theta_lim = std::stod(value);
         } else if (key == "nSeg") {
             this->nSeg = std::stoi(value);
+        } else if (key == "r_xpoint") {
+            this->R_xPoint = std::stod(value);
+        } else if (key == "z_xpoint") {
+            this->Z_xPoint = std::stod(value);
         } else {
             std::cerr << "Error: Invalid key: " << key << std::endl;
         }
