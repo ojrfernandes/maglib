@@ -15,6 +15,14 @@ struct point {
     double Z;
 };
 
+// Structure to store an interpolant arc
+struct interpolantArc {
+    point x0, x1;
+    double a, b;
+
+    point eval(double x) const;
+};
+
 class manifold {
   public:
     // Constructor
@@ -45,6 +53,8 @@ class manifold {
     point apply_map(double R, double Z, double Phi, int nTurns);
     // Find the pivot point for the fisrt primary segment
     point pivot();
+
+    std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
 
     // User defined parameters
     int stability;  // 0: forward, 1: backward

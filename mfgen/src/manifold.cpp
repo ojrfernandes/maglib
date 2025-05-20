@@ -282,6 +282,62 @@ void manifold::insertPoint(std::vector<point> &segment, size_t index) {
     }
 }
 
+point interpolantArc::eval(double t) const {
+    // Linear interpolation
+    double R_base = (1 - t) * x0.R + t * x1.R;
+    double Z_base = (1 - t) * x0.Z + t * x1.Z;
+
+    // Direction vector
+    double lR = x1.R - x0.R;
+    double lZ = x1.Z - x0.Z;
+
+    // Perpendicular vector (normal)
+    double nR = -lZ;
+    double nZ = lR;
+    double norm = std::sqrt(nR * nR + nZ * nZ);
+    if (norm == 0)
+        return {R_base, Z_base}; // Avoid division by zero
+
+    nR /= norm;
+    nZ /= norm;
+
+    // Shape function h(t)
+    double h = a * t * (1 - t) * (1 - t) - b * t * t * (1 - t);
+
+    // Compute the new point
+    double R_new = R_base + h * nR;
+    double Z_new = Z_base + h * nZ;
+    return {R_new, Z_new};
+}
+
+std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point> &segment) {
+    std::vector<interpolantArc> arcs;
+
+    for (size_t i = 0; i < segment.size() - 1; ++i) {
+        const point &p0 = segment[i];
+        const point &p1 = segment[i + 1];
+
+        // Chords and angles for arc i
+        double lR = p1.R - p0.R;
+        double lZ = p1.Z - p0.Z;
+
+        // Compute inter-secant angle theta
+        double theta = 0.0;
+        if (i > 0 && i < segment.size() - 2) {
+            theta = this->computeAngle(segment[i - 1].R, segment[i - 1].Z, p0.R, p0.Z, p1.R, p1.Z);
+        }
+
+        double m = std::tan(theta);
+        double a = (std::sqrt(1 + m * m) - 1) / m;
+        double b = -a;
+
+        // Compute the interpolant arc
+        arcs.push_back({p0, p1, a, b});
+    }
+
+    return arcs;
+}
+
 // Compute a refined new segment from a previous segment
 void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim) {
 
