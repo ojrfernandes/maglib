@@ -20,7 +20,7 @@ struct interpolantArc {
     point x0, x1;
     double a, b;
 
-    point eval(double x) const;
+    point evalNewPoint(double t) const;
 };
 
 class manifold {
@@ -32,11 +32,15 @@ class manifold {
     // Compute the primary segment
     void primarySegment(std::vector<point> &segment, size_t num_points);
     // Compute a refined new segment from a previous segment
-    void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
+    void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, double l_lim, double theta_lim);
+    // Compute a refined new segment from the first primary segment
+    void newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
     // Print a progress bar
     void progressBar(int j, int nSeg);
     // Set warning flag
     void setWarnings();
+
+    std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
 
     point xPoint; // x-point coordinates
 
@@ -45,6 +49,8 @@ class manifold {
     void eval_jacobian(double R, double Z, double Phi, double h, double jacobian[2][2]);
     // Insert a new point in the vector by linear interpolation
     void insertPoint(std::vector<point> &segment, size_t index);
+    // Insert a new point in the vector by interpolant arc
+    void insertPoint(std::vector<point> &segment, std::vector<interpolantArc> &interpolants, size_t index);
     // Compute distance between two points
     double computeDistance(double R1, double Z1, double R2, double Z2);
     // Compute angle between two vectors
@@ -53,8 +59,6 @@ class manifold {
     point apply_map(double R, double Z, double Phi, int nTurns);
     // Find the pivot point for the fisrt primary segment
     point pivot();
-
-    std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
 
     // User defined parameters
     int stability;  // 0: forward, 1: backward

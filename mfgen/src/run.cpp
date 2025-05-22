@@ -77,10 +77,12 @@ int main() {
     manifold.primarySegment(primary_segment, num_points);
 
     std::vector<point> new_segment; // vector of points to store the new segment
+    std::vector<point> new_segment2;
+    std::vector<point> primary_segment_copy = primary_segment;
 
     // loop to create new segments
     for (int i = 1; i < input.nSeg; ++i) {
-        // create new segment
+        // create new segment from the primary segment
         manifold.newSegment(primary_segment, new_segment, input.Phi, i, input.l_lim, input.theta_lim);
 
         // append new segment to the output file
@@ -98,6 +100,27 @@ int main() {
 
         // empty new segment vector
         new_segment.clear();
+
+        // create new segment from the primary segment
+        manifold.newSegment(primary_segment_copy, new_segment2, input.Phi, input.l_lim, input.theta_lim);
+
+        // append new segment to the output file
+        std::ofstream file3("mf_arc.dat", std::ios::app);
+        file3 << std::fixed << std::setprecision(16);
+        if (file3.is_open()) {
+            for (size_t i = 0; i < new_segment.size(); ++i) {
+                file3 << new_segment2[i].R << " " << new_segment2[i].Z << std::endl;
+            }
+            file3.close();
+        } else {
+            std::cerr << "Unable to open file" << std::endl;
+            return 1;
+        }
+
+        primary_segment_copy = new_segment2;
+
+        // empty new segment vector
+        new_segment2.clear();
 
         // print progress bar
         manifold.progressBar(i, input.nSeg);

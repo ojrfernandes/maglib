@@ -282,74 +282,43 @@ void manifold::insertPoint(std::vector<point> &segment, size_t index) {
     }
 }
 
-point interpolantArc::eval(double t) const {
-    // Linear interpolation
-    double R_base = (1 - t) * x0.R + t * x1.R;
-    double Z_base = (1 - t) * x0.Z + t * x1.Z;
-
-    // Direction vector
-    double lR = x1.R - x0.R;
-    double lZ = x1.Z - x0.Z;
-
-    // Perpendicular vector (normal)
-    double nR = -lZ;
-    double nZ = lR;
-    double norm = std::sqrt(nR * nR + nZ * nZ);
-    if (norm == 0)
-        return {R_base, Z_base}; // Avoid division by zero
-
-    nR /= norm;
-    nZ /= norm;
-
-    // Shape function h(t)
-    double h = a * t * (1 - t) * (1 - t) - b * t * t * (1 - t);
-
-    // Compute the new point
-    double R_new = R_base + h * nR;
-    double Z_new = Z_base + h * nZ;
-    return {R_new, Z_new};
-}
-
-std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point> &segment) {
-    std::vector<interpolantArc> arcs;
-
-    for (size_t i = 0; i < segment.size() - 1; ++i) {
-        const point &p0 = segment[i];
-        const point &p1 = segment[i + 1];
-
-        // Chords and angles for arc i
-        double lR = p1.R - p0.R;
-        double lZ = p1.Z - p0.Z;
-
-        // Compute inter-secant angle theta
-        double theta = 0.0;
-        if (i > 0 && i < segment.size() - 2) {
-            theta = this->computeAngle(segment[i - 1].R, segment[i - 1].Z, p0.R, p0.Z, p1.R, p1.Z);
-        }
-
-        double m = std::tan(theta);
-        double a = (std::sqrt(1 + m * m) - 1) / m;
-        double b = -a;
-
-        // Compute the interpolant arc
-        arcs.push_back({p0, p1, a, b});
+void manifold::insertPoint(std::vector<point> &segment, std::vector<interpolantArc> &interpolants, size_t index) {
+    // Check if the index is valid
+    if (index == 0 || index >= segment.size()) {
+        std::cerr << "Error: Invalid index for insertPoint." << std::endl;
+        return;
     }
 
-    return arcs;
+    // Compute the difference between the two points
+    double dR = segment[index].R - segment[index - 1].R;
+    double dZ = segment[index].Z - segment[index - 1].Z;
+
+    // Only insert a point if the distance between the two points is larger than the precision limit
+    if (std::sqrt(dR * dR + dZ * dZ) > this->precision_limit) {
+        point new_point = interpolants[index].evalNewPoint(0.5);
+        segment.insert(segment.begin() + index, new_point);
+    } else {
+        // Set the overlap flag to true if the precision limit is reached
+        this->overlap = true;
+        if (this->warnings) {
+            std::cerr << "Warning: Skipping insertion due to floating point precision limits." << std::endl;
+        }
+    }
 }
 
-// Compute a refined new segment from a previous segment
-void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim) {
+void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, double l_lim, double theta_lim) {
 
     size_t j = 1;                     // Start at the second point
     double theta_lim_aux = theta_lim; // Copy of the angle limit
     int insertion_count = 0;          // Counter for insertions in the current segment
 
+    std::vector<interpolantArc> interpolants = this->buildInterpolants(prev_seg);
+
     while (j < prev_seg.size() - 1) {
         // Apply map to the points
-        point x_i = this->apply_map(prev_seg[j - 1].R, prev_seg[j - 1].Z, Phi, nSeg);
-        point x_j = this->apply_map(prev_seg[j].R, prev_seg[j].Z, Phi, nSeg);
-        point x_k = this->apply_map(prev_seg[j + 1].R, prev_seg[j + 1].Z, Phi, nSeg);
+        point x_i = this->apply_map(prev_seg[j - 1].R, prev_seg[j - 1].Z, Phi, 1);
+        point x_j = this->apply_map(prev_seg[j].R, prev_seg[j].Z, Phi, 1);
+        point x_k = this->apply_map(prev_seg[j + 1].R, prev_seg[j + 1].Z, Phi, 1);
 
         // Compute distances and angle to check if the points are too far apart
         double l_i = this->computeDistance(x_i.R, x_i.Z, x_j.R, x_j.Z);
@@ -364,20 +333,20 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
         // Check if angle exceeds threshold
         if (l_theta > theta_lim_aux) {
             if (l_i > l_ii) {
-                this->insertPoint(prev_seg, j);
+                this->insertPoint(prev_seg, interpolants, j);
                 insertion_count++;
                 if (j != 1) {
                     j = j - 1;
                 }
             } else {
-                this->insertPoint(prev_seg, j + 1);
+                this->insertPoint(prev_seg, interpolants, j + 1);
                 insertion_count++;
             }
             this->refining_angle = true;
         }
         // Check if distance l_i exceed threshold
         else if (l_i > l_lim) {
-            this->insertPoint(prev_seg, j);
+            this->insertPoint(prev_seg, interpolants, j);
             insertion_count++;
             if (j != 1) {
                 j = j - 1;
@@ -386,7 +355,7 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
         }
         // Check if distance l_ii exceed threshold
         else if (l_ii > l_lim) {
-            this->insertPoint(prev_seg, j + 1);
+            this->insertPoint(prev_seg, interpolants, j + 1);
             insertion_count++;
             this->refining_angle = false;
         }
@@ -394,6 +363,83 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
         else {
             new_seg.push_back(x_i);
             if (j == prev_seg.size() - 2) {
+                new_seg.push_back(x_j);
+                new_seg.push_back(x_k);
+            }
+            j = j + 1;
+            insertion_count = 0;
+        }
+        // Relax the angle limit if the precision limit is reached
+        if (this->overlap) {
+            theta_lim_aux *= 1.5;
+            this->overlap = false;
+        }
+        // Stop refinement if the maximum number of insertions is reached
+        if (insertion_count >= this->max_insertions) {
+            if (this->warnings) {
+                std::cerr << "Warning: Maximum number of insertions reached. Stopping refinement at this segment." << std::endl;
+            }
+            break;
+        }
+    }
+}
+
+// Compute a refined new segment from a primary segment
+void manifold::newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim) {
+
+    size_t j = 1;                     // Start at the second point
+    double theta_lim_aux = theta_lim; // Copy of the angle limit
+    int insertion_count = 0;          // Counter for insertions in the current segment
+
+    while (j < primary_seg.size() - 1) {
+        // Apply map to the points
+        point x_i = this->apply_map(primary_seg[j - 1].R, primary_seg[j - 1].Z, Phi, nSeg);
+        point x_j = this->apply_map(primary_seg[j].R, primary_seg[j].Z, Phi, nSeg);
+        point x_k = this->apply_map(primary_seg[j + 1].R, primary_seg[j + 1].Z, Phi, nSeg);
+
+        // Compute distances and angle to check if the points are too far apart
+        double l_i = this->computeDistance(x_i.R, x_i.Z, x_j.R, x_j.Z);
+        double l_ii = this->computeDistance(x_j.R, x_j.Z, x_k.R, x_k.Z);
+        double l_theta = this->computeAngle(x_i.R, x_i.Z, x_j.R, x_j.Z, x_k.R, x_k.Z);
+
+        // if not refining angle, reset the angle limit
+        if (!this->refining_angle) {
+            theta_lim_aux = theta_lim;
+        }
+
+        // Check if angle exceeds threshold
+        if (l_theta > theta_lim_aux) {
+            if (l_i > l_ii) {
+                this->insertPoint(primary_seg, j);
+                insertion_count++;
+                if (j != 1) {
+                    j = j - 1;
+                }
+            } else {
+                this->insertPoint(primary_seg, j + 1);
+                insertion_count++;
+            }
+            this->refining_angle = true;
+        }
+        // Check if distance l_i exceed threshold
+        else if (l_i > l_lim) {
+            this->insertPoint(primary_seg, j);
+            insertion_count++;
+            if (j != 1) {
+                j = j - 1;
+            }
+            this->refining_angle = false;
+        }
+        // Check if distance l_ii exceed threshold
+        else if (l_ii > l_lim) {
+            this->insertPoint(primary_seg, j + 1);
+            insertion_count++;
+            this->refining_angle = false;
+        }
+        // If conditions are met, add the point to the new segment
+        else {
+            new_seg.push_back(x_i);
+            if (j == primary_seg.size() - 2) {
                 new_seg.push_back(x_j);
                 new_seg.push_back(x_k);
             }
@@ -434,4 +480,56 @@ void manifold::progressBar(int j, int nSeg) {
     }
     std::cout << "] " << int(progress * 100.0) << " %\r\n";
     std::cout.flush();
+}
+
+std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point> &segment) {
+    std::vector<interpolantArc> arcs;
+
+    for (size_t i = 1; i < segment.size() - 2; ++i) {
+        const point &pm1 = segment[i - 1];
+        const point &p0 = segment[i];
+        const point &p1 = segment[i + 1];
+        const point &p2 = segment[i + 2];
+
+        // Compute inter-secant angle theta
+        double theta = 0.0;
+        double theta_1 = 0.0;
+        if (i > 0 && i < segment.size() - 2) {
+            theta = this->computeAngle(pm1.R, pm1.Z, p0.R, p0.Z, p1.R, p1.Z);
+            theta_1 = this->computeAngle(p0.R, p0.Z, p1.R, p1.Z, p2.R, p2.Z);
+        }
+
+        double m = std::tan(theta);
+        double m_1 = std::tan(theta_1);
+
+        double a = (std::sqrt(1 + m * m) - 1) / m;
+        double b = -(std::sqrt(1 + m_1 * m_1) - 1) / m_1;
+
+        // Compute the interpolant arc
+        arcs.push_back({p0, p1, a, b});
+    }
+
+    return arcs;
+}
+
+point interpolantArc::evalNewPoint(double t) const {
+    // Linear interpolation
+    double R_base = (1 - t) * x0.R + t * x1.R;
+    double Z_base = (1 - t) * x0.Z + t * x1.Z;
+
+    // Direction vector
+    double lR = x1.R - x0.R;
+    double lZ = x1.Z - x0.Z;
+
+    // Perpendicular vector (normal)
+    double nR = -lZ;
+    double nZ = lR;
+
+    // Shape function h(t)
+    double h = a * t * (1 - t) * (1 - t) - b * t * t * (1 - t);
+
+    // Compute the new point
+    double R_new = R_base + h * nR;
+    double Z_new = Z_base + h * nZ;
+    return {R_new, Z_new};
 }
