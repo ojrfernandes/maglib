@@ -39,7 +39,7 @@ class manifold {
     // Print a progress bar
     void progressBar(int j, int nSeg);
     // Set warning flag
-    void setWarnings();
+    void setVerbose();
 
     std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
 
@@ -67,7 +67,7 @@ class manifold {
     double epsilon; // distance from the x-point
 
     // Default parameters
-    bool warnings = true;           // verbose flag
+    bool verbose = false;           // verbose flag
     int s_factor = 1;               // sign factor for the manifold stability
     double h = 1e-8;                // step size for numerical derivatives
     double tol = 1e-14;             // tolerance for Newton's method

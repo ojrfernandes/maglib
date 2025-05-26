@@ -18,8 +18,8 @@ manifold::manifold(const char *source_path, const int timeslice, double phi, int
 }
 
 // Set warning flag
-void manifold::setWarnings() {
-    this->warnings = true;
+void manifold::setVerbose() {
+    this->verbose = true;
     tracer.set_warnings();
 }
 
@@ -40,15 +40,9 @@ point manifold::apply_map(double R, double Z, double Phi, int nTurns) {
 
     // Check if the map was successful
     if (status == SODE_SUCCESS_TIME) {
-        // check for NaN
-        // if (std::isnan(R) || std::isnan(Z)) {
-        //     if (this->warnings) {
-        //         std::cerr << "Warning: NaN value encountered in apply_map" << std::endl;
-        //     }
-        // }
         return {R, Z};
     } else {
-        if (this->warnings) {
+        if (this->verbose) {
             std::cerr << "Failed to apply map at (R, Z) = (" << R << ", " << Z << ")" << std::endl;
         }
         return {std::nan(""), std::nan("")};
@@ -124,9 +118,6 @@ bool manifold::find_xPoint(double R, double Z) {
         if (std::sqrt(dR * dR + dZ * dZ) < this->tol) {
             this->xPoint = {R, Z};
             return true;
-        }
-        if (this->warnings) {
-            std::cout << std::setprecision(16) << "R: " << R << " Z: " << Z << std::endl;
         }
     }
 
@@ -261,33 +252,6 @@ double manifold::computeAngle(double R0, double Z0, double R1, double Z1, double
     return std::acos(cos_theta);
 }
 
-// Insert a new point in the vector by linear interpolation
-// void manifold::insertPoint(std::vector<point> &segment, size_t index) {
-//     // Check if the index is valid
-//     if (index == 0 || index >= segment.size()) {
-//         std::cerr << "Error: Invalid index for insertPoint." << std::endl;
-//         return;
-//     }
-
-//     // Compute the difference between the two points
-//     double dR = segment[index].R - segment[index - 1].R;
-//     double dZ = segment[index].Z - segment[index - 1].Z;
-
-//     // Only insert a point if the distance between the two points is larger than the precision limit
-//     if (std::sqrt(dR * dR + dZ * dZ) > this->precision_limit) {
-//         point new_point;
-//         new_point.R = (segment[index - 1].R + segment[index].R) / 2;
-//         new_point.Z = (segment[index - 1].Z + segment[index].Z) / 2;
-//         segment.insert(segment.begin() + index, new_point);
-//     } else {
-//         // Set the overlap flag to true if the precision limit is reached
-//         this->overlap = true;
-//         if (this->warnings) {
-//             std::cerr << "Warning: Skipping insertion due to floating point precision limits." << std::endl;
-//         }
-//     }
-// }
-
 void manifold::insertPoint(std::vector<point> &segment, interpolantArc &arc) {
 
     // Compute the difference between the two points
@@ -299,32 +263,35 @@ void manifold::insertPoint(std::vector<point> &segment, interpolantArc &arc) {
 
     // Only insert a point if the distance between the two points is larger than the precision limit
     if (delta > this->precision_limit) {
-        std::cout << "x0: " << arc.x0.R << " " << arc.x0.Z << std::endl;
-        std::cout << "x1: " << arc.x1.R << " " << arc.x1.Z << std::endl;
         point new_point = arc.evalNewPoint(0.5);
-        std::cout << "New point: " << new_point.R << " " << new_point.Z << std::endl;
 
         // Check if the new point is valid
-        point new_point_image = this->apply_map(new_point.R, new_point.Z, this->phi, 1);
-        if (std::isnan(new_point_image.R) || std::isnan(new_point_image.Z)) {
-            if (this->warnings) {
+        if (this->verbose) {
+            std::cout << "x0: " << arc.x0.R << " " << arc.x0.Z << std::endl;
+            std::cout << "x1: " << arc.x1.R << " " << arc.x1.Z << std::endl;
+            std::cout << "New point: " << new_point.R << " " << new_point.Z << std::endl;
+            point new_point_image = this->apply_map(new_point.R, new_point.Z, this->phi, 1);
+            if (std::isnan(new_point_image.R) || std::isnan(new_point_image.Z)) {
                 std::cerr << "Warning: NaN value encountered in insertPoint R: " << new_point.R << " Z: " << new_point.Z << std::endl;
+                return;
             }
-            return;
         }
 
         // Insert the new point in the segment between points arc.i0 and arc.i1
         if (arc.i0 < segment.size() && arc.i1 < segment.size()) {
             segment.insert(segment.begin() + arc.i1, new_point);
-            std::cout << "Inserted new point at index: " << arc.i1 << std::endl;
+            if (this->verbose) {
+                std::cout << "Inserted new point at index: " << arc.i1 << "\n"
+                          << std::endl;
+            }
         } else {
-            if (this->warnings) {
+            if (this->verbose) {
                 std::cerr << "Warning: Invalid indices for insertion in insertPoint." << std::endl;
             }
         }
     } else {
         this->overlap = true; // Set the overlap flag to true if the precision limit is reached
-        if (this->warnings) {
+        if (this->verbose) {
             std::cerr << "Warning: Skipping insertion due to floating point precision limits." << std::endl;
         }
     }
@@ -347,10 +314,6 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
     size_t j = 1; // Start at the second point
 
     while (j < arcs.size()) {
-
-        std::cout << "arcs size: " << arcs.size() << std::endl;
-        std::cout << "prev_seg size: " << prev_seg.size() << "\n"
-                  << std::endl;
 
         // Points in the previous segment
         point x0_i = arcs[j - 1].x0;
@@ -396,8 +359,6 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
             if (j == arcs.size() - 1) {
                 new_seg.push_back(x_j);
                 new_seg.push_back(x_k);
-                point x_last = this->apply_map(prev_seg.back().R, prev_seg.back().Z, Phi, 1);
-                new_seg.push_back(x_last);
             }
             j += 1;
             insertion_count = 0;
@@ -409,9 +370,7 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
         }
 
         if (insertion_count >= this->max_insertions) {
-            if (this->warnings) {
-                std::cerr << "Warning: Maximum number of insertions reached. Stopping refinement at this segment." << std::endl;
-            }
+            std::cerr << "Warning: Maximum number of insertions reached. Stopping refinement at this segment." << std::endl;
             break;
         }
 
@@ -481,7 +440,7 @@ std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point>
 
 point interpolantArc::evalNewPoint(double t) const {
     if ((x0.R == 0 && x0.Z == 0) && (x1.R == 0 && x1.Z == 0)) {
-        std::cerr << "Warning: Interpolating between two zero points!" << std::endl;
+        std::cerr << "Error: Interpolating between two zero points!" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -492,15 +451,6 @@ point interpolantArc::evalNewPoint(double t) const {
     // Direction vector
     double lR = x1.R - x0.R;
     double lZ = x1.Z - x0.Z;
-
-    // double chord_len = std::sqrt(lR * lR + lZ * lZ);
-    // if (chord_len < 1e-5) {
-    //     // Too short → just return midpoint
-    //     if (std::isnan(R_base) || std::isnan(Z_base)) {
-    //         std::cerr << "Warning: Midpoint NaN in fallback.\n";
-    //     }
-    //     return {R_base, Z_base};
-    // }
 
     // Perpendicular vector (normal)
     double nR = -lZ;
@@ -513,88 +463,11 @@ point interpolantArc::evalNewPoint(double t) const {
     double R_new = R_base + h * nR;
     double Z_new = Z_base + h * nZ;
 
-    // // Final sanity check
-    // if (std::isnan(R_new) || std::isnan(Z_new)) {
-    //     std::cerr << "Warning: NaN generated in evalNewPoint. Returning midpoint.\n";
-    //     return {R_base, Z_base};
-    // }
+    // Final sanity check
+    if (std::isnan(R_new) || std::isnan(Z_new)) {
+        // std::cerr << "Warning: NaN generated in evalNewPoint. Returning midpoint.\n";
+        return {R_base, Z_base};
+    }
 
     return {R_new, Z_new};
 }
-
-// // Compute a refined new segment from a primary segment
-// void manifold::newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim) {
-
-//     size_t j = 1;                     // Start at the second point
-//     double theta_lim_aux = theta_lim; // Copy of the angle limit
-//     int insertion_count = 0;          // Counter for insertions in the current segment
-
-//     while (j < primary_seg.size() - 1) {
-//         // Apply map to the points
-//         point x_i = this->apply_map(primary_seg[j - 1].R, primary_seg[j - 1].Z, Phi, nSeg);
-//         point x_j = this->apply_map(primary_seg[j].R, primary_seg[j].Z, Phi, nSeg);
-//         point x_k = this->apply_map(primary_seg[j + 1].R, primary_seg[j + 1].Z, Phi, nSeg);
-
-//         // Compute distances and angle to check if the points are too far apart
-//         double l_i = this->computeDistance(x_i.R, x_i.Z, x_j.R, x_j.Z);
-//         double l_ii = this->computeDistance(x_j.R, x_j.Z, x_k.R, x_k.Z);
-//         double l_theta = this->computeAngle(x_i.R, x_i.Z, x_j.R, x_j.Z, x_k.R, x_k.Z);
-
-//         // if not refining angle, reset the angle limit
-//         if (!this->refining_angle) {
-//             theta_lim_aux = theta_lim;
-//         }
-
-//         // Check if angle exceeds threshold
-//         if (l_theta > theta_lim_aux) {
-//             if (l_i > l_ii) {
-//                 this->insertPoint(primary_seg, j);
-//                 insertion_count++;
-//                 if (j != 1) {
-//                     j = j - 1;
-//                 }
-//             } else {
-//                 this->insertPoint(primary_seg, j + 1);
-//                 insertion_count++;
-//             }
-//             this->refining_angle = true;
-//         }
-//         // Check if distance l_i exceed threshold
-//         else if (l_i > l_lim) {
-//             this->insertPoint(primary_seg, j);
-//             insertion_count++;
-//             if (j != 1) {
-//                 j = j - 1;
-//             }
-//             this->refining_angle = false;
-//         }
-//         // Check if distance l_ii exceed threshold
-//         else if (l_ii > l_lim) {
-//             this->insertPoint(primary_seg, j + 1);
-//             insertion_count++;
-//             this->refining_angle = false;
-//         }
-//         // If conditions are met, add the point to the new segment
-//         else {
-//             new_seg.push_back(x_i);
-//             if (j == primary_seg.size() - 2) {
-//                 new_seg.push_back(x_j);
-//                 new_seg.push_back(x_k);
-//             }
-//             j = j + 1;
-//             insertion_count = 0;
-//         }
-//         // Relax the angle limit if the precision limit is reached
-//         if (this->overlap) {
-//             theta_lim_aux *= 1.5;
-//             this->overlap = false;
-//         }
-//         // Stop refinement if the maximum number of insertions is reached
-//         if (insertion_count >= this->max_insertions) {
-//             if (this->warnings) {
-//                 std::cerr << "Warning: Maximum number of insertions reached. Stopping refinement at this segment." << std::endl;
-//             }
-//             break;
-//         }
-//     }
-// }

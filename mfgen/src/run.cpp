@@ -92,6 +92,10 @@ int main() {
 
     // loop to create new segments
     for (int i = 1; i < input.nSeg; ++i) {
+        // print progress bar
+        manifold.progressBar(i, input.nSeg);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
         // create new segment from the primary segment
         manifold.newSegment(primary_segment, new_segment, input.Phi, i, input.l_lim, input.theta_lim);
 
@@ -111,10 +115,6 @@ int main() {
 
         // empty new segment vector
         new_segment.clear();
-
-        // print progress bar
-        manifold.progressBar(i, input.nSeg);
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     // Done!
