@@ -76,51 +76,41 @@ int main() {
               << std::endl;
     manifold.primarySegment(primary_segment, num_points);
 
+    // save the primary segment to file input.output_path
+    std::ofstream output_file(input.output_path);
+    if (!output_file) {
+        std::cerr << "Error opening output file: " << input.output_path << std::endl;
+        return 1;
+    }
+    output_file << std::fixed << std::setprecision(16);
+    for (const auto &pt : primary_segment) {
+        output_file << pt.R << " " << pt.Z << "\n";
+    }
+    output_file.close();
+
     std::vector<point> new_segment; // vector of points to store the new segment
-    std::vector<point> new_segment2;
-    std::vector<point> primary_segment_copy = primary_segment;
 
     // loop to create new segments
     for (int i = 1; i < input.nSeg; ++i) {
         // create new segment from the primary segment
         manifold.newSegment(primary_segment, new_segment, input.Phi, i, input.l_lim, input.theta_lim);
 
-        // append new segment to the output file
-        std::ofstream file2(input.output_path, std::ios::app);
-        file2 << std::fixed << std::setprecision(16);
-        if (file2.is_open()) {
-            for (size_t i = 0; i < new_segment.size(); ++i) {
-                file2 << new_segment[i].R << " " << new_segment[i].Z << std::endl;
-            }
-            file2.close();
-        } else {
-            std::cerr << "Unable to open file" << std::endl;
+        // append the new segment to file input.output_path
+        std::ofstream output_file(input.output_path, std::ios::app);
+        if (!output_file) {
+            std::cerr << "Error opening output file: " << input.output_path << std::endl;
             return 1;
         }
+        output_file << std::fixed << std::setprecision(16);
+        for (const auto &pt : new_segment) {
+            output_file << pt.R << " " << pt.Z << "\n";
+        }
+        output_file.close();
+
+        primary_segment = new_segment;
 
         // empty new segment vector
         new_segment.clear();
-
-        // create new segment from the primary segment
-        manifold.newSegment(primary_segment_copy, new_segment2, input.Phi, input.l_lim, input.theta_lim);
-
-        // append new segment to the output file
-        std::ofstream file3("mf_arc.dat", std::ios::app);
-        file3 << std::fixed << std::setprecision(16);
-        if (file3.is_open()) {
-            for (size_t i = 0; i < new_segment.size(); ++i) {
-                file3 << new_segment2[i].R << " " << new_segment2[i].Z << std::endl;
-            }
-            file3.close();
-        } else {
-            std::cerr << "Unable to open file" << std::endl;
-            return 1;
-        }
-
-        primary_segment_copy = new_segment2;
-
-        // empty new segment vector
-        new_segment2.clear();
 
         // print progress bar
         manifold.progressBar(i, input.nSeg);

@@ -19,6 +19,7 @@ struct point {
 struct interpolantArc {
     point x0, x1;
     double a, b;
+    int i0, i1; // indices of the points in the segment
 
     point evalNewPoint(double t) const;
 };
@@ -32,9 +33,9 @@ class manifold {
     // Compute the primary segment
     void primarySegment(std::vector<point> &segment, size_t num_points);
     // Compute a refined new segment from a previous segment
-    void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, double l_lim, double theta_lim);
+    void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
     // Compute a refined new segment from the first primary segment
-    void newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
+    // void newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
     // Print a progress bar
     void progressBar(int j, int nSeg);
     // Set warning flag
@@ -48,9 +49,9 @@ class manifold {
     // Evaluate the jacobian of the map at a given point
     void eval_jacobian(double R, double Z, double Phi, double h, double jacobian[2][2]);
     // Insert a new point in the vector by linear interpolation
-    void insertPoint(std::vector<point> &segment, size_t index);
+    // void insertPoint(std::vector<point> &segment, size_t index);
     // Insert a new point in the vector by interpolant arc
-    void insertPoint(std::vector<point> &segment, std::vector<interpolantArc> &interpolants, size_t index);
+    void insertPoint(std::vector<point> &segment, interpolantArc &arc);
     // Compute distance between two points
     double computeDistance(double R1, double Z1, double R2, double Z2);
     // Compute angle between two vectors
@@ -66,9 +67,9 @@ class manifold {
     double epsilon; // distance from the x-point
 
     // Default parameters
-    bool warnings = false;          // verbose flag
+    bool warnings = true;           // verbose flag
     int s_factor = 1;               // sign factor for the manifold stability
-    double h = 1e-8;                // step size for numerical differentiation
+    double h = 1e-8;                // step size for numerical derivatives
     double tol = 1e-14;             // tolerance for Newton's method
     int max_iter = 50;              // maximum number of iterations for Newton's method
     double precision_limit = 1e-14; // precision limit for floating point comparisons
