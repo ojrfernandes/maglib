@@ -302,7 +302,7 @@ void manifold::insertPoint(std::vector<point> &segment, interpolantArc &arc) {
         std::cout << "x0: " << arc.x0.R << " " << arc.x0.Z << std::endl;
         std::cout << "x1: " << arc.x1.R << " " << arc.x1.Z << std::endl;
         point new_point = arc.evalNewPoint(0.5);
-        std::cout << "\nNew point: " << new_point.R << " " << new_point.Z << std::endl;
+        std::cout << "New point: " << new_point.R << " " << new_point.Z << std::endl;
 
         // Check if the new point is valid
         point new_point_image = this->apply_map(new_point.R, new_point.Z, this->phi, 1);
@@ -332,15 +332,25 @@ void manifold::insertPoint(std::vector<point> &segment, interpolantArc &arc) {
 
 void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim) {
 
+    // Append the last two points of the previous segment to the beginning of the new segment
+    if (prev_seg.size() < 2) {
+        std::cerr << "Error: Previous segment must have at least two points." << std::endl;
+        return;
+    }
+    new_seg.push_back(prev_seg[prev_seg.size() - 2]);
+    new_seg.push_back(prev_seg[prev_seg.size() - 1]);
+
     double theta_lim_aux = theta_lim;
     int insertion_count = 0;
-    std::vector<interpolantArc> arcs;
 
-    size_t arcs_size = prev_seg.size() - 3;
+    std::vector<interpolantArc> arcs = this->buildInterpolants(prev_seg);
     size_t j = 1; // Start at the second point
-    while (j < arcs_size) {
-        // Build interpolants for the current segment
-        arcs = this->buildInterpolants(prev_seg);
+
+    while (j < arcs.size()) {
+
+        std::cout << "arcs size: " << arcs.size() << std::endl;
+        std::cout << "prev_seg size: " << prev_seg.size() << "\n"
+                  << std::endl;
 
         // Points in the previous segment
         point x0_i = arcs[j - 1].x0;
@@ -383,9 +393,11 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
             this->refining_angle = false;
         } else {
             new_seg.push_back(x_i);
-            if (j == prev_seg.size() - 1) {
+            if (j == arcs.size() - 1) {
                 new_seg.push_back(x_j);
                 new_seg.push_back(x_k);
+                point x_last = this->apply_map(prev_seg.back().R, prev_seg.back().Z, Phi, 1);
+                new_seg.push_back(x_last);
             }
             j += 1;
             insertion_count = 0;
@@ -402,6 +414,9 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
             }
             break;
         }
+
+        // Update the interpolant arcs
+        arcs = this->buildInterpolants(prev_seg);
     }
 }
 
@@ -478,6 +493,15 @@ point interpolantArc::evalNewPoint(double t) const {
     double lR = x1.R - x0.R;
     double lZ = x1.Z - x0.Z;
 
+    // double chord_len = std::sqrt(lR * lR + lZ * lZ);
+    // if (chord_len < 1e-5) {
+    //     // Too short → just return midpoint
+    //     if (std::isnan(R_base) || std::isnan(Z_base)) {
+    //         std::cerr << "Warning: Midpoint NaN in fallback.\n";
+    //     }
+    //     return {R_base, Z_base};
+    // }
+
     // Perpendicular vector (normal)
     double nR = -lZ;
     double nZ = lR;
@@ -488,6 +512,13 @@ point interpolantArc::evalNewPoint(double t) const {
     // Compute the new point
     double R_new = R_base + h * nR;
     double Z_new = Z_base + h * nZ;
+
+    // // Final sanity check
+    // if (std::isnan(R_new) || std::isnan(Z_new)) {
+    //     std::cerr << "Warning: NaN generated in evalNewPoint. Returning midpoint.\n";
+    //     return {R_base, Z_base};
+    // }
+
     return {R_new, Z_new};
 }
 
