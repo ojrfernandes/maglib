@@ -23,6 +23,7 @@ class input_read {
     std::string output_path; // path to the output file
     int timeslice;           // timeslice to be read from the source file
     int stability;           // stability of the manifold (stable or unstable)
+    int method;              // method to be used for the manifold generation
     double Phi;              // toroidal angle coordinate for of the poincaré section
     double R_xPoint = 0;     // R coordinate of the x-point
     double Z_xPoint = 0;     // Z coordinate of the x-point

@@ -33,9 +33,9 @@ class manifold {
     // Compute the primary segment
     void primarySegment(std::vector<point> &segment, size_t num_points);
     // Compute a refined new segment from a previous segment
-    void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
+    void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, double l_lim, double theta_lim);
     // Compute a refined new segment from the first primary segment
-    // void newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
+    void newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
     // Print a progress bar
     void progressBar(int j, int nSeg);
     // Set warning flag
@@ -49,7 +49,7 @@ class manifold {
     // Evaluate the jacobian of the map at a given point
     void eval_jacobian(double R, double Z, double Phi, double h, double jacobian[2][2]);
     // Insert a new point in the vector by linear interpolation
-    // void insertPoint(std::vector<point> &segment, size_t index);
+    void insertPoint(std::vector<point> &segment, size_t index);
     // Insert a new point in the vector by interpolant arc
     void insertPoint(std::vector<point> &segment, interpolantArc &arc);
     // Compute distance between two points

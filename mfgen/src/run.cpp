@@ -22,6 +22,7 @@ int main() {
     std::cout << "output_path: " << input.output_path << std::endl;
     std::cout << "stability: " << input.stability << std::endl;
     std::cout << "timeslice: " << input.timeslice << std::endl;
+    std::cout << "method: " << input.method << std::endl;
     std::cout << "Phi: " << input.Phi << std::endl;
     std::cout << "epsilon: " << input.epsilon << std::endl;
     std::cout << "nSeg: " << input.nSeg << std::endl;
@@ -96,8 +97,15 @@ int main() {
         manifold.progressBar(i, input.nSeg);
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        // create new segment from the primary segment
-        manifold.newSegment(primary_segment, new_segment, input.Phi, i, input.l_lim, input.theta_lim);
+        if (input.method == 0) {
+            manifold.newSegment(primary_segment, new_segment, input.Phi, i, input.l_lim, input.theta_lim);
+        } else if (input.method == 1) {
+            manifold.newSegment(primary_segment, new_segment, input.Phi, input.l_lim, input.theta_lim);
+            primary_segment = new_segment;
+        } else {
+            std::cerr << "Invalid method selected. Please choose 0 or 1." << std::endl;
+            return 1;
+        }
 
         // append the new segment to file input.output_path
         std::ofstream output_file(input.output_path, std::ios::app);
@@ -110,8 +118,6 @@ int main() {
             output_file << pt.R << " " << pt.Z << "\n";
         }
         output_file.close();
-
-        primary_segment = new_segment;
 
         // empty new segment vector
         new_segment.clear();

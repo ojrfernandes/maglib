@@ -57,8 +57,22 @@ bool input_read::readInputFile() {
             f0.close();
         } else if (key == "stability") {
             this->stability = std::stoi(value);
+            if (this->stability != 0 && this->stability != 1) {
+                std::cerr << "Error: Stability must be 0 (forward) or 1 (backward)." << std::endl;
+                return false;
+            }
         } else if (key == "timeslice") {
             this->timeslice = std::stoi(value);
+            if (this->timeslice < 0) {
+                std::cerr << "Error: Timeslice must be a non-negative integer." << std::endl;
+                return false;
+            }
+        } else if (key == "method") {
+            this->method = std::stoi(value);
+            if (this->method != 0 && this->method != 1) {
+                std::cerr << "Error: Method must be 0 (exact) or 1 (interpolant)." << std::endl;
+                return false;
+            }
         } else if (key == "Phi") {
             this->Phi = std::stod(value);
         } else if (key == "epsilon") {

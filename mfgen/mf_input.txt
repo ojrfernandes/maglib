@@ -5,7 +5,8 @@
         output_path = mf_out.dat
 #        
         stability = 0                   # stable manifold = 0, unstable manifold = 1
-        timeslice = 1                   # equilibrium = -1, vacuum = 0, plasma_resp = 1 
+        timeslice = 1                   # equilibrium = -1, vacuum = 0, plasma_resp = 1
+        method = 1                      # exact manifold = 0, interpolant method = 1 
         Phi = 0                         # poicaré section toroidal coordinate (deg)
 #
 #=============== REFINEMENT PARAMETERS
@@ -13,4 +14,4 @@
         epsilon = 1e-6                  # primary segment's distance from X-point
         nSeg = 8                        # number of primary segments to be mapped
         l_lim = 0.005                   # distance treshold for the refinement process
-        theta_lim = 0.35                # angle treshold for the refinement process
+        theta_lim = 20                  # angle treshold for the refinement process (deg)
