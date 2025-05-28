@@ -1,6 +1,6 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-#define INPUT_READ_V 250505 // version (yy.mm.dd)
+#define INPUT_READ_V 250528 // version (yy.mm.dd)
 
 #include <fstream>
 #include <hdf5.h>
