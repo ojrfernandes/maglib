@@ -73,8 +73,18 @@ bool input_read::readInputFile() {
                 std::cerr << "Error: Method must be 0 (exact) or 1 (interpolant)." << std::endl;
                 return false;
             }
+        } else if (key == "slices") {
+            this->slices = std::stoi(value);
+            if (this->slices <= 0) {
+                std::cerr << "Error: Number of slices must be a positive integer." << std::endl;
+                return false;
+            }
         } else if (key == "Phi") {
             this->Phi = std::stod(value);
+        } else if (key == "phi_0") {
+            this->phi_0 = std::stod(value);
+        } else if (key == "phi_1") {
+            this->phi_1 = std::stod(value);
         } else if (key == "epsilon") {
             this->epsilon = std::stod(value);
         } else if (key == "l_lim") {

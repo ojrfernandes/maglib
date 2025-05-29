@@ -24,7 +24,10 @@ class input_read {
     int timeslice;           // timeslice to be read from the source file
     int stability;           // stability of the manifold (stable or unstable)
     int method;              // method to be used for the manifold generation
+    int slices;              // number of toroidal slices to be generated
     double Phi;              // toroidal angle coordinate for of the poincaré section
+    double phi_0;            // initial toroidal angle coordinate
+    double phi_1;            // final toroidal angle coordinate
     double R_xPoint = 0;     // R coordinate of the x-point
     double Z_xPoint = 0;     // Z coordinate of the x-point
     double epsilon;          // first primary segment distance to the x-point

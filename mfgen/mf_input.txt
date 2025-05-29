@@ -6,8 +6,12 @@
 #        
         stability = 0                   # stable manifold = 0, unstable manifold = 1
         timeslice = 1                   # equilibrium = -1, vacuum = 0, plasma_resp = 1
-        method = 1                      # exact manifold = 0, interpolant method = 1 
+        method = 1                      # exact manifold = 0, interpolant method = 1
+        slices = 1                      # number of toroidal slices to be generated
         Phi = 0                         # poicaré section toroidal coordinate (deg)
+#        
+        phi_0 = 0                       # initial toroidal angle coordinate
+        phi_1 = 0                       # final toroidal angle coordinate
 #
 #=============== REFINEMENT PARAMETERS
 #
