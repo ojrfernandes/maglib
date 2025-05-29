@@ -333,6 +333,7 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
         std::cerr << "Error: Previous segment must have at least two points." << std::endl;
         return;
     }
+    new_seg.push_back(prev_seg[prev_seg.size() - 3]);
     new_seg.push_back(prev_seg[prev_seg.size() - 2]);
     new_seg.push_back(prev_seg[prev_seg.size() - 1]);
 
