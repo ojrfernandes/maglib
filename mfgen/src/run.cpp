@@ -49,9 +49,10 @@ int main() {
         std::cout << "znull: " << input.Z_xPoint << std::endl;
     }
 
-    // create vector of input.slices points from input.phi_0 to input.phi_1
-    std::vector<double> phi_slices = {input.phi_0};
+    // create vector of input.slices points from input.phi_0 to input.phi_1 (degrees)
+    std::vector<double> phi_slices;
     if (input.slices > 1) {
+        phi_slices.push_back(input.phi_0);
         std::cout << "\nCreating vector of points from phi_0 to phi_1..." << std::endl;
         double dPhi = (input.phi_1 - input.phi_0) / (input.slices - 1);
         std::cout << "Phi = " << input.phi_0;
@@ -61,11 +62,13 @@ int main() {
             std::cout << ", " << phi;
         }
     } else {
+        phi_slices.push_back(input.Phi);
         std::cout << "\nUsing single point with Phi = " << input.Phi << std::endl;
     }
 
     // loop over phi slices
     for (const auto &phi : phi_slices) {
+        double phi_rad = phi * M_PI / 180.0; // convert degrees to radians
 
         std::cout << "\n\n"
                   << std::string(50, '#') << "\n"
@@ -75,7 +78,7 @@ int main() {
         // create manifold object
         std::cout << "\nCreating manifold object...\n"
                   << std::endl;
-        manifold manifold(input.source_path.c_str(), input.timeslice, phi, input.stability, input.epsilon);
+        manifold manifold(input.source_path.c_str(), input.timeslice, phi_rad, input.stability, input.epsilon);
 
         // find the x-point
         std::cout << "\nFinding x-point..."
@@ -124,9 +127,9 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             if (input.method == 0) {
-                manifold.newSegment(primary_segment, new_segment, phi, i, input.l_lim, input.theta_lim);
+                manifold.newSegment(primary_segment, new_segment, phi_rad, i, input.l_lim, input.theta_lim);
             } else if (input.method == 1) {
-                manifold.newSegment(primary_segment, new_segment, phi, input.l_lim, input.theta_lim);
+                manifold.newSegment(primary_segment, new_segment, phi_rad, input.l_lim, input.theta_lim);
                 primary_segment = new_segment;
             } else {
                 std::cerr << "Invalid method selected. Please choose 0 or 1." << std::endl;
