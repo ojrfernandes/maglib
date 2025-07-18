@@ -402,7 +402,8 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
 
         if (insertion_count >= this->max_insertions) {
             std::cerr << "Warning: Maximum number of insertions reached. Stopping refinement at this segment." << std::endl;
-            break;
+            j = arcs.size(); // Exit the loop
+            continue;
         }
 
         // Update the interpolant arcs
@@ -481,7 +482,8 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
         // Stop refinement if the maximum number of insertions is reached
         if (insertion_count >= this->max_insertions) {
             std::cerr << "Warning: Maximum number of insertions reached. Stopping refinement at this segment." << std::endl;
-            break;
+            j = prev_seg.size() - 1; // Exit the loop
+            continue;
         }
     }
 }
