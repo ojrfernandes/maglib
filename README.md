@@ -1,23 +1,79 @@
 # Maglib
-Maglib is a library designed for computational tasks in plasma physics, leveraging the Fusion-IO framework for data extraction. It provides tools for generating high resolution figures of magnetic footprints and manifolds. Maglib is a work in progess and currently has only been tested on data from M3D-C1 simulations for the TCABR Tokamak. Maglib is being developped at the Plasma Physics Laboratory from Universidade de São Paulo - Brazil.
+
+Maglib is a library designed for computational tasks in plasma physics, leveraging the Fusion-IO framework for data extraction. It provides tools for generating high-resolution figures of magnetic footprints and invariant manifolds. 
+
+**Current Status**: Maglib is a work in progress and has currently only been tested on data from M3D-C1 simulations for the TCABR Tokamak. 
+
+Developed at the Plasma Physics Laboratory, Institute of Physics - Universidade de São Paulo, Brazil.
 
 ## Prerequisites
+
+Before installing Maglib, ensure you have the following dependencies:
+
+### System Requirements
+- **CMake** (≥ 3.10): Build system generator  
+  📥 [Download CMake](https://cmake.org/)
+
+- **HDF5**: High-performance data management library (with C headers)  
+  📥 [Download HDF5](https://www.hdfgroup.org/)
+
+- **OpenMP**: API for parallel programming  
+  📥 [OpenMP Documentation](https://www.openmp.org/)
+
+- **Armadillo**: C++ library for linear algebra & scientific computing  
+  📥 [Download Armadillo](https://arma.sourceforge.net/)
+
 ### Fusion-IO Dependency
-maglib requires an installation of Fusion-IO, an interface for extracting data from various plasma simulation codes. Fusion-IO was developed by Nate Ferraro at the Princeton Plasma Physics Laboratory and can be found at the [Fusion-IO GitHub Repository](https://github.com/nferraro/fusion-io).
+Maglib requires **Fusion-IO**, an interface for extracting data from plasma simulation codes developed by Nate Ferraro at Princeton Plasma Physics Laboratory.
 
-⚠️ Compatibility Warning:
-This program **is not** compatible with the latest versions of Fusion-IO. For the best results, we recommend using a Fusion-IO version from around July 2023. Commit 022a77f is our recommentation.
+📥 [Fusion-IO GitHub Repository](https://github.com/nferraro/fusion-io)
 
-To clone the compatible version, run:
-```bash 
-git clone https://github.com/nferraro/fusion-io.git
-cd fusion-io
-git checkout 022a77f
+⚠️ **Important Compatibility Note**: Maglib expects Fusion-IO libraries to be compiled as two shared libraries named `libfusionio.so` and `libm3dc1.so`. When installing Fusion-IO using CMake, these may be compiled as static libraries or with different names. Please ensure the correct shared library names before proceeding with installation.
+
+## Installation
+
+### Step 1: Set Environment Variable
+Add your Fusion-IO build directory to your environment variables:
+
+```bash
+export FUSION_IO_DIR=/path/to/your/fusion-io/build
 ```
-Keep in mind that Fusion-IO CMake install has been implemented **after** to this version, hence, manual instalation is necessary. 
+or add this line to your `~/.bashrc` or `~/.zshrc` for persistence across sessions.
 
-## Sode 
-The Sode module (Solver for Ordinary Differential Equations) provides a general purpose integrator for systems of ordinary differential equations, including various adaptative Runge-Kutta methods.
+### Step 2: Clone and Build
+```bash
+# Clone the repository (if not already done)
+git clone https://github.com/ojrfernandes/maglib.git maglib
+cd maglib
 
-## Maglit
-The Maglit module (Magnetic Line Integrator) provides an interface between Sode and the Fusion-IO modules, making it possible to handle systems which require information from the fields at every integration step e.g. magnetic field lines.
+# Create build directory
+mkdir build
+cd build
+
+# Configure and build
+cmake ..
+make
+```
+
+### Step 3: (optional) Set the executables to your system PATH in your .bashrc
+```bash
+# maglib directory
+export MAGLIB_ROOT=[path to your maglib root directory]
+ 
+# fpgen (Footprint generator)
+export PATH=$MAGLIB_ROOT/build/fpgen:$PATH
+
+# mfgen (Manifold generator)
+export PATH=$MAGLIB_ROOT/build/mfgen:$PATH
+
+# lbmap (Magnetic lobe mapping tool)
+export PATH=$MAGLIB_ROOT/build/lbmap:$PATH
+```
+
+## Troubleshooting
+
+**Common Issues:**
+
+- **CMake can't find dependencies**: Ensure all prerequisites are properly installed and in your system PATH
+- **Fusion-IO linking errors**: Verify that `libfusionio.so` and `libm3dc1.so` exist in your Fusion-IO build/lib directory
+- **Build errors**: Check that all dependencies have development headers installed (especially HDF5)
