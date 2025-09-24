@@ -2,7 +2,7 @@
 #define FOOTPRINT_H
 #define FOOTPRINT_V 250505 // version (yy.mm.dd)
 
-#include "../../maglit/maglit.h"
+#include <maglit.h>
 #include <iomanip>
 #include <omp.h>
 #include <thread>

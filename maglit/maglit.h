@@ -2,9 +2,9 @@
 #define MAGLIT_H
 #define MAGLIT_V 241119 // version (yy.mm.dd)
 
-#include "../sode/sode.h"
+#include <sode.h>
 #include <functional>
-#include <fusion_io.h>
+#include "fusion_io.h"
 #include <iostream>
 
 class maglit {

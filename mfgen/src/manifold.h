@@ -2,7 +2,7 @@
 #define MANIFOLD_H
 #define MANIFOLD_V 250528 // version (yy.mm.dd)
 
-#include "../../maglit/maglit.h"
+#include <maglit.h>
 #include <armadillo>
 #include <chrono>
 #include <iomanip>
