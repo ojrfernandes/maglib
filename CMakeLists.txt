@@ -37,6 +37,61 @@ message(STATUS "FUSION_IO_LIB_DIR: ${FUSION_IO_LIB_DIR}")
 
 #=============================================================================
 
+# Testing setup
+option(BUILD_TESTS "Build unit tests" ON)
+if(BUILD_TESTS)
+    enable_testing()
+    
+    # Try to find system GoogleTest first
+    find_package(GTest QUIET)
+    
+    if(NOT GTest_FOUND)
+        # Check if we already have googletest cloned
+        set(GTEST_ROOT ${CMAKE_SOURCE_DIR}/external/googletest)
+        
+        if(NOT EXISTS ${GTEST_ROOT})
+            message(STATUS "GoogleTest not found, cloning from GitHub...")
+            
+            # Create external directory
+            file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/external)
+            
+            # Clone googletest
+            execute_process(
+                COMMAND git clone https://github.com/google/googletest.git ${GTEST_ROOT}
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external
+                RESULT_VARIABLE GIT_RESULT
+            )
+            
+            if(NOT GIT_RESULT EQUAL "0")
+                message(FATAL_ERROR "Failed to clone GoogleTest from GitHub")
+            endif()
+            
+            message(STATUS "GoogleTest cloned successfully")
+        else()
+            message(STATUS "Using existing GoogleTest at ${GTEST_ROOT}")
+        endif()
+        
+        # Build googletest as part of our project
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+        set(BUILD_GTEST ON CACHE BOOL "" FORCE)
+        add_subdirectory(${GTEST_ROOT} ${CMAKE_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
+        
+        # Set up variables for our tests
+        set(GTEST_LIBRARIES gtest)
+        set(GTEST_MAIN_LIBRARIES gtest_main)
+    else()
+        message(STATUS "Using system GoogleTest")
+        set(GTEST_LIBRARIES GTest::gtest)
+        set(GTEST_MAIN_LIBRARIES GTest::gtest_main)
+    endif()
+    
+    # Add tests subdirectory
+    add_subdirectory(tests)
+endif()
+
+#=============================================================================
+
 # Include subdirectories
 add_subdirectory(maglit)
 add_subdirectory(sode)
