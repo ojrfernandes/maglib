@@ -23,7 +23,7 @@ target_include_directories(mfgen PRIVATE
 
 # Copy input file to build directory
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/mf_input.txt
-    ${CMAKE_CURRENT_BINARY_DIR}/mf_input.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/mfgen_input.txt
+    ${CMAKE_BINARY_DIR}/bin/mfgen_input.txt
     COPYONLY
 )

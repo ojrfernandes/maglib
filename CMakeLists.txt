@@ -92,6 +92,13 @@ endif()
 
 #=============================================================================
 
+# Set output directories for all executables
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+
+#=============================================================================
+
 # Include subdirectories
 add_subdirectory(maglit)
 add_subdirectory(sode)

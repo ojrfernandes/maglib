@@ -19,7 +19,7 @@ target_include_directories(lbmap PRIVATE
 
 # Copy input file to build directory
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/lb_input.txt
-    ${CMAKE_CURRENT_BINARY_DIR}/lb_input.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/lbmap_input.txt
+    ${CMAKE_BINARY_DIR}/bin/lbmap_input.txt
     COPYONLY
 )
