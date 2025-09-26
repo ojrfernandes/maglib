@@ -57,17 +57,11 @@ make
 
 ### Step 3: (optional) Set the executables to your system PATH in your .bashrc
 ```bash
-# maglib directory
+# set maglib directory
 export MAGLIB_ROOT=/path/to/your/maglib/root
  
-# fpgen (Footprint generator)
-export PATH=$MAGLIB_ROOT/build/fpgen:$PATH
-
-# mfgen (Manifold generator)
-export PATH=$MAGLIB_ROOT/build/mfgen:$PATH
-
-# lbmap (Magnetic lobe mapping tool)
-export PATH=$MAGLIB_ROOT/build/lbmap:$PATH
+# add executables to path
+export PATH=$MAGLIB_ROOT/build/bin:$PATH
 ```
 
 ## Troubleshooting
