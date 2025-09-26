@@ -12,16 +12,16 @@ Before installing Maglib, ensure you have the following dependencies:
 
 ### System Requirements
 - **CMake** (≥ 3.10): Build system generator  
-  📥 [Download CMake](https://cmake.org/)
+  📄 [CMake Documentation](https://cmake.org/)
 
 - **HDF5**: High-performance data management library (with C headers)  
-  📥 [Download HDF5](https://www.hdfgroup.org/)
+  📄 [HDF5 Documentation](https://www.hdfgroup.org/)
 
 - **OpenMP**: API for parallel programming  
-  📥 [OpenMP Documentation](https://www.openmp.org/)
+  📄 [OpenMP Documentation](https://www.openmp.org/)
 
 - **Armadillo**: C++ library for linear algebra & scientific computing  
-  📥 [Download Armadillo](https://arma.sourceforge.net/)
+  📄 [Armadillo Documentation](https://arma.sourceforge.net/)
 
 ### Fusion-IO Dependency
 Maglib requires **Fusion-IO**, an interface for extracting data from plasma simulation codes developed by Nate Ferraro at Princeton Plasma Physics Laboratory.
@@ -58,7 +58,7 @@ make
 ### Step 3: (optional) Set the executables to your system PATH in your .bashrc
 ```bash
 # maglib directory
-export MAGLIB_ROOT=[path to your maglib root directory]
+export MAGLIB_ROOT=/path/to/your/maglib/root
  
 # fpgen (Footprint generator)
 export PATH=$MAGLIB_ROOT/build/fpgen:$PATH
