@@ -2,3 +2,4 @@ build
 external
 .vscode
 magplot/magplot/__pycache__
+tests/data

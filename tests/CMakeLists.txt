@@ -27,6 +27,9 @@ target_include_directories(test_maglit PRIVATE
     ${CMAKE_SOURCE_DIR}/sode
     ${HDF5_INCLUDE_DIRS}
 )
+target_compile_definitions(test_maglit PRIVATE
+    TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+)
 
 # Integration tests (for programs)
 add_executable(test_integration test_integration.cpp)
