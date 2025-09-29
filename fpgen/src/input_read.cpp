@@ -7,40 +7,62 @@ bool input_read::readInputFile() {
     std::ifstream file(this->reading_path);
     std::string line;
 
+    // Open the file and check for errors
     if (!file) {
-        std::cerr << "Error: Unable to open file: " << reading_path << std::endl;
+        std::cerr << "Error reading input: Unable to open file: " << reading_path << std::endl;
         return false;
     }
 
+    // check if the file is empty
+    if (file.peek() == std::ifstream::traits_type::eof()) {
+        std::cerr << "Error reading input: Input file is empty: " << reading_path << std::endl;
+        return false;
+    }
+
+    // Lambda function to trim whitespace from both ends of a string
+    auto trim = [](std::string &s) {
+        size_t start = s.find_first_not_of(" \t");
+        size_t end = s.find_last_not_of(" \t");
+        if (start == std::string::npos) {
+            s.clear();
+        } else {
+            s = s.substr(start, end - start + 1);
+        }
+    };
+
     while (std::getline(file, line)) {
-        // Ignore empty lines and comments
+        // Trim the line first
+        trim(line);
+
+        // Ignore empty lines and lines that start with '#'
         if (line.empty() || line[0] == '#') {
             continue;
         }
 
-        std::istringstream iss(line);
-        std::string key, equals, value;
-
-        if (!(iss >> key >> equals)) {
-            std::cerr << "Error: Invalid line (missing key or '=' symbol): " << line << std::endl;
-            continue;
+        // Find '=' position
+        auto eq_pos = line.find('=');
+        if (eq_pos == std::string::npos) {
+            std::cerr << "Error reading input: Invalid line (missing '='): " << line << std::endl;
+            return false;
         }
 
-        if (equals != "=") {
-            std::cerr << "Error: Invalid format (expected '=' after key): " << line << std::endl;
-            continue;
+        // Split into key and value
+        std::string key = line.substr(0, eq_pos);
+        std::string value = line.substr(eq_pos + 1);
+
+        // Handle inline comments in value
+        auto comment_pos = value.find('#');
+        if (comment_pos != std::string::npos) {
+            value = value.substr(0, comment_pos);
         }
 
-        // Read the rest of the line as value, ignoring anything after '#'
-        std::getline(iss, value, '#');
+        // Trim both key and value
+        trim(key);
+        trim(value);
 
-        // Trim whitespace from value
-        size_t start = value.find_first_not_of(" \t");
-        size_t end = value.find_last_not_of(" \t");
-        if (start != std::string::npos) {
-            value = value.substr(start, end - start + 1);
-        } else {
-            value.clear();
+        if (key.empty()) {
+            std::cerr << "Error reading input: Empty key in line: " << line << std::endl;
+            return false;
         }
 
         // Assign values to corresponding variables
@@ -53,10 +75,11 @@ bool input_read::readInputFile() {
             // check if there is a saved file with the same name
             std::ifstream f0(this->output_path);
             if (f0.is_open()) {
-                std::cerr << "Warning: File " << this->output_path << " already exists. Please, change your output file name to avoid overwriting your data." << std::endl;
+                std::cerr << "Warning: File " << this->output_path
+                          << " already exists. Please, change your output file name to avoid overwriting your data."
+                          << std::endl;
                 return false;
             }
-            f0.close();
         } else if (key == "num_threads") {
             this->num_threads = std::stoi(value);
         } else if (key == "plate") {
@@ -72,7 +95,7 @@ bool input_read::readInputFile() {
         } else if (key == "gridMax") {
             this->gridMax = std::stod(value);
         } else {
-            std::cerr << "Error: Unknown key: " << key << std::endl;
+            std::cerr << "Error reading input: Unknown key: " << key << std::endl;
         }
     }
 

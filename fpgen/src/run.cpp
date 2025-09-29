@@ -4,7 +4,7 @@
 
 int main() {
     // read params from input file
-    std::string pathsFile = "fp_input.txt";
+    std::string pathsFile = "fpgen_input.txt";
 
     std::cout << "\nReading input file..."
               << std::endl;

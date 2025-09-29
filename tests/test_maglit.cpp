@@ -2,7 +2,6 @@
 #include "sode.h"
 #include <cstring>
 #include <gtest/gtest.h>
-#include <iostream>
 
 // Test fixture for maglit functionality
 class MaglitTest : public ::testing::Test {
