@@ -116,7 +116,7 @@ def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet",
         fsize=(figsize[0]*sizef, figsize[1]*sizef)
         plt.figure(figsize=fsize, dpi=dpi)
         plt.imshow(z_psi, cmap=cmap, extent=[0, 360, np.min(y), np.max(y)], origin='lower', aspect='auto')
-        plt.colorbar().set_label(r'$\psi_{n\,\,\mathrm{min}}$')
+        plt.colorbar().set_label(r'$\psi_{N\,\,\mathrm{min}}$')
         if xaxis == "rad":
             plt.gca().xaxis.set_major_formatter(FuncFormatter(degrees_to_radians))
             plt.xlabel("$\phi$ ( rad )")
@@ -154,7 +154,7 @@ def plot_fp(filename=None, plate="h", which_plot="all", xaxis="rad", cmap="jet",
         fsize=(figsize[0]*sizef, figsize[1]*sizef)
         plt.figure(figsize=fsize, dpi=dpi)
         plt.imshow(z_norm, cmap=cmap_f, extent=[0, 360, np.min(y), np.max(y)], origin='lower', aspect='auto', vmin=0, vmax=1)
-        plt.colorbar().set_label('$( \psi_{n\,\,\mathrm{min}}$ . connection length ) $^{-1}_\mathrm{norm}$') 
+        plt.colorbar().set_label('$( \psi_{N\,\,\mathrm{min}}$ . connection length ) $^{-1}_\mathrm{norm}$') 
         if xaxis == "rad":
             plt.gca().xaxis.set_major_formatter(FuncFormatter(degrees_to_radians))
             plt.xlabel("$\phi$ ( rad )")
