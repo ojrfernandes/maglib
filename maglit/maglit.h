@@ -2,9 +2,9 @@
 #define MAGLIT_H
 #define MAGLIT_V 241119 // version (yy.mm.dd)
 
-#include <sode.h>
-#include <functional>
 #include "fusion_io.h"
+#include "sode.h"
+#include <functional>
 #include <iostream>
 
 class maglit {
@@ -55,21 +55,21 @@ class maglit {
     }
 
     // public variables
-    std::function<bool(double, double, double, void *)> inside; // generic function for "inside" logic
-    void *aux;                                                  // void pointer to auxiliary class
-    int inv_factor = 1;                                         // factor for inverse map
+    std::function<bool(double, double, double, void *)> inside;         // generic function for "inside" logic
+    void                                               *aux;            // void pointer to auxiliary class
+    int                                                 inv_factor = 1; // factor for inverse map
 
   private:
-    bool verb = false;     // verbose mode
-    bool warnings = false; // warning mode
-    fio_source *src;       // fusion-io data source
-    fio_field *mag_field;  // fusion-io magnetic field
-    fio_field *psin_field; // fusion-io normalized poloidal flux
-    fio_field *psi_field;  // fusion-io poloidal flux
-    fio_option_list opt;   // fusion-io field options
-    sode solver;           // solver for the dynamical system
-    fio_hint hint;         // fusion-io hint for finite element search
-    double x[2];           // auxiliary orbit variable
+    bool            verb = false;     // verbose mode
+    bool            warnings = false; // warning mode
+    fio_source     *src;              // fusion-io data source
+    fio_field      *mag_field;        // fusion-io magnetic field
+    fio_field      *psin_field;       // fusion-io normalized poloidal flux
+    fio_field      *psi_field;        // fusion-io poloidal flux
+    fio_option_list opt;              // fusion-io field options
+    sode            solver;           // solver for the dynamical system
+    fio_hint        hint;             // fusion-io hint for finite element search
+    double          x[2];             // auxiliary orbit variable
 };
 
 // map of dynamical system x: (R,z); t: phi

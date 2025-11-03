@@ -4,11 +4,12 @@ add_library(maglit STATIC
     maglit.h
     collider.cpp
     collider.h
+    sode.cpp
+    sode.h
 )
 
 # Link dependencies
-target_link_libraries(maglit 
-    PUBLIC sode                          
+target_link_libraries(maglit                          
     PRIVATE ${HDF5_LIBRARIES}           
             ${FUSION_IO_LIB_DIR}/libfusionio.so  
             ${FUSION_IO_LIB_DIR}/libm3dc1.so    

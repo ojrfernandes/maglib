@@ -101,7 +101,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
 
 # Include subdirectories
 add_subdirectory(maglit)
-add_subdirectory(sode)
 add_subdirectory(fpgen)
 add_subdirectory(mfgen)
 add_subdirectory(lbmap)

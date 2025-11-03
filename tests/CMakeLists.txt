@@ -4,12 +4,12 @@
 add_executable(test_sode test_sode.cpp)
 target_link_libraries(test_sode 
     PRIVATE 
-    sode
+    maglit
     ${GTEST_MAIN_LIBRARIES}
     ${GTEST_LIBRARIES}
 )
 target_include_directories(test_sode PRIVATE
-    ${CMAKE_SOURCE_DIR}/sode
+    ${CMAKE_SOURCE_DIR}/maglit
 )
 
 # Test for collider class in maglit library
@@ -29,14 +29,12 @@ add_executable(test_maglit test_maglit.cpp)
 target_link_libraries(test_maglit 
     PRIVATE 
     maglit
-    sode
     ${GTEST_MAIN_LIBRARIES}
     ${GTEST_LIBRARIES}
     ${HDF5_LIBRARIES}
 )
 target_include_directories(test_maglit PRIVATE
     ${CMAKE_SOURCE_DIR}/maglit
-    ${CMAKE_SOURCE_DIR}/sode
     ${HDF5_INCLUDE_DIRS}
 )
 target_compile_definitions(test_maglit PRIVATE
@@ -53,7 +51,6 @@ add_executable(test_fpgen
 target_link_libraries(test_fpgen 
     PRIVATE 
     maglit
-    sode
     ${GTEST_MAIN_LIBRARIES}
     ${GTEST_LIBRARIES}
     ${HDF5_LIBRARIES}
@@ -61,7 +58,6 @@ target_link_libraries(test_fpgen
 )
 target_include_directories(test_fpgen PRIVATE
     ${CMAKE_SOURCE_DIR}/maglit
-    ${CMAKE_SOURCE_DIR}/sode
     ${HDF5_INCLUDE_DIRS}
 )
 
