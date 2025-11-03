@@ -34,6 +34,8 @@ class sode {
     void set_system(int (*system)(double *f, double *x, double t, void *aux));
     // function to detect user defined changes in the orbit
     void set_monitor(bool (*monitor)(double *x, double t, void *aux));
+    // set auxiliary pointer for the monitor
+    void set_aux(void *aux);
     // run before computing new orbits
     void reset();
     // evolve iteratively system up to t_end or up to a change in monitor
@@ -43,7 +45,7 @@ class sode {
     void set_verb();
 
   private:
-    int dim; // the dimension of the dynamical system
+    int  dim; // the dimension of the dynamical system
     bool verb;
 
     double h_init;  // initial stepsize when begining orbit
@@ -54,19 +56,20 @@ class sode {
     double tol_mon; // tolerance on the location of monitor change
     double damp;    // stepsize damping
 
-    int (*system)(double *f, double *x, double t, void *aux);
-    bool (*monitor)(double *x, double t, void *aux);
+    int (*system)(double *f, double *x, double t, void *aux) = nullptr;
+    bool (*monitor)(double *x, double t, void *aux) = nullptr;
+    void *monitor_aux = nullptr;
 
-    sode_type type; // integration method
-    int q;          // consistency order, err is O(h^p)
-    int s;          // the number of steps in the procedure
-    double h;       // current step-size
-    bool bisecting; // true if currently bisecting event
-    double **k;     // the k's of the integration routine
-    double **a;     // the a's in the Butcher table
-    double *c;      // the c's in the Butcher table
-    double *b1;     // the higher order b's
-    double *b2;     // the lower order b's
+    sode_type type;      // integration method
+    int       q;         // consistency order, err is O(h^p)
+    int       s;         // the number of steps in the procedure
+    double    h;         // current step-size
+    bool      bisecting; // true if currently bisecting event
+    double  **k;         // the k's of the integration routine
+    double  **a;         // the a's in the Butcher table
+    double   *c;         // the c's in the Butcher table
+    double   *b1;        // the higher order b's
+    double   *b2;        // the lower order b's
 
     double *x0; // auxiliary vector
     double *x1; // higher order solution

@@ -16,6 +16,7 @@ class ColliderTest : public ::testing::Test {
         circle_shape_file = test_dir + "/circle_shape.txt";
         invalid_shape_file = test_dir + "/invalid_shape.txt";
         reversed_square_shape_file = test_dir + "/reversed_square_shape.txt";
+        tcabr_shape_file = test_dir + "/tcabr_shape.txt";
 
         createShapeFiles();
     }
@@ -30,6 +31,7 @@ class ColliderTest : public ::testing::Test {
     std::string circle_shape_file;
     std::string invalid_shape_file;
     std::string reversed_square_shape_file;
+    std::string tcabr_shape_file;
 
     void createShapeFiles() {
         // Create a square shape (0 to 1 in both R and Z)
@@ -65,6 +67,78 @@ class ColliderTest : public ::testing::Test {
         reversed << "1.0 1.0\n";
         reversed << "0.0 0.0\n";
         reversed.close();
+
+        // Create TCABR shape file
+        std::ofstream tcabr(tcabr_shape_file);
+        tcabr << "4.3500000e-01  -0.0000000e+00\n";
+        tcabr << "4.3500000e-01  -2.4000000e-02\n";
+        tcabr << "4.3500000e-01  -4.8000000e-02\n";
+        tcabr << "4.3500000e-01  -7.2000000e-02\n";
+        tcabr << "4.3500000e-01  -9.6000000e-02\n";
+        tcabr << "4.3500000e-01  -1.2000000e-01\n";
+        tcabr << "4.3500000e-01  -1.4400000e-01\n";
+        tcabr << "4.3500000e-01  -1.6800000e-01\n";
+        tcabr << "4.3500000e-01  -1.9200000e-01\n";
+        tcabr << "4.3500000e-01  -2.4000000e-01\n";
+        tcabr << "4.8800000e-01  -2.4000000e-01\n";
+        tcabr << "5.1450000e-01  -2.4000000e-01\n";
+        tcabr << "5.4100000e-01  -2.4000000e-01\n";
+        tcabr << "5.6750000e-01  -2.4000000e-01\n";
+        tcabr << "5.9400000e-01  -2.4000000e-01\n";
+        tcabr << "6.2050000e-01  -2.4000000e-01\n";
+        tcabr << "6.4700000e-01  -2.4000000e-01\n";
+        tcabr << "6.7040000e-01  -2.3780000e-01\n";
+        tcabr << "6.9070000e-01  -2.3340000e-01\n";
+        tcabr << "7.0790000e-01  -2.2680000e-01\n";
+        tcabr << "7.2200000e-01  -2.1800000e-01\n";
+        tcabr << "7.3300000e-01  -2.0700000e-01\n";
+        tcabr << "7.4400000e-01  -1.9600000e-01\n";
+        tcabr << "7.5500000e-01  -1.8500000e-01\n";
+        tcabr << "7.6600000e-01  -1.7400000e-01\n";
+        tcabr << "7.7700000e-01  -1.6300000e-01\n";
+        tcabr << "7.8800000e-01  -1.5200000e-01\n";
+        tcabr << "7.9680000e-01  -1.3800000e-01\n";
+        tcabr << "8.0340000e-01  -1.2100000e-01\n";
+        tcabr << "8.0780000e-01  -1.0100000e-01\n";
+        tcabr << "8.1000000e-01  -7.8000000e-02\n";
+        tcabr << "8.1000000e-01  -5.2000000e-02\n";
+        tcabr << "8.1000000e-01  -2.6000000e-02\n";
+        tcabr << "8.1000000e-01   0.0000000e+00\n";
+        tcabr << "8.1000000e-01   2.6000000e-02\n";
+        tcabr << "8.1000000e-01   5.2000000e-02\n";
+        tcabr << "8.1000000e-01   7.8000000e-02\n";
+        tcabr << "8.0780000e-01   1.0100000e-01\n";
+        tcabr << "8.0340000e-01   1.2100000e-01\n";
+        tcabr << "7.9680000e-01   1.3800000e-01\n";
+        tcabr << "7.8800000e-01   1.5200000e-01\n";
+        tcabr << "7.7700000e-01   1.6300000e-01\n";
+        tcabr << "7.6600000e-01   1.7400000e-01\n";
+        tcabr << "7.5500000e-01   1.8500000e-01\n";
+        tcabr << "7.4400000e-01   1.9600000e-01\n";
+        tcabr << "7.3300000e-01   2.0700000e-01\n";
+        tcabr << "7.2200000e-01   2.1800000e-01\n";
+        tcabr << "7.0790000e-01   2.2680000e-01\n";
+        tcabr << "6.9070000e-01   2.3340000e-01\n";
+        tcabr << "6.7040000e-01   2.3780000e-01\n";
+        tcabr << "6.4700000e-01   2.4000000e-01\n";
+        tcabr << "6.2050000e-01   2.4000000e-01\n";
+        tcabr << "5.9400000e-01   2.4000000e-01\n";
+        tcabr << "5.6750000e-01   2.4000000e-01\n";
+        tcabr << "5.4100000e-01   2.4000000e-01\n";
+        tcabr << "5.1450000e-01   2.4000000e-01\n";
+        tcabr << "4.8800000e-01   2.4000000e-01\n";
+        tcabr << "4.6680000e-01   2.3520000e-01\n";
+        tcabr << "4.5090000e-01   2.2560000e-01\n";
+        tcabr << "4.4030000e-01   2.1120000e-01\n";
+        tcabr << "4.3500000e-01   1.9200000e-01\n";
+        tcabr << "4.3500000e-01   1.6800000e-01\n";
+        tcabr << "4.3500000e-01   1.4400000e-01\n";
+        tcabr << "4.3500000e-01   1.2000000e-01\n";
+        tcabr << "4.3500000e-01   9.6000000e-02\n";
+        tcabr << "4.3500000e-01   7.2000000e-02\n";
+        tcabr << "4.3500000e-01   4.8000000e-02\n";
+        tcabr << "4.3500000e-01   2.4000000e-02\n";
+        tcabr.close();
     }
 };
 
@@ -78,7 +152,8 @@ TEST_F(ColliderTest, Collider_DefaultConstructor) {
 // Test: Load valid square shape
 TEST_F(ColliderTest, Collider_LoadSquareShape) {
     collider square_shape;
-    square_shape.load_shape(square_shape_file);
+    bool     result = square_shape.load_shape(square_shape_file);
+    EXPECT_TRUE(result);
     EXPECT_TRUE(square_shape.is_loaded());
     EXPECT_EQ(square_shape.get_vertices().size(), 4);
 }
@@ -86,7 +161,8 @@ TEST_F(ColliderTest, Collider_LoadSquareShape) {
 // Test: Load valid circle shape
 TEST_F(ColliderTest, Collider_LoadCircleShape) {
     collider circle_shape;
-    circle_shape.load_shape(circle_shape_file);
+    bool     result = circle_shape.load_shape(circle_shape_file);
+    EXPECT_TRUE(result);
     EXPECT_TRUE(circle_shape.is_loaded());
     EXPECT_EQ(circle_shape.get_vertices().size(), 8);
 }
@@ -94,14 +170,15 @@ TEST_F(ColliderTest, Collider_LoadCircleShape) {
 // Test: Load invalid shape
 TEST_F(ColliderTest, Collider_LoadInvalidShape) {
     collider invalid_shape;
-    invalid_shape.load_shape(invalid_shape_file);
-    EXPECT_FALSE(invalid_shape.is_loaded());
+    bool     result = invalid_shape.load_shape(invalid_shape_file);
+    EXPECT_FALSE(result);
 }
 
 // Test: Point inside square shape
 TEST_F(ColliderTest, Collider_PointInsideSquare) {
     collider square_shape;
-    square_shape.load_shape(square_shape_file);
+    bool     result = square_shape.load_shape(square_shape_file);
+    EXPECT_TRUE(result);
     EXPECT_TRUE(square_shape.inside(0.5, 0.5));  // Inside
     EXPECT_FALSE(square_shape.inside(1.5, 0.5)); // Outside
     EXPECT_TRUE(square_shape.inside(0.0, 0.5));  // On edge
@@ -110,7 +187,8 @@ TEST_F(ColliderTest, Collider_PointInsideSquare) {
 // Test: Point inside circle shape
 TEST_F(ColliderTest, Collider_PointInsideCircle) {
     collider circle_shape;
-    circle_shape.load_shape(circle_shape_file);
+    bool     result = circle_shape.load_shape(circle_shape_file);
+    EXPECT_TRUE(result);
     EXPECT_TRUE(circle_shape.inside(0.5, 0.5));  // Inside
     EXPECT_FALSE(circle_shape.inside(0.1, 0.1)); // Outside
     EXPECT_TRUE(circle_shape.inside(0.9, 0.5));  // On edge
@@ -125,9 +203,18 @@ TEST_F(ColliderTest, Collider_PointInsideWithoutLoading) {
 // Test: Reverse winding order shape
 TEST_F(ColliderTest, Collider_ReverseWindingOrder) {
     collider reversed_shape;
-    reversed_shape.load_shape(reversed_square_shape_file);
-    EXPECT_TRUE(reversed_shape.is_loaded());
+    bool     result = reversed_shape.load_shape(reversed_square_shape_file);
+    EXPECT_TRUE(result);
     EXPECT_EQ(reversed_shape.get_vertices().size(), 4);
     EXPECT_TRUE(reversed_shape.inside(0.5, 0.5));  // Inside
     EXPECT_FALSE(reversed_shape.inside(1.5, 0.5)); // Outside
+}
+
+// Test: Load TCABR shape
+TEST_F(ColliderTest, Collider_LoadTCABRShape) {
+    collider tcabr_shape;
+    bool     result = tcabr_shape.load_shape(tcabr_shape_file);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(tcabr_shape.is_loaded());
+    EXPECT_EQ(tcabr_shape.get_vertices().size(), 68);
 }

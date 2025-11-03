@@ -129,7 +129,7 @@ void maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
         return;
     }
     double x[3] = {R, Phi, Z};
-    bool result = psin_field->eval(x, psin, hint);
+    bool   result = psin_field->eval(x, psin, hint);
     if (result != FIO_SUCCESS && this->warnings) {
         std::cerr << "Fio psin field returned " << result << std::endl;
     }
@@ -144,7 +144,7 @@ void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
         return;
     }
     double x[3] = {R, Phi, Z};
-    bool result = psi_field->eval(x, psi, hint);
+    bool   result = psi_field->eval(x, psi, hint);
     if (result != FIO_SUCCESS && this->warnings) {
         std::cerr << "Fio psi field returned " << result << std::endl;
     }
@@ -153,8 +153,8 @@ void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
 // map of dynamical system x: (R,z); t: phi
 int mag_system(double *f, double *x, double t, void *mgl) {
     maglit *tracer = (maglit *)mgl;
-    double aux_x[3];
-    double aux_b[3];
+    double  aux_x[3];
+    double  aux_b[3];
     aux_x[0] = x[0];                                     // R
     aux_x[1] = t;                                        // phi
     aux_x[2] = x[1];                                     // z
@@ -168,9 +168,20 @@ int mag_system(double *f, double *x, double t, void *mgl) {
     }
 }
 
+// set monitor for boundary
+void maglit::set_monitor(const std::string &collider_path) {
+    if (!boundary.load_shape(collider_path)) {
+        std::cerr << "Error loading collider shape from " << collider_path << std::endl;
+        return;
+    }
+
+    solver.set_monitor(&maglit::monitor_boundary);
+    solver.set_aux(this);
+}
+
 // monitor for inside region of interest
-bool maglit::mag_monitor(double *x, double t, void *mgl) {
-    maglit *tracer = (maglit *)mgl;
+bool maglit::monitor_boundary(double *x, double t, void *mgl) {
+    maglit *self = static_cast<maglit *>(mgl);
     // x: (R,z); t: phi
-    return tracer->inside(x[0], x[1], t, tracer->aux);
+    return self->boundary.inside(x[0], x[1]);
 }

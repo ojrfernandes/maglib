@@ -6,7 +6,7 @@ footprint::footprint(const double &plate, const double &gridMin, const double &g
 
 void footprint::runGrid(maglit &tracer) {
     map_scalars scalars;
-    double R0, Z0;
+    double      R0, Z0;
 
     switch (plate) {
     case 0:
@@ -63,10 +63,10 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     R1 = R0;
     Z1 = Z0;
     phi1 = phi0;
-    int status;
-    double phi_max = 100 * 2 * M_PI;
-    double arc = 0;
-    double psin0 = 5.0;
+    int     status;
+    double  phi_max = 10000 * 2 * M_PI;
+    double  arc = 0;
+    double  psin0 = 5.0;
     double *psin1 = &psin0;
     scalars.psimin = *psin1;
     tracer.reset();

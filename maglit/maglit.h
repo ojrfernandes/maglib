@@ -2,10 +2,12 @@
 #define MAGLIT_H
 #define MAGLIT_V 241119 // version (yy.mm.dd)
 
+#include "collider.h"
 #include "fusion_io.h"
 #include "sode.h"
 #include <functional>
 #include <iostream>
+#include <string>
 
 class maglit {
   public:
@@ -40,24 +42,11 @@ class maglit {
     void psin_eval(double &R, double &Phi, double &Z, double *psin);
     // evaluate the poloidal flux
     void psi_eval(double &R, double &Phi, double &Z, double *psi);
-    // monitor for inside region of interest
-    static bool mag_monitor(double *x, double t, void *mgl);
+    // set monitor for inside region of interest
+    void set_monitor(const std::string &path);
 
-    // template function
-    // defines the inside region of interest
-    template <typename auxClass>
-    void set_inside(auxClass &aux, bool (auxClass::*inside)(double, double, double, void *)) {
-        this->aux = static_cast<void *>(&aux);
-        this->inside = [inside](double R, double Z, double phi, void *aux) {
-            return (static_cast<auxClass *>(aux)->*inside)(R, Z, phi, aux);
-        };
-        solver.set_monitor(mag_monitor);
-    }
-
-    // public variables
-    std::function<bool(double, double, double, void *)> inside;         // generic function for "inside" logic
-    void                                               *aux;            // void pointer to auxiliary class
-    int                                                 inv_factor = 1; // factor for inverse map
+    int      inv_factor = 1; // factor for inverse map
+    collider boundary;       // boundary to be monitored
 
   private:
     bool            verb = false;     // verbose mode
@@ -70,6 +59,8 @@ class maglit {
     sode            solver;           // solver for the dynamical system
     fio_hint        hint;             // fusion-io hint for finite element search
     double          x[2];             // auxiliary orbit variable
+
+    static bool monitor_boundary(double *x, double t, void *mgl);
 };
 
 // map of dynamical system x: (R,z); t: phi

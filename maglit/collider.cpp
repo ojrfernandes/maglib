@@ -1,11 +1,11 @@
 #include "collider.h"
 
-void collider::load_shape(const std::string &path) {
+bool collider::load_shape(const std::string &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Error: could not open file " << path << std::endl;
         loaded = false;
-        return;
+        return false;
     }
 
     vertices.clear();
@@ -18,10 +18,11 @@ void collider::load_shape(const std::string &path) {
     if (vertices.size() < 3) {
         std::cerr << "Error: vessel shape must have at least 3 vertices." << std::endl;
         loaded = false;
-        return;
+        return false;
     }
 
     loaded = true;
+    return true;
 }
 
 bool collider::inside(double R, double Z) const {

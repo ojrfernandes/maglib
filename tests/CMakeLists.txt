@@ -45,7 +45,6 @@ target_compile_definitions(test_maglit PRIVATE
 add_executable(test_fpgen
     test_fpgen.cpp
     ${CMAKE_SOURCE_DIR}/fpgen/src/input_read.cpp
-    ${CMAKE_SOURCE_DIR}/fpgen/src/tcabr_collider.cpp
     ${CMAKE_SOURCE_DIR}/fpgen/src/footprint.cpp)
     
 target_link_libraries(test_fpgen 

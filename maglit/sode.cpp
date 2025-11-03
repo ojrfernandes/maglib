@@ -77,6 +77,11 @@ void sode::set_monitor(bool (*monitor)(double *x, double t, void *aux)) {
     this->monitor = monitor;
 }
 
+// set auxiliary pointer for the monitor
+void sode::set_aux(void *aux) {
+    this->monitor_aux = aux;
+}
+
 // reset integrator (run before computing new orbits)
 void sode::reset() {
     this->h = h_min;
@@ -85,6 +90,8 @@ void sode::reset() {
 
 // evolve iteratively system up to t_end or up to a change in monitor
 int sode::evolve(double *x, double *t, double t_end, int chg_mon, void *aux) {
+    if (aux == nullptr)
+        aux = this->monitor_aux;
     if (verb)
         printf("sode::evolve\n");
     int status = calc_ks(x, *t, aux);
@@ -193,6 +200,8 @@ void sode::set_verb() {
 
 // calculate the k's for the runge-kutta method
 int sode::calc_ks(double *x, double t, void *aux) {
+    if (aux == nullptr)
+        aux = this->monitor_aux;
     int status = 0;
     for (int i = 0; i < s; i++) {
         vector_copy(x0, x, dim);

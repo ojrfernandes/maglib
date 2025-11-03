@@ -5,7 +5,6 @@
 
 // Include the fpgen headers
 #include "../fpgen/src/input_read.h"
-// #include "../fpgen/src/tcabr_collider.h"
 // #include "../fpgen/src/footprint.h"
 
 // Test fixture for maglit functionality
@@ -26,13 +25,6 @@ class FpgenTest : public ::testing::Test {
         empty_input_file = test_dir + "/empty_input.txt";
 
         createInvalidInputFiles();
-
-        // // Create shape files for collider tests
-        // square_shape_file = test_dir + "/square_shape.txt";
-        // circle_shape_file = test_dir + "/circle_shape.txt";
-        // invalid_shape_file = test_dir + "/invalid_shape.txt";
-
-        // createShapeFiles();
     }
 
     void TearDown() override {
@@ -82,47 +74,12 @@ class FpgenTest : public ::testing::Test {
         empty_file.close();
     }
 
-    // void createShapeFiles() {
-    //     // Create a square shape (0 to 1 in both R and Z)
-    //     std::ofstream square(square_shape_file);
-    //     square << "4\n"; // 4 vertices
-    //     square << "0.0 0.0\n";
-    //     square << "1.0 0.0\n";
-    //     square << "1.0 1.0\n";
-    //     square << "0.0 1.0\n";
-    //     square.close();
-
-    //     // Create an approximate circle (octagon) centered at (0.5, 0.5) with radius 0.4
-    //     std::ofstream circle(circle_shape_file);
-    //     circle << "8\n"; // 8 vertices
-    //     double cx = 0.5, cz = 0.5, radius = 0.4;
-    //     for (int i = 0; i < 8; i++) {
-    //         double angle = 2.0 * M_PI * i / 8.0;
-    //         double r = cx + radius * cos(angle);
-    //         double z = cz + radius * sin(angle);
-    //         circle << r << " " << z << "\n";
-    //     }
-    //     circle.close();
-
-    //     // Create invalid shape file
-    //     std::ofstream invalid(invalid_shape_file);
-    //     invalid << "3\n"; // Says 3 vertices
-    //     invalid << "0.0 0.0\n";
-    //     invalid << "1.0 0.0\n";
-    //     // Missing third vertex
-    //     invalid.close();
-    // }
-
     std::string test_dir;
     std::string valid_input_file;
     std::string invalid_input_file;
     std::string malformed_input_file;
     std::string empty_input_file;
     std::string nonexistent_file = "nonexistent_file.txt";
-
-    // std::string square_shape_file;
-    // std::string circle_shape_file;
-    // std::string invalid_shape_file;
 };
 
 // ==================== INPUT_READ TESTS ====================/
@@ -130,7 +87,7 @@ class FpgenTest : public ::testing::Test {
 // Test: Valid input file parsing
 TEST_F(FpgenTest, InputRead_ValidFile) {
     input_read reader(valid_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_TRUE(result) << "Should successfully read valid input file";
 
@@ -152,7 +109,7 @@ TEST_F(FpgenTest, InputRead_ValidFile) {
 // Test: Constructor initializes reading_path correctly
 TEST_F(FpgenTest, InputRead_Constructor) {
     std::string test_path = "test_path.txt";
-    input_read reader(test_path);
+    input_read  reader(test_path);
 
     // We can't directly access reading_path (it's private),
     // but we can test that the constructor doesn't crash
@@ -162,7 +119,7 @@ TEST_F(FpgenTest, InputRead_Constructor) {
 // Test: Nonexistent file handling
 TEST_F(FpgenTest, InputRead_NonexistentFile) {
     input_read reader(nonexistent_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for nonexistent file";
 }
@@ -170,7 +127,7 @@ TEST_F(FpgenTest, InputRead_NonexistentFile) {
 // Test: Empty file handling
 TEST_F(FpgenTest, InputRead_EmptyFile) {
     input_read reader(empty_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for empty file";
 }
@@ -178,14 +135,14 @@ TEST_F(FpgenTest, InputRead_EmptyFile) {
 // Test: File with malformed syntax
 TEST_F(FpgenTest, InputRead_MalformedSyntax) {
     input_read reader(malformed_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for malformed input file";
 }
 
 // Test: Edge case values
 TEST_F(FpgenTest, InputRead_EdgeCaseValues) {
-    std::string edge_case_file = test_dir + "/edge_case.txt";
+    std::string   edge_case_file = test_dir + "/edge_case.txt";
     std::ofstream file(edge_case_file);
     file << "source_path = \n" // Empty string
          << "shape_path = a\n" // Single character
@@ -200,7 +157,7 @@ TEST_F(FpgenTest, InputRead_EdgeCaseValues) {
     file.close();
 
     input_read reader(edge_case_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     if (result) {
         // If parsing succeeded, check the values
@@ -220,7 +177,7 @@ TEST_F(FpgenTest, InputRead_EdgeCaseValues) {
 
 // Test: Comments and whitespace handling
 TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
-    std::string whitespace_file = test_dir + "/whitespace_test.txt";
+    std::string   whitespace_file = test_dir + "/whitespace_test.txt";
     std::ofstream file(whitespace_file);
     file << "# This is a comment line\n"
          << "\n" // Empty line
@@ -238,7 +195,7 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
     file.close();
 
     input_read reader(whitespace_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_TRUE(result) << "Should handle comments and whitespace correctly";
 
@@ -254,7 +211,7 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
 // Test: Parameter validation (if the class does validation)
 TEST_F(FpgenTest, InputRead_ParameterValidation) {
     // Test logical constraints
-    std::string constraint_file = test_dir + "/constraint_test.txt";
+    std::string   constraint_file = test_dir + "/constraint_test.txt";
     std::ofstream file(constraint_file);
     file << "source_path = test.h5\n"
          << "shape_path = test.txt\n"
@@ -269,7 +226,7 @@ TEST_F(FpgenTest, InputRead_ParameterValidation) {
     file.close();
 
     input_read reader(constraint_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     // The test should either:
     // 1. Accept the values as-is (no validation in parser)
@@ -294,7 +251,7 @@ TEST_F(FpgenTest, InputRead_MultipleReads) {
 
     // Store values from first read
     std::string first_source = reader.source_path;
-    int first_threads = reader.num_threads;
+    int         first_threads = reader.num_threads;
 
     // Second read should give same results
     bool result2 = reader.readInputFile();
@@ -302,155 +259,3 @@ TEST_F(FpgenTest, InputRead_MultipleReads) {
     EXPECT_EQ(reader.source_path, first_source);
     EXPECT_EQ(reader.num_threads, first_threads);
 }
-
-// // ==================== TCABR_SHAPE TESTS ====================
-
-// // Test: Default constructor
-// TEST_F(FpgenTest, TcabrShape_DefaultConstructor) {
-//     EXPECT_NO_THROW(tcabr_shape shape);
-// }
-
-// // Test: Constructor with valid shape file
-// TEST_F(FpgenTest, TcabrShape_ConstructorWithFile) {
-//     EXPECT_NO_THROW(tcabr_shape shape(square_shape_file));
-
-//     tcabr_shape shape(square_shape_file);
-//     // If construction succeeded, object should be usable
-//     EXPECT_TRUE(true);
-// }
-
-// // Test: Load square shape and test inside/outside detection
-// TEST_F(FpgenTest, TcabrShape_SquareInsideOutside) {
-//     tcabr_shape shape(square_shape_file);
-//     tcabr_shape *shape_ptr = &shape;
-
-//     // Points clearly inside the square [0,1]x[0,1]
-//     EXPECT_TRUE(shape.tcabr_inside(0.5, 0.5, 0.0, shape_ptr))
-//         << "Center point (0.5, 0.5) should be inside";
-//     EXPECT_TRUE(shape.tcabr_inside(0.25, 0.25, 0.0, shape_ptr))
-//         << "Point (0.25, 0.25) should be inside";
-//     EXPECT_TRUE(shape.tcabr_inside(0.75, 0.75, 0.0, shape_ptr))
-//         << "Point (0.75, 0.75) should be inside";
-
-//     // Points clearly outside
-//     EXPECT_FALSE(shape.tcabr_inside(1.5, 0.5, 0.0, shape_ptr))
-//         << "Point (1.5, 0.5) should be outside";
-//     EXPECT_FALSE(shape.tcabr_inside(0.5, 1.5, 0.0, shape_ptr))
-//         << "Point (0.5, 1.5) should be outside";
-//     EXPECT_FALSE(shape.tcabr_inside(-0.5, 0.5, 0.0, shape_ptr))
-//         << "Point (-0.5, 0.5) should be outside";
-//     EXPECT_FALSE(shape.tcabr_inside(0.5, -0.5, 0.0, shape_ptr))
-//         << "Point (0.5, -0.5) should be outside";
-// }
-
-// // Test: Boundary points (edge cases)
-// TEST_F(FpgenTest, TcabrShape_BoundaryPoints) {
-//     tcabr_shape shape(square_shape_file);
-//     tcabr_shape *shape_ptr = &shape;
-
-//     // Points on the edges - behavior depends on implementation
-//     // Testing that these don't crash and give consistent results
-//     EXPECT_NO_THROW(shape.tcabr_inside(0.0, 0.5, 0.0, shape_ptr));
-//     EXPECT_NO_THROW(shape.tcabr_inside(1.0, 0.5, 0.0, shape_ptr));
-//     EXPECT_NO_THROW(shape.tcabr_inside(0.5, 0.0, 0.0, shape_ptr));
-//     EXPECT_NO_THROW(shape.tcabr_inside(0.5, 1.0, 0.0, shape_ptr));
-
-//     // Vertices
-//     EXPECT_NO_THROW(shape.tcabr_inside(0.0, 0.0, 0.0, shape_ptr));
-//     EXPECT_NO_THROW(shape.tcabr_inside(1.0, 1.0, 0.0, shape_ptr));
-// }
-
-// // Test: Circular shape
-// TEST_F(FpgenTest, TcabrShape_CircularShape) {
-//     tcabr_shape shape(circle_shape_file);
-//     tcabr_shape *shape_ptr = &shape;
-
-//     // Center should be inside
-//     EXPECT_TRUE(shape.tcabr_inside(0.5, 0.5, 0.0, shape_ptr))
-//         << "Center (0.5, 0.5) should be inside circle";
-
-//     // Point near center should be inside
-//     EXPECT_TRUE(shape.tcabr_inside(0.6, 0.5, 0.0, shape_ptr))
-//         << "Point (0.6, 0.5) should be inside circle";
-
-//     // Point far from center should be outside
-//     EXPECT_FALSE(shape.tcabr_inside(1.5, 0.5, 0.0, shape_ptr))
-//         << "Point (1.5, 0.5) should be outside circle";
-//     EXPECT_FALSE(shape.tcabr_inside(0.5, 1.5, 0.0, shape_ptr))
-//         << "Point (0.5, 1.5) should be outside circle";
-// }
-
-// // Test: All quadrants around center
-// TEST_F(FpgenTest, TcabrShape_AllQuadrants) {
-//     tcabr_shape shape(square_shape_file);
-//     tcabr_shape *shape_ptr = &shape;
-
-//     // Test points in all four quadrants relative to center (0.5, 0.5)
-//     EXPECT_TRUE(shape.tcabr_inside(0.75, 0.75, 0.0, shape_ptr))
-//         << "Quadrant I should be inside";
-//     EXPECT_TRUE(shape.tcabr_inside(0.25, 0.75, 0.0, shape_ptr))
-//         << "Quadrant II should be inside";
-//     EXPECT_TRUE(shape.tcabr_inside(0.25, 0.25, 0.0, shape_ptr))
-//         << "Quadrant III should be inside";
-//     EXPECT_TRUE(shape.tcabr_inside(0.75, 0.25, 0.0, shape_ptr))
-//         << "Quadrant IV should be inside";
-// }
-
-// // Test: Phi parameter (should not affect 2D collision in poloidal plane)
-// TEST_F(FpgenTest, TcabrShape_PhiParameter) {
-//     tcabr_shape shape(square_shape_file);
-//     tcabr_shape *shape_ptr = &shape;
-
-//     // Same point with different phi values should give same result
-//     bool result1 = shape.tcabr_inside(0.5, 0.5, 0.0, shape_ptr);
-//     bool result2 = shape.tcabr_inside(0.5, 0.5, M_PI, shape_ptr);
-//     bool result3 = shape.tcabr_inside(0.5, 0.5, 2 * M_PI, shape_ptr);
-
-//     EXPECT_EQ(result1, result2) << "Phi should not affect result";
-//     EXPECT_EQ(result1, result3) << "Phi should not affect result";
-// }
-
-// // Test: Invalid shape file handling
-// TEST_F(FpgenTest, TcabrShape_InvalidFile) {
-//     // Constructor with invalid file should not crash
-//     EXPECT_NO_THROW(tcabr_shape shape(invalid_shape_file));
-
-//     // Constructor with nonexistent file should not crash
-//     EXPECT_NO_THROW(tcabr_shape shape(nonexistent_file));
-// }
-
-// // Test: Multiple collision checks
-// TEST_F(FpgenTest, TcabrShape_MultipleChecks) {
-//     tcabr_shape shape(square_shape_file);
-//     tcabr_shape *shape_ptr = &shape;
-
-//     // Perform many collision checks (tests index caching/searching)
-//     for (int i = 0; i < 100; i++) {
-//         double r = 0.5 + 0.3 * cos(i * 0.1);
-//         double z = 0.5 + 0.3 * sin(i * 0.1);
-
-//         // All these points should be inside (circle of radius 0.3 around center)
-//         EXPECT_TRUE(shape.tcabr_inside(r, z, 0.0, shape_ptr))
-//             << "Point (" << r << ", " << z << ") should be inside";
-//     }
-// }
-
-// // Test: Extreme coordinates
-// TEST_F(FpgenTest, TcabrShape_ExtremeCoordinates) {
-//     tcabr_shape shape(square_shape_file);
-//     tcabr_shape *shape_ptr = &shape;
-
-//     // Very far points
-//     EXPECT_FALSE(shape.tcabr_inside(1000.0, 0.5, 0.0, shape_ptr));
-//     EXPECT_FALSE(shape.tcabr_inside(-1000.0, 0.5, 0.0, shape_ptr));
-//     EXPECT_FALSE(shape.tcabr_inside(0.5, 1000.0, 0.0, shape_ptr));
-//     EXPECT_FALSE(shape.tcabr_inside(0.5, -1000.0, 0.0, shape_ptr));
-
-//     // Very close to center
-//     EXPECT_TRUE(shape.tcabr_inside(0.50001, 0.50001, 0.0, shape_ptr));
-// }
-
-// // Basic compilation test
-// TEST(FpgenSimpleTest, CanIncludeHeaders) {
-//     EXPECT_TRUE(true);
-// }

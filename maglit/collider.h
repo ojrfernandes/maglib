@@ -15,7 +15,7 @@ class collider {
     collider() = default;
 
     // load (R,Z) vessel vertices from file
-    void load_shape(const std::string &path);
+    bool load_shape(const std::string &path);
 
     // check if a point (R,Z) is inside the vessel
     bool inside(double R, double Z) const;

@@ -1,6 +1,5 @@
 #include "footprint.h"
 #include "input_read.h"
-#include "tcabr_collider.h"
 
 int main() {
     // read params from input file
@@ -9,14 +8,11 @@ int main() {
     std::cout << "\nReading input file..."
               << std::endl;
     input_read input(pathsFile);
-    bool readStatus = input.readInputFile();
+    bool       readStatus = input.readInputFile();
     if (!readStatus) {
         std::cerr << "Error reading input file." << std::endl;
         return 1;
     }
-
-    // initialize shape object
-    tcabr_shape shape(input.shape_path);
 
     std::cout << "\nInput parameters:" << std::endl;
     std::cout << "source_path: " << input.source_path << std::endl;
@@ -52,7 +48,7 @@ int main() {
         // Construct a maglit object directly in the vector
         tracer.emplace_back(input.source_path.c_str(), FIO_M3DC1_SOURCE, input.timeslice);
         // Configure the newly created maglit object
-        tracer.back().set_inside(shape, &tcabr_shape::tcabr_inside);
+        tracer.back().set_monitor(input.shape_path);
         tracer.back().configure(0.01, 1e-5, 0.2);
     }
 
