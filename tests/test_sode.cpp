@@ -60,6 +60,8 @@ class SodeTest : public ::testing::Test {
     }
 };
 
+// ==================== SODE TESTS ====================
+
 // Test basic constructor and configuration
 TEST_F(SodeTest, ConstructorAndConfiguration) {
     // Test for solver types
@@ -112,10 +114,10 @@ TEST_F(SodeTest, SimpleHarmonicOscillator) {
     solver.configure(1e-3, 1e-6, 1e-1);
     solver.configure(1e-10, 1e-12, 1e-12, 0.9);
 
-    sho_params params = {1.0}; // omega = 1
-    double x[2] = {1.0, 0.0};  // Initial: x=1, v=0
-    double t = 0.0;            // Initial time
-    double t_end = 2 * M_PI;   // One full period
+    sho_params params = {1.0};    // omega = 1
+    double     x[2] = {1.0, 0.0}; // Initial: x=1, v=0
+    double     t = 0.0;           // Initial time
+    double     t_end = 2 * M_PI;  // One full period
 
     // E = 0.5*(m*v^2 + k*x^2) = 0.5*(v^2 + omega^2*x^2)
     double initial_energy = 0.5 * (x[1] * x[1] + params.omega * params.omega * x[0] * x[0]);
@@ -143,9 +145,9 @@ TEST_F(SodeTest, LorenzSystemStability) {
     solver.configure(1e-10, 1e-12, 1e-12, 0.9);
 
     lorenz_params params = {10.0, 28.0, 8.0 / 3.0}; // Parameters: sigma, rho, beta
-    double x[3] = {0.1, 0.1, 0.1};                  // Initial condition
-    double t = 0.0;                                 // Initial time
-    double t_end = 10.0;                            // Evolve for some time
+    double        x[3] = {0.1, 0.1, 0.1};           // Initial condition
+    double        t = 0.0;                          // Initial time
+    double        t_end = 10.0;                     // Evolve for some time
 
     solver.reset();
     int status = SODE_CONTINUE_GOOD_STEP;
@@ -168,10 +170,10 @@ TEST_F(SodeTest, EventDetection) {
     solver.configure(1e-3, 1e-6, 1e-1);
     solver.configure(1e-10, 1e-12, 1e-12, 0.9);
 
-    sho_params params = {1.0}; // omega = 1
-    double x[2] = {1.0, 0.0};  // Start at x=1 (monitor = true)
-    double t = 0.0;
-    double t_end = 10.0;
+    sho_params params = {1.0};    // omega = 1
+    double     x[2] = {1.0, 0.0}; // Start at x=1 (monitor = true)
+    double     t = 0.0;
+    double     t_end = 10.0;
 
     solver.reset();
     int status = SODE_CONTINUE_GOOD_STEP;
@@ -188,10 +190,10 @@ TEST_F(SodeTest, EventDetection) {
 // Test different solver types give similar results
 TEST_F(SodeTest, SolverConsistency) {
     lorenz_params params = {10.0, 28.0, 8.0 / 3.0};
-    double t_end = 1.0;
+    double        t_end = 1.0;
 
     // Solve with different methods
-    std::vector<sode_type> solvers = {SODE_RK56_FB, SODE_RK56_CK, SODE_RK78_DP};
+    std::vector<sode_type>           solvers = {SODE_RK56_FB, SODE_RK56_CK, SODE_RK78_DP};
     std::vector<std::vector<double>> results;
 
     for (auto solver_type : solvers) {

@@ -2,6 +2,8 @@
 add_library(maglit STATIC 
     maglit.cpp
     maglit.h
+    collider.cpp
+    collider.h
 )
 
 # Link dependencies

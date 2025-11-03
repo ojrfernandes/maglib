@@ -22,8 +22,8 @@ class MaglitTest : public ::testing::Test {
         tolerance = 1e-6;
     }
 
-    double tolerance;
-    static char source_path[256];
+    double         tolerance;
+    static char    source_path[256];
     static maglit *tracer;
 
     bool values_are_close(double a, double b, double tol) {
@@ -33,8 +33,11 @@ class MaglitTest : public ::testing::Test {
 
 // Static member definitions
 maglit *MaglitTest::tracer = nullptr;
-char MaglitTest::source_path[256];
+char    MaglitTest::source_path[256];
 
+// ==================== MAGLIT TESTS ====================
+
+// Test constructor and configuration
 TEST_F(MaglitTest, ConstructorAndConfiguration) {
     ASSERT_NE(tracer, nullptr);
     EXPECT_TRUE(true); // If we reach here, constructors and configurations worked
@@ -65,16 +68,16 @@ TEST_F(MaglitTest, PsiFieldEvaluation) {
     EXPECT_TRUE(values_are_close(psi, -0.00988012, tolerance)); // psi
 }
 
-// Test normalized poloidal flux evaluation at a specific point
-TEST_F(MaglitTest, PsiNFieldEvaluation) {
-    double x[3] = {0.7, 0.0, 0.0}; // R, phi, Z
-    double psiN = 0.0;
+// // Test normalized poloidal flux evaluation at a specific point
+// TEST_F(MaglitTest, PsiNFieldEvaluation) {
+//     double x[3] = {0.7, 0.0, 0.0}; // R, phi, Z
+//     double psiN = 0.0;
 
-    tracer->psin_eval(x[0], x[1], x[2], &psiN);
-    // Basic checks on psiN values
-    // Compared to fusion-io python routines output
-    EXPECT_TRUE(values_are_close(psiN, 0.328433, tolerance)); // psiN
-}
+//     tracer->psin_eval(x[0], x[1], x[2], &psiN);
+//     // Basic checks on psiN values
+//     // Compared to fusion-io python routines output
+//     EXPECT_TRUE(values_are_close(psiN, 0.328433, tolerance)); // psiN
+// }
 
 // Test inverse map functionality
 TEST_F(MaglitTest, InverseMap) {

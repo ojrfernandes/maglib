@@ -12,6 +12,18 @@ target_include_directories(test_sode PRIVATE
     ${CMAKE_SOURCE_DIR}/sode
 )
 
+# Test for collider class in maglit library
+add_executable(test_collider test_collider.cpp)
+target_link_libraries(test_collider 
+    PRIVATE
+    maglit
+    ${GTEST_MAIN_LIBRARIES}
+    ${GTEST_LIBRARIES}
+)
+target_include_directories(test_collider PRIVATE
+    ${CMAKE_SOURCE_DIR}/maglit
+)
+
 # Test for maglit library
 add_executable(test_maglit test_maglit.cpp)
 target_link_libraries(test_maglit 
@@ -55,5 +67,6 @@ target_include_directories(test_fpgen PRIVATE
 
 # Register tests with CTest
 add_test(NAME SodeTests COMMAND test_sode)
+add_test(NAME ColliderTests COMMAND test_collider)
 add_test(NAME MaglitTests COMMAND test_maglit)
 add_test(NAME FpgenTests COMMAND test_fpgen)
