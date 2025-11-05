@@ -35,7 +35,7 @@ int main() {
     omp_set_num_threads(input.num_threads);
 
     if (input.num_threads > 1) {
-        std::cout << "\nA maglit object must be created for each thread. \nYou shall see the same messages printed a number of times. \nThis may take some time. \n\nDON'T PANIC"
+        std::cout << "\nA maglit object must be created for each thread. \nYou shall see the same messages printed a number of times. \n\nThis may take some time. \n\nDON'T PANIC"
                   << std::endl;
     } else {
         std::cout << "\nCreating maglit object...\n"

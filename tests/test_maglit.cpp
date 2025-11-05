@@ -1,7 +1,8 @@
-#include "maglit.h"
-#include "sode.h"
 #include <cstring>
 #include <gtest/gtest.h>
+
+// Include the maglit header
+#include "../maglit/maglit.h"
 
 // Test fixture for maglit functionality
 class MaglitTest : public ::testing::Test {
@@ -9,6 +10,7 @@ class MaglitTest : public ::testing::Test {
     static void SetUpTestSuite() {
         std::snprintf(source_path, sizeof(source_path),
                       "%s/C1.h5", TEST_DATA_DIR);
+        shape_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
         tracer_vac = new maglit(source_path, FIO_M3DC1_SOURCE, -1);
         tracer_vac->configure(0.01, 1e-6, 0.1);
         tracer_resp = new maglit(source_path, FIO_M3DC1_SOURCE, 1);
@@ -26,10 +28,11 @@ class MaglitTest : public ::testing::Test {
         tolerance = 1e-6;
     }
 
-    double         tolerance;
-    static char    source_path[256];
-    static maglit *tracer_vac;
-    static maglit *tracer_resp;
+    double             tolerance;
+    static char        source_path[256];
+    static std::string shape_path;
+    static maglit     *tracer_vac;
+    static maglit     *tracer_resp;
 
     bool values_are_close(double a, double b, double tol) {
         return std::fabs(a - b) < tol;
@@ -40,7 +43,7 @@ class MaglitTest : public ::testing::Test {
 maglit     *MaglitTest::tracer_vac = nullptr;
 maglit     *MaglitTest::tracer_resp = nullptr;
 char        MaglitTest::source_path[256];
-std::string shape_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+std::string MaglitTest::shape_path;
 
 // ==================== MAGLIT INTEGRATION TESTS ====================
 

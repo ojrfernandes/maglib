@@ -1,8 +1,10 @@
-#include "../maglit/collider.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <string>
+
+// Include the collider header
+#include "../maglit/collider.h"
 
 // Test fixture for collider functionality
 class ColliderTest : public ::testing::Test {

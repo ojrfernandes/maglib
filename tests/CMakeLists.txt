@@ -59,6 +59,9 @@ target_include_directories(test_fpgen PRIVATE
     ${CMAKE_SOURCE_DIR}/maglit
     ${HDF5_INCLUDE_DIRS}
 )
+target_compile_definitions(test_fpgen PRIVATE
+    TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+)
 
 # Register tests with CTest
 add_test(NAME SodeTests COMMAND test_sode)

@@ -1,7 +1,9 @@
-#include "sode.h"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <vector>
+
+// Include the sode header
+#include "../maglit/sode.h"
 
 // Test parameters for Lorenz system
 typedef struct {

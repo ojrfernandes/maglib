@@ -1,6 +1,6 @@
 #ifndef MAGLIT_H
 #define MAGLIT_H
-#define MAGLIT_V 241119 // version (yy.mm.dd)
+#define MAGLIT_V 251103 // version (yy.mm.dd)
 
 #include "collider.h"
 #include "fusion_io.h"

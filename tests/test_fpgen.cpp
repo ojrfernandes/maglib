@@ -4,12 +4,27 @@
 #include <string>
 
 // Include the fpgen headers
+#include "../fpgen/src/footprint.h"
 #include "../fpgen/src/input_read.h"
-// #include "../fpgen/src/footprint.h"
 
 // Test fixture for maglit functionality
 class FpgenTest : public ::testing::Test {
   protected:
+    static void SetUpTestSuite() {
+        std::snprintf(source_path, sizeof(source_path),
+                      "%s/C1.h5", TEST_DATA_DIR);
+        tracer = new maglit(source_path, FIO_M3DC1_SOURCE, 1);
+        tracer->configure(0.01, 1e-6, 0.1);
+    }
+
+    static void TearDownTestSuite() {
+        delete tracer;
+        tracer = nullptr;
+    }
+
+    static maglit *tracer;
+    static char    source_path[256];
+
     void SetUp() override {
         // Create temporary directory for test files
         test_dir = "test_input_files";
@@ -160,7 +175,6 @@ TEST_F(FpgenTest, InputRead_EdgeCaseValues) {
     bool       result = reader.readInputFile();
 
     if (result) {
-        // If parsing succeeded, check the values
         EXPECT_EQ(reader.shape_path, "a");
         EXPECT_EQ(reader.num_threads, 0);
         EXPECT_EQ(reader.plate, -1);
@@ -171,7 +185,6 @@ TEST_F(FpgenTest, InputRead_EdgeCaseValues) {
         EXPECT_EQ(reader.nPhi, 1000000);
     }
 
-    // Test should either succeed with correct parsing or fail gracefully
     EXPECT_NO_THROW(reader.readInputFile());
 }
 
@@ -208,7 +221,7 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
     }
 }
 
-// Test: Parameter validation (if the class does validation)
+// Test: Parameter validation
 TEST_F(FpgenTest, InputRead_ParameterValidation) {
     // Test logical constraints
     std::string   constraint_file = test_dir + "/constraint_test.txt";
@@ -228,9 +241,6 @@ TEST_F(FpgenTest, InputRead_ParameterValidation) {
     input_read reader(constraint_file);
     bool       result = reader.readInputFile();
 
-    // The test should either:
-    // 1. Accept the values as-is (no validation in parser)
-    // 2. Reject invalid logical relationships
     if (result) {
         // If it accepts the values, we can test that they were read correctly
         EXPECT_DOUBLE_EQ(reader.gridMin, 0.6);
@@ -258,4 +268,39 @@ TEST_F(FpgenTest, InputRead_MultipleReads) {
     EXPECT_TRUE(result2);
     EXPECT_EQ(reader.source_path, first_source);
     EXPECT_EQ(reader.num_threads, first_threads);
+}
+
+// ==================== FOOTPRINT TESTS ====================/
+
+// Static member definitions
+maglit *FpgenTest::tracer = nullptr;
+char    FpgenTest::source_path[256];
+
+// Test: Constructor and basic initialization
+TEST_F(FpgenTest, Footprint_Constructor) {
+    // Test floor plate (plate = 0)
+    EXPECT_NO_THROW(footprint fp(0, 0.5, 0.6, 10, 20));
+
+    // Test wall plate (plate = 1)
+    EXPECT_NO_THROW(footprint fp(1, -0.3, 0.3, 15, 30));
+}
+
+// Test: Output data structure initialization
+TEST_F(FpgenTest, Footprint_OutputDataInitialization) {
+    int       nGrid = 10;
+    int       nPhi = 20;
+    footprint fp(0, 0.5, 0.6, nGrid, nPhi);
+
+    // Check that outputData is properly sized
+    EXPECT_EQ(fp.outputData.size(), nGrid * nPhi);
+
+    // Check that each row has 5 columns
+    if (fp.outputData.size() > 0) {
+        EXPECT_EQ(fp.outputData[0].size(), 5);
+    }
+
+    // Check all rows are properly initialized
+    for (const auto &row : fp.outputData) {
+        EXPECT_EQ(row.size(), 5);
+    }
 }
