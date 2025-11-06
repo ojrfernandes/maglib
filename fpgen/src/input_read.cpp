@@ -5,7 +5,7 @@ input_read::input_read(const std::string &readingPath) : reading_path(readingPat
 
 bool input_read::readInputFile() {
     std::ifstream file(this->reading_path);
-    std::string line;
+    std::string   line;
 
     // Open the file and check for errors
     if (!file) {
@@ -80,20 +80,67 @@ bool input_read::readInputFile() {
                           << std::endl;
                 return false;
             }
-        } else if (key == "num_threads") {
-            this->num_threads = std::stoi(value);
-        } else if (key == "plate") {
-            this->plate = std::stoi(value);
         } else if (key == "timeslice") {
             this->timeslice = std::stoi(value);
-        } else if (key == "nGrid") {
-            this->nGrid = std::stoi(value);
+            // check if timeslice is -1 or a non-negative integer
+            if (this->timeslice < -1) {
+                std::cerr << "Error: Timeslice must be -1 (equilibrium) or a non-negative integer." << std::endl;
+                return false;
+            }
+        } else if (key == "manifold") {
+            this->manifold = std::stoi(value);
+            // check if manifold is 0 or 1
+            if (this->manifold != 0 && this->manifold != 1) {
+                std::cerr << "Error: Manifold must be 0 (unstable) or 1 (stable)." << std::endl;
+                return false;
+            }
+        } else if (key == "grid_R1") {
+            this->grid_R1 = std::stod(value);
+        } else if (key == "grid_Z1") {
+            this->grid_Z1 = std::stod(value);
+        } else if (key == "grid_R2") {
+            this->grid_R2 = std::stod(value);
+        } else if (key == "grid_Z2") {
+            this->grid_Z2 = std::stod(value);
+        } else if (key == "nRZ") {
+            this->nRZ = std::stoi(value);
         } else if (key == "nPhi") {
             this->nPhi = std::stoi(value);
-        } else if (key == "gridMin") {
-            this->gridMin = std::stod(value);
-        } else if (key == "gridMax") {
-            this->gridMax = std::stod(value);
+        } else if (key == "num_threads") {
+            this->num_threads = std::stoi(value);
+            // check if num_threads is a positive integer
+            if (this->num_threads <= 0) {
+                std::cerr << "Error: num_threads must be a positive integer." << std::endl;
+                return false;
+            }
+        } else if (key == "max_turns") {
+            this->max_turns = std::stoi(value);
+            // check if max_turns is a positive integer
+            if (this->max_turns <= 0) {
+                std::cerr << "Error: max_turns must be a positive integer." << std::endl;
+                return false;
+            }
+        } else if (key == "h_init") {
+            this->h_init = std::stod(value);
+            // check if h_init is positive
+            if (this->h_init <= 0) {
+                std::cerr << "Error: h_init must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "h_min") {
+            this->h_min = std::stod(value);
+            // check if h_min is positive
+            if (this->h_min <= 0) {
+                std::cerr << "Error: h_min must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "h_max") {
+            this->h_max = std::stod(value);
+            // check if h_max is greater than or equal to h_min
+            if (this->h_max < this->h_min) {
+                std::cerr << "Error: h_max must be greater than or equal to h_min." << std::endl;
+                return false;
+            }
         } else {
             std::cerr << "Error reading input: Unknown key: " << key << std::endl;
         }

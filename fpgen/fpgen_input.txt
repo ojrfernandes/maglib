@@ -1,16 +1,30 @@
 ################################ FPGEN #################################
 #
-#=============== STRING PARAMETERS
-        source_path = C1.h5
-        shape_path = tcabr_first_wall.txt
-        output_path = fp_out.dat
+#=============== I/O FILES
+
+        source_path = C1.h5                     # M3DC1 file
+        shape_path = tcabr_first_wall.txt       # machine boundary shape file
+        output_path = fp_out.dat                # output file path and name
 #
-#=============== NUMERIC PARAMETERS        
+#=============== MAPPING PARAMETERS        
 #       
-        num_threads = 1         # number of threads
-        plate  = 0              # floor=0; wall=1
-        timeslice = 1           # equilibrium=-1; vacuum=0; plasma_resp=1 
-        gridMin = 0.501         # minimum value mapped on correspondent axis (R or Z)
-        gridMax = 0.545         # maximum value mapped on correspondent axis (R or Z)
-        nGrid = 10              # grid dimensions on correspondent axis (R or Z)
-        nPhi = 20               # grid dimentions on phi axis
+        timeslice = 1           # M3DC1 timeslice
+        manifold  = 1           # unstable manifold=0; stable manifold=1
+
+        grid_R1 = 0.435         # first point (R,Z) delimiting the target plate mapped surface
+        grid_Z1 = -0.239
+
+        grid_R2 = 0.435         # second point (R,Z) delimiting the target plate mapped surface
+        grid_Z2 = -0.232
+
+        nRZ = 10                # grid dimension along the (R,Z) plane
+        nPhi = 20               # grid dimention along toroidal direction (Phi)
+
+#
+#=============== ADDITIONAL PARAMETERS
+#
+        num_threads = 1         # number of threads for OpenMP execution
+        max_turns = 1000        # maximum toroidal turns for field line integration
+        h_init = 1e-2           # initial step-size for integration
+        h_min = 1e-6            # minimum step-size for integration
+        h_max = 1e-2            # maximum step-size for integration

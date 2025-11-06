@@ -5,7 +5,9 @@ int main() {
     // read params from input file
     std::string pathsFile = "fpgen_input.txt";
 
-    std::cout << "\nReading input file..."
+    std::cout << "\n-----------------------------------------------\n"
+              << "FPGEN - Magnetic Footprint Generator\n"
+              << "-----------------------------------------------\n"
               << std::endl;
     input_read input(pathsFile);
     bool       readStatus = input.readInputFile();
@@ -14,31 +16,41 @@ int main() {
         return 1;
     }
 
-    std::cout << "\nInput parameters:" << std::endl;
-    std::cout << "source_path: " << input.source_path << std::endl;
-    std::cout << "shape_path: " << input.shape_path << std::endl;
-    std::cout << "output_path: " << input.output_path << std::endl;
-    std::cout << "num_threads: " << input.num_threads << std::endl;
-    std::cout << "plate: " << input.plate << std::endl;
-    std::cout << "timeslice: " << input.timeslice << std::endl;
-    std::cout << "gridMin: " << input.gridMin << std::endl;
-    std::cout << "gridMax: " << input.gridMax << std::endl;
-    std::cout << "nGrid: " << input.nGrid << std::endl;
-    std::cout << "nPhi: " << input.nPhi << std::endl;
+    std::cout << "--------------- I/O FILES ---------------------\n\n"
+              << "source_path: " << input.source_path << "\n"
+              << "shape_path: " << input.shape_path << "\n"
+              << "output_path: " << input.output_path << "\n\n"
+              << "--------------- MAPPING PARAMETERS ------------\n\n"
+              << "timeslice: " << input.timeslice << "\n"
+              << "manifold: " << input.manifold << "\n"
+              << "grid_R1: " << input.grid_R1 << "\n"
+              << "grid_Z1: " << input.grid_Z1 << "\n"
+              << "grid_R2: " << input.grid_R2 << "\n"
+              << "grid_Z2: " << input.grid_Z2 << "\n"
+              << "nRZ: " << input.nRZ << "\n"
+              << "nPhi: " << input.nPhi << "\n\n"
+              << "--------------- ADDITIONAL PARAMETERS ---------\n\n"
+              << "num_threads: " << input.num_threads << "\n"
+              << "max_turns: " << input.max_turns << "\n"
+              << "h_init: " << input.h_init << "\n"
+              << "h_min: " << input.h_min << "\n"
+              << "h_max: " << input.h_max << "\n\n"
+              << "-----------------------------------------------" << std::endl;
 
     // create footprint object
-    std::cout << "\nCreating footprint object..."
+    std::cout << "\nCreating footprint object...\n\n"
+              << "-----------------------------------------------"
               << std::endl;
-    footprint footprint(input.plate, input.gridMin, input.gridMax, input.nGrid, input.nPhi);
+    footprint footprint(input.manifold, input.grid_R1, input.grid_Z1, input.grid_R2, input.grid_Z2, input.nRZ, input.nPhi);
 
-    // set omp parametera
+    // set omp parameters
     omp_set_num_threads(input.num_threads);
 
     if (input.num_threads > 1) {
-        std::cout << "\nA maglit object must be created for each thread. \nYou shall see the same messages printed a number of times. \n\nThis may take some time. \n\nDON'T PANIC"
+        std::cout << "\nA maglit object must be created for each thread. \nYou shall see the same message printed a number of times."
                   << std::endl;
     } else {
-        std::cout << "\nCreating maglit object...\n"
+        std::cout << "\nCreating maglit object..."
                   << std::endl;
     }
 
@@ -49,7 +61,7 @@ int main() {
         tracer.emplace_back(input.source_path.c_str(), FIO_M3DC1_SOURCE, input.timeslice);
         // Configure the newly created maglit object
         tracer.back().set_monitor(input.shape_path);
-        tracer.back().configure(0.01, 1e-5, 0.2);
+        tracer.back().configure(input.h_init, input.h_min, input.h_max);
     }
 
     std::cout << "\nMaglit object(s) created successfully."
@@ -64,8 +76,13 @@ int main() {
         footprint.runGrid(tracer[tid]);
     }
 
+    // check if output data ends with .dat
+    if (input.output_path.size() >= 4 &&
+        input.output_path.substr(input.output_path.size() - 4) != ".dat") {
+        input.output_path += ".dat";
+    }
     // create output file
-    std::cout << "\n Saving output file at " << input.output_path << std::endl;
+    std::cout << "\nSaving output file at " << input.output_path << std::endl;
     std::ofstream f0(input.output_path);
     if (!f0.is_open()) {
         std::cerr << "Failed to open file at " << input.output_path << std::endl;
@@ -91,7 +108,8 @@ int main() {
 
     // print success message
     std::cout << "\nOutput file saved successfully.\n";
-    std::cout << "Program finished successfully." << std::endl;
+    std::cout << "\nProgram finished successfully.\n"
+              << std::endl;
 
     return 0;
 }

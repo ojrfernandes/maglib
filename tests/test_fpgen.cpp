@@ -11,9 +11,8 @@
 class FpgenTest : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
-        std::snprintf(source_path, sizeof(source_path),
-                      "%s/C1.h5", TEST_DATA_DIR);
-        tracer = new maglit(source_path, FIO_M3DC1_SOURCE, 1);
+        std::string source_path = std::string(TEST_DATA_DIR) + "/C1.h5";
+        tracer = new maglit(source_path.c_str(), FIO_M3DC1_SOURCE, 1);
         tracer->configure(0.01, 1e-6, 0.1);
     }
 
@@ -22,8 +21,8 @@ class FpgenTest : public ::testing::Test {
         tracer = nullptr;
     }
 
-    static maglit *tracer;
-    static char    source_path[256];
+    static maglit     *tracer;
+    static std::string source_path;
 
     void SetUp() override {
         // Create temporary directory for test files
@@ -51,20 +50,32 @@ class FpgenTest : public ::testing::Test {
         std::ofstream file(filename);
         file << "################################ FPGEN #################################\n"
              << "#\n"
-             << "#=============== STRING PARAMETERS\n"
-             << "        source_path = test_source.h5\n"
-             << "        shape_path = test_shape.txt\n"
-             << "        output_path = test_output.dat\n"
+             << "#=============== I/O FILES\n"
+             << "        source_path = test_source.h5       # M3DC1 file\n"
+             << "        shape_path = test_shape.txt        # machine boundary shape file\n"
+             << "        output_path = test_output.dat      # output file path and name\n"
              << "#\n"
-             << "#=============== NUMERIC PARAMETERS        \n"
+             << "#=============== MAPPING PARAMETERS        \n"
              << "#       \n"
-             << "        num_threads = 4         # number of threads\n"
-             << "        plate  = 1              # floor=0; wall=1\n"
-             << "        timeslice = 0           # equilibrium=-1; vacuum=0; plasma_resp=1 \n"
-             << "        gridMin = 0.400         # minimum value mapped on correspondent axis (R or Z)\n"
-             << "        gridMax = 0.600         # maximum value mapped on correspondent axis (R or Z)\n"
-             << "        nGrid = 50              # grid dimensions on correspondent axis (R or Z)\n"
-             << "        nPhi = 100              # grid dimentions on phi axis\n";
+             << "        timeslice = 1           # M3DC1 timeslice \n"
+             << "        manifold  = 1           # unstable manifold=0; stable manifold=1\n"
+             << "\n"
+             << "        grid_R1 = 0.435         # first point (R,Z) delimiting the target plate mapped surface\n"
+             << "        grid_Z1 = -0.239        # first point (R,Z) delimiting the target plate mapped surface\n"
+             << "\n"
+             << "        grid_R2 = 0.435         # second point (R,Z) delimiting the target plate mapped surface\n"
+             << "        grid_Z2 = -0.232        # second point (R,Z) delimiting the target plate mapped surface\n"
+             << "\n"
+             << "        nRZ = 10                # grid dimension along the (R,Z) plane\n"
+             << "        nPhi = 20               # grid dimension along toroidal direction (Phi)\n"
+             << "#\n"
+             << "#=============== ADDITIONAL PARAMETERS\n"
+             << "#\n"
+             << "        num_threads = 1         # number of threads for OpenMP execution\n"
+             << "        max_turns = 10000       # maximum toroidal turns for field line integration\n"
+             << "        h_init = 1e-2           # initial step-size for integration\n"
+             << "        h_min = 1e-6            # minimum step-size for integration\n"
+             << "        h_max = 1e-2            # maximum step-size for integration\n";
         file.close();
     }
 
@@ -112,13 +123,19 @@ TEST_F(FpgenTest, InputRead_ValidFile) {
     EXPECT_EQ(reader.output_path, "test_output.dat");
 
     // Check numeric parameters
-    EXPECT_EQ(reader.num_threads, 4);
-    EXPECT_EQ(reader.plate, 1);
-    EXPECT_EQ(reader.timeslice, 0);
-    EXPECT_DOUBLE_EQ(reader.gridMin, 0.400);
-    EXPECT_DOUBLE_EQ(reader.gridMax, 0.600);
-    EXPECT_EQ(reader.nGrid, 50);
-    EXPECT_EQ(reader.nPhi, 100);
+    EXPECT_EQ(reader.timeslice, 1);
+    EXPECT_EQ(reader.manifold, 1);
+    EXPECT_DOUBLE_EQ(reader.grid_R1, 0.435);
+    EXPECT_DOUBLE_EQ(reader.grid_Z1, -0.239);
+    EXPECT_DOUBLE_EQ(reader.grid_R2, 0.435);
+    EXPECT_DOUBLE_EQ(reader.grid_Z2, -0.232);
+    EXPECT_EQ(reader.nRZ, 10);
+    EXPECT_EQ(reader.nPhi, 20);
+    EXPECT_EQ(reader.num_threads, 1);
+    EXPECT_EQ(reader.max_turns, 10000);
+    EXPECT_DOUBLE_EQ(reader.h_init, 1e-2);
+    EXPECT_DOUBLE_EQ(reader.h_min, 1e-6);
+    EXPECT_DOUBLE_EQ(reader.h_max, 1e-2);
 }
 
 // Test: Constructor initializes reading_path correctly
@@ -126,8 +143,7 @@ TEST_F(FpgenTest, InputRead_Constructor) {
     std::string test_path = "test_path.txt";
     input_read  reader(test_path);
 
-    // We can't directly access reading_path (it's private),
-    // but we can test that the constructor doesn't crash
+    // test that the constructor doesn't crash
     EXPECT_NO_THROW(input_read reader2(test_path));
 }
 
@@ -162,27 +178,43 @@ TEST_F(FpgenTest, InputRead_EdgeCaseValues) {
     file << "source_path = \n" // Empty string
          << "shape_path = a\n" // Single character
          << "output_path = very_long_filename_with_many_characters_to_test_string_handling.dat\n"
-         << "num_threads = 0\n" // Zero threads
-         << "plate = -1\n"      // Negative value
          << "timeslice = 999\n" // Large value
-         << "gridMin = -1.0\n"  // Negative minimum
-         << "gridMax = 1e6\n"   // Scientific notation
-         << "nGrid = 1\n"       // Minimum grid
-         << "nPhi = 1000000\n"; // Large grid
+         << "manifold = 0\n"    // Lower bound
+         << "grid_R1 = -1.0\n"  // Negative float
+         << "grid_Z1 = 1e6\n"   // Very large float
+         << "grid_R2 = 0.0\n"   // Zero value
+         << "grid_Z2 = -1e6\n"  // Very large negative float
+         << "nRZ = 1\n"         // Minimum grid size
+         << "nPhi = 1000000\n"  // Very large grid size
+         << "num_threads = 0\n" // Edge case for threads
+         << "max_turns = 1\n"   // Minimum turns
+         << "h_init = 1e-10\n"  // Very small step size
+         << "h_min = 0.0\n"     // Zero step size
+         << "h_max = 1e10\n";   // Very large step size
+
     file.close();
 
     input_read reader(edge_case_file);
     bool       result = reader.readInputFile();
 
     if (result) {
+        EXPECT_EQ(reader.source_path, "");
         EXPECT_EQ(reader.shape_path, "a");
-        EXPECT_EQ(reader.num_threads, 0);
-        EXPECT_EQ(reader.plate, -1);
+        EXPECT_EQ(reader.output_path,
+                  "very_long_filename_with_many_characters_to_test_string_handling.dat");
         EXPECT_EQ(reader.timeslice, 999);
-        EXPECT_DOUBLE_EQ(reader.gridMin, -1.0);
-        EXPECT_DOUBLE_EQ(reader.gridMax, 1e6);
-        EXPECT_EQ(reader.nGrid, 1);
+        EXPECT_EQ(reader.manifold, 0);
+        EXPECT_DOUBLE_EQ(reader.grid_R1, -1.0);
+        EXPECT_DOUBLE_EQ(reader.grid_Z1, 1e6);
+        EXPECT_DOUBLE_EQ(reader.grid_R2, 0.0);
+        EXPECT_DOUBLE_EQ(reader.grid_Z2, -1e6);
+        EXPECT_EQ(reader.nRZ, 1);
         EXPECT_EQ(reader.nPhi, 1000000);
+        EXPECT_EQ(reader.num_threads, 0);
+        EXPECT_EQ(reader.max_turns, 1);
+        EXPECT_DOUBLE_EQ(reader.h_init, 1e-10);
+        EXPECT_DOUBLE_EQ(reader.h_min, 0.0);
+        EXPECT_DOUBLE_EQ(reader.h_max, 1e10);
     }
 
     EXPECT_NO_THROW(reader.readInputFile());
@@ -198,13 +230,20 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
          << "\t\tsource_path = test.h5\t\t# Trailing comment with tabs\n"
          << "    shape_path    =    test.txt    # Lots of spaces\n"
          << "output_path=test.dat# No spaces around equals\n"
-         << "  num_threads  =  8  \n" // Trailing spaces
-         << "\tplate\t=\t0\t\n"       // Tabs instead of spaces
          << "timeslice = 1 # Comment\n"
-         << "gridMin = 0.5\n"
-         << "gridMax = 0.6\n"
-         << "nGrid = 10\n"
-         << "nPhi = 20\n";
+         << "\tmanifold\t=\t1\t\n" // Tabs instead of spaces
+         << "grid_R1 = 0.435\n"
+         << "grid_Z1 = -0.239\n"
+         << "grid_R2 = 0.435\n"
+         << "grid_Z2 = -0.232\n"
+         << "nRZ = 10\n"
+         << "nPhi = 20\n"
+         << "num_threads = 8\n" // Trailing spaces
+         << "max_turns = 10000\n"
+         << "h_init = 1e-2\n"
+         << "h_min = 1e-6\n"
+         << "h_max = 1e-2\n";
+
     file.close();
 
     input_read reader(whitespace_file);
@@ -216,8 +255,9 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
         EXPECT_EQ(reader.source_path, "test.h5");
         EXPECT_EQ(reader.shape_path, "test.txt");
         EXPECT_EQ(reader.output_path, "test.dat");
+        EXPECT_EQ(reader.timeslice, 1);
+        EXPECT_EQ(reader.manifold, 1);
         EXPECT_EQ(reader.num_threads, 8);
-        EXPECT_EQ(reader.plate, 0);
     }
 }
 
@@ -229,26 +269,25 @@ TEST_F(FpgenTest, InputRead_ParameterValidation) {
     file << "source_path = test.h5\n"
          << "shape_path = test.txt\n"
          << "output_path = test.dat\n"
-         << "num_threads = 1\n"
-         << "plate = 0\n"
          << "timeslice = 1\n"
-         << "gridMin = 0.6\n" // gridMin > gridMax
-         << "gridMax = 0.5\n"
-         << "nGrid = 10\n"
-         << "nPhi = 20\n";
+         << "manifold = 1\n"
+         << "grid_R1 = 0.435\n"
+         << "grid_Z1 = -0.239\n"
+         << "grid_R2 = 0.435\n"
+         << "grid_Z2 = -0.232\n"
+         << "nRZ = 10\n"
+         << "nPhi = 20\n"
+         << "num_threads = 8\n"
+         << "max_turns = 10000\n"
+         << "h_init = 1e-2\n"
+         << "h_min = 1e-6\n"
+         << "h_max = 1e-8\n"; // h_max < h_min should be invalid
     file.close();
 
     input_read reader(constraint_file);
     bool       result = reader.readInputFile();
 
-    if (result) {
-        // If it accepts the values, we can test that they were read correctly
-        EXPECT_DOUBLE_EQ(reader.gridMin, 0.6);
-        EXPECT_DOUBLE_EQ(reader.gridMax, 0.5);
-    }
-
-    // Either way, it shouldn't crash
-    EXPECT_NO_THROW(reader.readInputFile());
+    EXPECT_FALSE(result) << "Should return false for invalid parameter constraints";
 }
 
 // Test: Multiple reads from same object
@@ -273,26 +312,26 @@ TEST_F(FpgenTest, InputRead_MultipleReads) {
 // ==================== FOOTPRINT TESTS ====================/
 
 // Static member definitions
-maglit *FpgenTest::tracer = nullptr;
-char    FpgenTest::source_path[256];
+maglit     *FpgenTest::tracer = nullptr;
+std::string FpgenTest::source_path;
 
 // Test: Constructor and basic initialization
 TEST_F(FpgenTest, Footprint_Constructor) {
     // Test floor plate (plate = 0)
-    EXPECT_NO_THROW(footprint fp(0, 0.5, 0.6, 10, 20));
+    EXPECT_NO_THROW(footprint fp(0, 0.435, -0.239, 0.435, -0.232, 10, 20));
 
     // Test wall plate (plate = 1)
-    EXPECT_NO_THROW(footprint fp(1, -0.3, 0.3, 15, 30));
+    EXPECT_NO_THROW(footprint fp(1, 0.435, -0.239, 0.435, -0.232, 15, 30));
 }
 
 // Test: Output data structure initialization
 TEST_F(FpgenTest, Footprint_OutputDataInitialization) {
-    int       nGrid = 10;
+    int       nRZ = 10;
     int       nPhi = 20;
-    footprint fp(0, 0.5, 0.6, nGrid, nPhi);
+    footprint fp(0, 0.5, 0.6, 0.4, 0.5, nRZ, nPhi);
 
     // Check that outputData is properly sized
-    EXPECT_EQ(fp.outputData.size(), nGrid * nPhi);
+    EXPECT_EQ(fp.outputData.size(), nRZ * nPhi);
 
     // Check that each row has 5 columns
     if (fp.outputData.size() > 0) {
