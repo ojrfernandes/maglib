@@ -6,7 +6,7 @@
 // Include the collider header
 #include "../maglit/collider.h"
 
-// Test fixture for collider functionality
+// Test fixture for collider tests
 class ColliderTest : public ::testing::Test {
   protected:
     void SetUp() override {

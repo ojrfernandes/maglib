@@ -1,13 +1,13 @@
 #include "footprint.h"
 
-footprint::footprint(const int manifold, const double grid_R1, const double grid_Z1, const double grid_R2, const double grid_Z2, const int nRZ, const int nPhi) : manifold(manifold), grid_R1(grid_R1), grid_Z1(grid_Z1), grid_R2(grid_R2), grid_Z2(grid_Z2), nRZ(nRZ), nPhi(nPhi) {
+footprint::footprint(const int manifold, const double grid_R1, const double grid_Z1, const double grid_R2, const double grid_Z2, const int nRZ, const int nPhi, const int max_turns) : manifold(manifold), grid_R1(grid_R1), grid_Z1(grid_Z1), grid_R2(grid_R2), grid_Z2(grid_Z2), nRZ(nRZ), nPhi(nPhi), max_turns(max_turns) {
     this->outputData.resize(nRZ * nPhi, std::vector<double>(5));
 }
 
 void footprint::runGrid(maglit &tracer) {
     map_scalars scalars;
 
-    if (manifold == 0) {
+    if (manifold == 1) {
         // evaluating unstable manifold
         // since the field line is traced backwards, the map remains direct
         tracer.inverse_map(false);
@@ -60,7 +60,7 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     Z1 = Z0;
     phi1 = phi0;
     int     status;
-    double  phi_max = 10000 * 2 * M_PI;
+    double  phi_max = this->max_turns * 2 * M_PI;
     double  arc = 0;
     double  psin0 = 5.0;
     double *psin1 = &psin0;

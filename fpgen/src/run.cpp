@@ -38,10 +38,9 @@ int main() {
               << "-----------------------------------------------" << std::endl;
 
     // create footprint object
-    std::cout << "\nCreating footprint object...\n\n"
-              << "-----------------------------------------------"
+    std::cout << "\nCreating footprint object...\n"
               << std::endl;
-    footprint footprint(input.manifold, input.grid_R1, input.grid_Z1, input.grid_R2, input.grid_Z2, input.nRZ, input.nPhi);
+    footprint footprint(input.manifold, input.grid_R1, input.grid_Z1, input.grid_R2, input.grid_Z2, input.nRZ, input.nPhi, input.max_turns);
 
     // set omp parameters
     omp_set_num_threads(input.num_threads);

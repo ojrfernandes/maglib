@@ -146,9 +146,9 @@ TEST_F(MaglitTest, ColliderMonitorIntegration) {
     tracer_resp->clear_hint();
 
     // If collider works, integration should stop due to monitor trigger
-    EXPECT_EQ(status, SODE_SUCCESS_MONITOR) << "Expected stop on wall crossing event";
-    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z)) << "Last point before crossing should be inside the vessel";
-    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z)) << "Point after crossing should be outside the vessel";
+    EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
+    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z));
+    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z));
 }
 
 TEST_F(MaglitTest, InverseColliderMonitorIntegration) {
@@ -175,9 +175,9 @@ TEST_F(MaglitTest, InverseColliderMonitorIntegration) {
     tracer_resp->clear_hint();
 
     // If collider works, integration should stop due to monitor trigger
-    EXPECT_EQ(status, SODE_SUCCESS_MONITOR) << "Expected stop on wall crossing event";
-    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z)) << "Last point before crossing should be inside the vessel";
-    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z)) << "Point after crossing should be outside the vessel";
+    EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
+    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z));
+    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z));
 }
 
 TEST_F(MaglitTest, OnBoundaryColliderMonitorIntegration) {
@@ -206,8 +206,8 @@ TEST_F(MaglitTest, OnBoundaryColliderMonitorIntegration) {
     tracer_resp->clear_hint();
 
     // If collider works, integration should stop due to monitor trigger
-    EXPECT_GT(step_count, 0) << "Expected at least one integration step";
-    EXPECT_EQ(status, SODE_SUCCESS_MONITOR) << "Expected stop on wall crossing event";
-    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z)) << "Last point before crossing should be inside the vessel";
-    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z)) << "Point after crossing should be outside the vessel";
+    EXPECT_GT(step_count, 0);
+    EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
+    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z));
+    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z));
 }

@@ -78,6 +78,7 @@ bool input_read::readInputFile() {
                 std::cerr << "Warning: File " << this->output_path
                           << " already exists. Please, change your output file name to avoid overwriting your data."
                           << std::endl;
+                f0.close();
                 return false;
             }
         } else if (key == "timeslice") {
@@ -104,8 +105,18 @@ bool input_read::readInputFile() {
             this->grid_Z2 = std::stod(value);
         } else if (key == "nRZ") {
             this->nRZ = std::stoi(value);
+            // check if nRZ is a positive integer
+            if (this->nRZ <= 0) {
+                std::cerr << "Error: nRZ must be a positive integer." << std::endl;
+                return false;
+            }
         } else if (key == "nPhi") {
             this->nPhi = std::stoi(value);
+            // check if nPhi is a positive integer
+            if (this->nPhi <= 0) {
+                std::cerr << "Error: nPhi must be a positive integer." << std::endl;
+                return false;
+            }
         } else if (key == "num_threads") {
             this->num_threads = std::stoi(value);
             // check if num_threads is a positive integer
@@ -144,6 +155,12 @@ bool input_read::readInputFile() {
         } else {
             std::cerr << "Error reading input: Unknown key: " << key << std::endl;
         }
+    }
+
+    // Check that required string parameters are not empty
+    if (source_path.empty() || shape_path.empty() || output_path.empty()) {
+        std::cerr << "Error on input: One or more required file paths are missing." << std::endl;
+        return false;
     }
 
     return true;

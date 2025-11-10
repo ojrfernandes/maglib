@@ -9,17 +9,16 @@
 #=============== MAPPING PARAMETERS        
 #       
         timeslice = 1           # M3DC1 timeslice
-        manifold  = 1           # unstable manifold=0; stable manifold=1
+        manifold  = 0           # stable manifold = 0; unstable manifold = 1
 
-        grid_R1 = 0.435         # first point (R,Z) delimiting the target plate mapped surface
+        grid_R1 = 0.435         # first point (R,Z) delimiting the mapped surface
         grid_Z1 = -0.239
 
-        grid_R2 = 0.435         # second point (R,Z) delimiting the target plate mapped surface
+        grid_R2 = 0.435         # second point (R,Z) delimiting the mapped surface
         grid_Z2 = -0.232
 
-        nRZ = 10                # grid dimension along the (R,Z) plane
+        nRZ = 10                # grid dimension along the (R,Z) direction
         nPhi = 20               # grid dimention along toroidal direction (Phi)
-
 #
 #=============== ADDITIONAL PARAMETERS
 #
