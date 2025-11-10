@@ -305,8 +305,7 @@ TEST_F(FpgenTest, InputRead_MultipleReads) {
 // ==================== FOOTPRINT TESTS ====================/
 
 // Static member definitions
-maglit     *FpgenTest::tracer = nullptr;
-std::string FpgenTest::source_path;
+maglit *FpgenTest::tracer = nullptr;
 
 // Test: Constructor and basic initialization
 TEST_F(FpgenTest, Footprint_Constructor) {
