@@ -42,13 +42,13 @@ target_compile_definitions(test_maglit PRIVATE
 )
 
 # Integration tests (for programs)
+# FPGEN
 add_executable(test_fpgen
     test_fpgen.cpp
     ${CMAKE_SOURCE_DIR}/fpgen/src/input_read.cpp
-    ${CMAKE_SOURCE_DIR}/fpgen/src/footprint.cpp)
-    
-target_link_libraries(test_fpgen 
-    PRIVATE 
+    ${CMAKE_SOURCE_DIR}/fpgen/src/footprint.cpp
+)
+target_link_libraries(test_fpgen PRIVATE 
     maglit
     ${GTEST_MAIN_LIBRARIES}
     ${GTEST_LIBRARIES}
@@ -63,8 +63,31 @@ target_compile_definitions(test_fpgen PRIVATE
     TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
 )
 
+# MFGEN
+add_executable(test_mfgen
+    test_mfgen.cpp
+    ${CMAKE_SOURCE_DIR}/mfgen/src/input_read.cpp
+    ${CMAKE_SOURCE_DIR}/mfgen/src/manifold.cpp
+)
+target_link_libraries(test_mfgen PRIVATE
+    maglit
+    ${GTEST_MAIN_LIBRARIES}
+    ${GTEST_LIBRARIES}
+    ${HDF5_LIBRARIES}
+    ${ARMADILLO_LIBRARIES}
+)
+target_include_directories(test_mfgen PRIVATE
+    ${CMAKE_SOURCE_DIR}/maglit
+    ${HDF5_INCLUDE_DIRS}
+    ${ARMADILLO_INCLUDE_DIRS}
+)
+target_compile_definitions(test_mfgen PRIVATE
+    TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+)
+
 # Register tests with CTest
 add_test(NAME SodeTests COMMAND test_sode)
 add_test(NAME ColliderTests COMMAND test_collider)
 add_test(NAME MaglitTests COMMAND test_maglit)
 add_test(NAME FpgenTests COMMAND test_fpgen)
+add_test(NAME MfgenTests COMMAND test_mfgen)

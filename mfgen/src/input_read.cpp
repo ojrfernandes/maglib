@@ -5,42 +5,64 @@ input_read::input_read(const std::string &readingPath) : reading_path(readingPat
 
 bool input_read::readInputFile() {
     std::ifstream file(this->reading_path);
-    std::string line;
+    std::string   line;
 
+    // Open the file and check for errors
     if (!file) {
-        std::cerr << "Error: Unable to open file: " << reading_path << std::endl;
+        std::cerr << "Error reading input: Unable to open file: " << reading_path << std::endl;
         return false;
     }
 
+    // check if the file is empty
+    if (file.peek() == std::ifstream::traits_type::eof()) {
+        std::cerr << "Error reading input: Input file is empty: " << reading_path << std::endl;
+        return false;
+    }
+
+    // Lambda function to trim whitespace from both ends of a string
+    auto trim = [](std::string &s) {
+        size_t start = s.find_first_not_of(" \t");
+        size_t end = s.find_last_not_of(" \t");
+        if (start == std::string::npos) {
+            s.clear();
+        } else {
+            s = s.substr(start, end - start + 1);
+        }
+    };
+
     while (std::getline(file, line)) {
-        // Ignore empty lines and comments
+        // Trim the line first
+        trim(line);
+
+        // Ignore empty lines and lines that start with '#'
         if (line.empty() || line[0] == '#') {
             continue;
         }
 
-        std::istringstream iss(line);
-        std::string key, equals, value;
-
-        if (!(iss >> key >> equals)) {
-            std::cerr << "Error: Invalid line (missing key or '=' symbol): " << line << std::endl;
-            continue;
+        // Find '=' position
+        auto eq_pos = line.find('=');
+        if (eq_pos == std::string::npos) {
+            std::cerr << "Error reading input: Invalid line (missing '='): " << line << std::endl;
+            return false;
         }
 
-        if (equals != "=") {
-            std::cerr << "Error: Invalid format (expected '=' after key): " << line << std::endl;
-            continue;
+        // Split into key and value
+        std::string key = line.substr(0, eq_pos);
+        std::string value = line.substr(eq_pos + 1);
+
+        // Handle inline comments in value
+        auto comment_pos = value.find('#');
+        if (comment_pos != std::string::npos) {
+            value = value.substr(0, comment_pos);
         }
 
-        // Read the rest of the line as value, ignoring anything after '#'
-        std::getline(iss, value, '#');
+        // Trim both key and value
+        trim(key);
+        trim(value);
 
-        // Trim whitespace from value
-        size_t start = value.find_first_not_of(" \t");
-        size_t end = value.find_last_not_of(" \t");
-        if (start != std::string::npos) {
-            value = value.substr(start, end - start + 1);
-        } else {
-            value.clear();
+        if (key.empty()) {
+            std::cerr << "Error reading input: Empty key in line: " << line << std::endl;
+            return false;
         }
 
         // Assign values to corresponding variables
@@ -55,51 +77,135 @@ bool input_read::readInputFile() {
                 return false;
             }
             f0.close();
-        } else if (key == "stability") {
-            this->stability = std::stoi(value);
-            if (this->stability != 0 && this->stability != 1) {
-                std::cerr << "Error: Stability must be 0 (forward) or 1 (backward)." << std::endl;
-                return false;
-            }
         } else if (key == "timeslice") {
             this->timeslice = std::stoi(value);
-            if (this->timeslice < 0) {
-                std::cerr << "Error: Timeslice must be a non-negative integer." << std::endl;
+            // check if timeslice is -1 or a non-negative integer
+            if (this->timeslice < -1) {
+                std::cerr << "Error: Timeslice must be -1 (equilibrium) or a non-negative integer." << std::endl;
+                return false;
+            }
+        } else if (key == "manifold") {
+            this->manifold = std::stoi(value);
+            // check if manifold is 0 or 1
+            if (this->manifold != 0 && this->manifold != 1) {
+                std::cerr << "Error: Manifold must be 0 (stable) or 1 (unstable)." << std::endl;
                 return false;
             }
         } else if (key == "method") {
             this->method = std::stoi(value);
+            // check if method is 0 or 1
             if (this->method != 0 && this->method != 1) {
                 std::cerr << "Error: Method must be 0 (exact) or 1 (interpolant)." << std::endl;
                 return false;
             }
-        } else if (key == "slices") {
-            this->slices = std::stoi(value);
-            if (this->slices <= 0) {
-                std::cerr << "Error: Number of slices must be a positive integer." << std::endl;
-                return false;
-            }
         } else if (key == "Phi") {
             this->Phi = std::stod(value);
+        } else if (key == "nSections") {
+            this->nSections = std::stoi(value);
+            // check if nSections is a positive integer
+            if (this->nSections < 1) {
+                std::cerr << "Error: nSections must be a positive integer." << std::endl;
+                return false;
+            }
         } else if (key == "phi_0") {
             this->phi_0 = std::stod(value);
         } else if (key == "phi_1") {
             this->phi_1 = std::stod(value);
         } else if (key == "epsilon") {
             this->epsilon = std::stod(value);
+            // check if epsilon is positive
+            if (this->epsilon <= 0) {
+                std::cerr << "Error: epsilon must be a positive value." << std::endl;
+                return false;
+            }
+        } else if (key == "nSegments") {
+            this->nSegments = std::stoi(value);
+            // check if nSegments is a positive integer
+            if (this->nSegments < 1) {
+                std::cerr << "Error: nSegments must be a positive integer." << std::endl;
+                return false;
+            }
         } else if (key == "l_lim") {
             this->l_lim = std::stod(value);
+            // check if l_lim is positive
+            if (this->l_lim <= 0) {
+                std::cerr << "Error: l_lim must be a positive number." << std::endl;
+                return false;
+            }
         } else if (key == "theta_lim") {
             this->theta_lim = std::stod(value);
-        } else if (key == "nSeg") {
-            this->nSeg = std::stoi(value);
-        } else if (key == "r_xpoint") {
-            this->R_xPoint = std::stod(value);
-        } else if (key == "z_xpoint") {
-            this->Z_xPoint = std::stod(value);
-        } else {
+            // check if theta_lim is positive
+            if (this->theta_lim <= 0) {
+                std::cerr << "Error: theta_lim must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "h_init") {
+            this->h_init = std::stod(value);
+            // check if h_init is positive
+            if (this->h_init <= 0) {
+                std::cerr << "Error: h_init must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "h_min") {
+            this->h_min = std::stod(value);
+            // check if h_min is positive
+            if (this->h_min <= 0) {
+                std::cerr << "Error: h_min must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "h_max") {
+            this->h_max = std::stod(value);
+            // check if h_max is greater than or equal to h_min
+            if (this->h_max < this->h_min) {
+                std::cerr << "Error: h_max must be greater than or equal to h_min." << std::endl;
+                return false;
+            }
+        } else if (key == "h_deriv") {
+            this->h_deriv = std::stod(value);
+            // check if h_deriv is positive
+            if (this->h_deriv <= 0) {
+                std::cerr << "Error: h_deriv must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "n_tol") {
+            this->n_tol = std::stod(value);
+            // check if n_tol is positive
+            if (this->n_tol <= 0) {
+                std::cerr << "Error: n_tol must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "max_iter") {
+            this->max_iter = std::stoi(value);
+            // check if max_iter is a positive integer
+            if (this->max_iter < 1) {
+                std::cerr << "Error: max_iter must be a positive integer." << std::endl;
+                return false;
+            }
+        } else if (key == "precision") {
+            this->precision = std::stod(value);
+            // check if precision is positive
+            if (this->precision <= 0) {
+                std::cerr << "Error: precision must be a positive number." << std::endl;
+                return false;
+            }
+        } else if (key == "max_insertions") {
+            this->max_insertions = std::stoi(value);
+            // check if max_insertions is a positive integer
+            if (this->max_insertions < 1) {
+                std::cerr << "Error: max_insertions must be a positive integer." << std::endl;
+                return false;
+            }
+        }
+
+        else {
             std::cerr << "Error: Invalid key: " << key << std::endl;
         }
+    }
+
+    // Check that required parameters are set
+    if (source_path.empty() || output_path.empty()) {
+        std::cerr << "Error reading input: Missing required parameters." << std::endl;
+        return false;
     }
 
     return true;

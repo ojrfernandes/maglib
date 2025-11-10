@@ -1,11 +1,11 @@
 #ifndef MANIFOLD_H
 #define MANIFOLD_H
-#define MANIFOLD_V 250528 // version (yy.mm.dd)
+#define MANIFOLD_V 251110 // version (yy.mm.dd)
 
-#include <maglit.h>
 #include <armadillo>
 #include <chrono>
 #include <iomanip>
+#include <maglit.h>
 #include <thread>
 #include <utility>
 
@@ -17,9 +17,9 @@ struct point {
 
 // Structure to store an interpolant arc
 struct interpolantArc {
-    point x0, x1;
+    point  x0, x1;
     double a, b;
-    int i0, i1; // indices of the points in the segment
+    int    i0, i1; // indices of the points in the segment
 
     point evalNewPoint(double t) const;
 };
@@ -27,7 +27,7 @@ struct interpolantArc {
 class manifold {
   public:
     // Constructor
-    manifold(const char *source_path, const int timeslice, double phi, int stability, double epsilon);
+    manifold(maglit &tracer, double phi, int stability);
     // Iteratively find the closest 1 period fixed point from the initial guess
     bool find_xPoint(double rGuess, double zGuess);
     // Compute the primary segment
@@ -40,6 +40,8 @@ class manifold {
     void progressBar(int j, int nSeg);
     // Set warning flag
     void setVerbose();
+    // Configure parameters
+    void configure(double epsilon, double h, double tol, int max_iter, double precision_limit, int max_insertions);
 
     std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
 
@@ -62,22 +64,22 @@ class manifold {
     point pivot();
 
     // User defined parameters
-    int stability;  // 0: forward, 1: backward
-    double phi;     // toroidal angle
-    double epsilon; // distance from the x-point
+    int    stability; // 0: forward, 1: backward
+    double phi;       // toroidal angle
 
-    // Default parameters
-    bool verbose = false;           // verbose flag
-    int s_factor = 1;               // sign factor for the manifold stability
+    // Additional parameters
+    double epsilon = 1e-6;          // distance from the x-point to the pivot point
+    bool   verbose = false;         // verbose flag
+    int    s_factor = 1;            // sign factor for the manifold stability
     double h = 1e-8;                // step size for numerical derivatives
     double tol = 1e-14;             // tolerance for Newton's method
-    int max_iter = 50;              // maximum number of iterations for Newton's method
+    int    max_iter = 50;           // maximum number of iterations for Newton's method
     double precision_limit = 1e-14; // precision limit for floating point comparisons
-    bool refining_angle = false;    // flag to indicate if the angle is being refined
-    bool overlap = false;           // flag to indicate floating point precision limit overlap
-    int max_insertions = 100;       // Max limit for new point insertions in a segment
+    bool   refining_angle = false;  // flag to indicate if the angle is being refined
+    bool   overlap = false;         // flag to indicate floating point precision limit overlap
+    int    max_insertions = 100;    // Max limit for new point insertions in a segment
 
-    maglit tracer; // magnetic field lines tracer
+    maglit &tracer; // magnetic field lines tracer
 };
 
 #endif // MANIFOLD_H

@@ -1,21 +1,34 @@
-################# MFGEN #################
+################################ MFGEN #################################
 #
-#=============== INPUT PARAMETERS
-        source_path = C1.h5
-        output_path = mf_out.dat
-#        
-        stability = 0                   # stable manifold = 0, unstable manifold = 1
-        timeslice = 1                   # equilibrium = -1, vacuum = 0, plasma_resp = 1
+#=============== I/O FILES
+
+        source_path = C1.h5             # M3DC1 file
+        output_path = mfgen_out.dat     # output file path and name
+#
+#============== TRACING PARAMETERS
+#
+        timeslice = 1                   # M3DC1 timeslice
+        manifold = 0                    # stable manifold = 0, unstable manifold = 1
         method = 1                      # exact manifold = 0, interpolant method = 1
-        slices = 1                      # number of toroidal slices to be generated
         Phi = 0                         # poicaré section toroidal coordinate (deg)
-#        
+        nSegments = 8                   # number of primary segments to be mapped
+#
+#============== MULTIPLE POINCARE SECTIONS
+#
+        nSections = 1                   # number of poicaré sections to be traced
         phi_0 = 0                       # initial toroidal angle coordinate
         phi_1 = 0                       # final toroidal angle coordinate
 #
-#=============== REFINEMENT PARAMETERS
+#=============== ADDITIONAL PARAMETERS
 #
         epsilon = 1e-6                  # primary segment's distance from X-point
-        nSeg = 8                        # number of primary segments to be mapped
         l_lim = 0.005                   # distance treshold for the refinement process
         theta_lim = 20                  # angle treshold for the refinement process (deg)
+        h_init = 1e-2                   # initial step-size for integration
+        h_min = 1e-6                    # minimum step-size for integration
+        h_max = 1e-2                    # maximum step-size for integration
+        h_deriv = 1e-8                  # step-size for numerical derivatives
+        n_tol = 1e-14                   # tolerance for Newton's method
+        max_iter = 50                   # maximum iterations for Newton's method
+        precision = 1e-14               # precision for floating point comparison
+        max_insertions = 100            # maximum new point insertions per segment

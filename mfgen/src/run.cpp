@@ -4,30 +4,45 @@
 int main() {
 
     // read params from input file
-    std::string pathsFile = "mf_input.txt";
+    std::string pathsFile = "mfgen_input.txt";
 
-    // read input file
-    std::cout << "\nReading input file..."
+    std::cout << "\n-----------------------------------------------\n"
+              << "MFGEN - Invariant Manifold Generator\n"
+              << "-----------------------------------------------\n"
               << std::endl;
     input_read input(pathsFile);
-    bool readStatus = input.readInputFile();
+    bool       readStatus = input.readInputFile();
     if (!readStatus) {
         std::cerr << "Error reading input file." << std::endl;
         return 1;
     }
 
-    // print input parameters
-    std::cout << "\nInput parameters:" << std::endl;
-    std::cout << "source_path: " << input.source_path << std::endl;
-    std::cout << "output_path: " << input.output_path << std::endl;
-    std::cout << "stability: " << input.stability << std::endl;
-    std::cout << "timeslice: " << input.timeslice << std::endl;
-    std::cout << "method: " << input.method << std::endl;
-    std::cout << "slices: " << input.slices << std::endl;
-    std::cout << "epsilon: " << input.epsilon << std::endl;
-    std::cout << "nSeg: " << input.nSeg << std::endl;
-    std::cout << "l_lim: " << input.l_lim << std::endl;
-    std::cout << "theta_lim: " << input.theta_lim << std::endl;
+    std::cout << "--------------- I/O FILES ---------------------\n\n"
+              << "source_path: " << input.source_path << "\n"
+              << "output_path: " << input.output_path << "\n\n"
+              << "--------------- TRACING PARAMETERS ------------\n\n"
+              << "timeslice: " << input.timeslice << "\n"
+              << "manifold: " << input.manifold << "\n"
+              << "method: " << input.method << "\n"
+              << "Phi: " << input.Phi << "\n\n"
+              << "--------------- MULTIPLE POINCARE SECTIONS ----\n\n"
+              << "nSections: " << input.nSections << "\n"
+              << "phi_0: " << input.phi_0 << "\n"
+              << "phi_1: " << input.phi_1 << "\n\n"
+              << "--------------- ADDITIONAL PARAMETERS ---------\n\n"
+              << "epsilon: " << input.epsilon << "\n"
+              << "nSegments: " << input.nSegments << "\n"
+              << "l_lim: " << input.l_lim << "\n"
+              << "theta_lim: " << input.theta_lim << "\n"
+              << "h_init: " << input.h_init << "\n"
+              << "h_min: " << input.h_min << "\n"
+              << "h_max: " << input.h_max << "\n"
+              << "h_deriv: " << input.h_deriv << "\n"
+              << "n_tol: " << input.n_tol << "\n"
+              << "max_iter: " << input.max_iter << "\n"
+              << "precision: " << input.precision << "\n"
+              << "max_insertions: " << input.max_insertions << "\n\n"
+              << "-----------------------------------------------" << std::endl;
 
     if (input.R_xPoint == 0 && input.Z_xPoint == 0) {
         // read xnull and znull from the HDF5 file
@@ -49,71 +64,82 @@ int main() {
         std::cout << "znull: " << input.Z_xPoint << std::endl;
     }
 
-    // create vector of input.slices points from input.phi_0 to input.phi_1 (degrees)
-    std::vector<double> phi_slices;
-    if (input.slices > 1) {
-        phi_slices.push_back(input.phi_0);
-        std::cout << "\nCreating vector of points from phi_0 to phi_1..." << std::endl;
-        double dPhi = (input.phi_1 - input.phi_0) / (input.slices - 1);
-        std::cout << "Phi = " << input.phi_0;
-        for (int i = 1; i < input.slices; ++i) {
+    // create vector of input.nSections angular coordinates from input.phi_0 to input.phi_1 (deg)
+    std::vector<double> poincare_sections;
+    if (input.nSections > 1) {
+        poincare_sections.push_back(input.phi_0);
+        double dPhi = (input.phi_1 - input.phi_0) / (input.nSections - 1);
+        std::cout << "\nPoincaré sections defined at Phi (deg) = " << input.phi_0;
+        for (int i = 1; i < input.nSections; ++i) {
             double phi = input.phi_0 + i * dPhi;
-            phi_slices.push_back(phi);
+            poincare_sections.push_back(phi);
             std::cout << ", " << phi;
         }
     } else {
-        phi_slices.push_back(input.Phi);
-        std::cout << "\nUsing single point with Phi = " << input.Phi << std::endl;
+        poincare_sections.push_back(input.Phi);
+        std::cout << "\nPoincaré section defined at Phi (deg) = " << input.Phi << std::endl;
     }
 
-    // loop over phi slices
-    for (const auto &phi : phi_slices) {
+    // loop over Poincaré sections
+    for (const auto &phi : poincare_sections) {
         double phi_rad = phi * M_PI / 180.0; // convert degrees to radians
 
         std::cout << "\n\n"
-                  << std::string(50, '#') << "\n"
+                  << std::string(50, '-') << "\n"
                   << std::endl;
 
-        std::cout << "Processing phi = " << static_cast<int>(phi) << std::endl;
+        std::cout << "Tracing section Phi = " << static_cast<int>(phi) << std::endl;
+
+        // create maglit object
+        std::cout << "\nCreating maglit object...\n"
+                  << std::endl;
+        maglit tracer(input.source_path.c_str(), FIO_M3DC1_SOURCE, input.timeslice);
+        tracer.configure(input.h_init, input.h_min, input.h_max);
+
         // create manifold object
         std::cout << "\nCreating manifold object...\n"
                   << std::endl;
-        manifold manifold(input.source_path.c_str(), input.timeslice, phi_rad, input.stability, input.epsilon);
+        manifold manifold(tracer, phi_rad, input.manifold);
+        manifold.configure(input.epsilon, input.h_deriv, input.n_tol, input.max_iter, input.precision, input.max_insertions);
 
         // find the x-point
-        std::cout << "\nFinding x-point..."
+        std::cout << "\nFinding X-Point..."
                   << std::endl;
         bool found_xp = manifold.find_xPoint(input.R_xPoint, input.Z_xPoint);
         if (!found_xp) {
-            std::cerr << "Failed to find the x-point at Phi = " << phi << std::endl;
+            std::cerr << "Failed to find the X-Point at Phi = " << phi << std::endl;
             continue;
         }
 
         // print x-point
         std::cout << std::fixed << std::setprecision(16) << "\n"
-                  << "x-point found at: " << "\n"
+                  << "X-Point found at: " << "\n"
                   << "R: " << manifold.xPoint.R << " Z: " << manifold.xPoint.Z << "\n"
                   << std::endl;
 
-        size_t num_points = 10;             // number of points in the primary segment
-        std::vector<point> primary_segment; // vector of points to store the primary segment
+        size_t             num_points = 10;       // number of points in the primary segment
+        std::vector<point> first_primary_segment; // vector of points to store the first primary segment
 
-        // compute primary segment
+        // compute first primary segment
         std::cout << "\nComputing the first primary segment...\n"
                   << std::endl;
-        manifold.primarySegment(primary_segment, num_points);
+        manifold.primarySegment(first_primary_segment, num_points);
+        // if input.output_path ends with .dat, remove it
+        if (input.output_path.size() >= 4 &&
+            input.output_path.substr(input.output_path.size() - 4) == ".dat") {
+            input.output_path = input.output_path.substr(0, input.output_path.size() - 4);
+        }
+        // concatenate input.output_path with the poincare sections
+        std::string section_file = input.output_path + "_" + std::to_string(static_cast<int>(phi)) + ".dat";
 
-        // concatenate input.output_path with the slice
-        std::string slice_file = input.output_path + "_" + std::to_string(static_cast<int>(phi)) + ".dat";
-
-        // save the primary segment to file slice_file
-        std::ofstream output_file(slice_file);
+        // save the primary segment to file section_file
+        std::ofstream output_file(section_file);
         if (!output_file) {
-            std::cerr << "Error opening output file: " << slice_file << std::endl;
+            std::cerr << "Error opening output file: " << section_file << std::endl;
             return 1;
         }
         output_file << std::fixed << std::setprecision(16);
-        for (const auto &pt : primary_segment) {
+        for (const auto &pt : first_primary_segment) {
             output_file << pt.R << " " << pt.Z << "\n";
         }
         output_file.close();
@@ -121,25 +147,25 @@ int main() {
         std::vector<point> new_segment; // vector of points to store the new segment
 
         // loop to create new segments
-        for (int i = 1; i < input.nSeg; ++i) {
+        for (int i = 1; i < input.nSegments; ++i) {
             // print progress bar
-            manifold.progressBar(i, input.nSeg);
+            manifold.progressBar(i, input.nSegments);
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             if (input.method == 0) {
-                manifold.newSegment(primary_segment, new_segment, phi_rad, i, input.l_lim, input.theta_lim);
+                manifold.newSegment(first_primary_segment, new_segment, phi_rad, i, input.l_lim, input.theta_lim);
             } else if (input.method == 1) {
-                manifold.newSegment(primary_segment, new_segment, phi_rad, input.l_lim, input.theta_lim);
-                primary_segment = new_segment;
+                manifold.newSegment(first_primary_segment, new_segment, phi_rad, input.l_lim, input.theta_lim);
+                first_primary_segment = new_segment;
             } else {
                 std::cerr << "Invalid method selected. Please choose 0 or 1." << std::endl;
                 return 1;
             }
 
-            // append the new segment to file slice_file
-            std::ofstream output_file(slice_file, std::ios::app);
+            // append the new segment to file section_file
+            std::ofstream output_file(section_file, std::ios::app);
             if (!output_file) {
-                std::cerr << "Error opening output file: " << slice_file << std::endl;
+                std::cerr << "Error opening output file: " << section_file << std::endl;
                 return 1;
             }
             output_file << std::fixed << std::setprecision(16);
@@ -152,8 +178,8 @@ int main() {
             new_segment.clear();
         }
 
-        std::cout << "\nManifold successfully computed for slice Phi = " << static_cast<int>(phi) << "\n"
-                  << "Data saved to " << slice_file << std::endl;
+        std::cout << "\nManifold successfully computed for Poincaré section phi = " << static_cast<int>(phi) << "\n"
+                  << "Data saved to " << section_file << std::endl;
     }
 
     // Done!

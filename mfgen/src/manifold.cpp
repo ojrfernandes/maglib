@@ -1,8 +1,8 @@
 #include "manifold.h"
 
 // Constructor
-manifold::manifold(const char *source_path, const int timeslice, double phi, int stability, double epsilon)
-    : stability(stability), phi(phi), epsilon(epsilon), tracer(source_path, FIO_M3DC1_SOURCE, timeslice) {
+manifold::manifold(maglit &tracer, double phi, int stability)
+    : stability(stability), phi(phi), tracer(tracer) {
 
     // Set the inverse map based on the stability
     switch (stability) {
@@ -21,6 +21,16 @@ manifold::manifold(const char *source_path, const int timeslice, double phi, int
 void manifold::setVerbose() {
     this->verbose = true;
     tracer.set_warnings();
+}
+
+// Configure parameters
+void manifold::configure(double epsilon, double h, double tol, int max_iter, double precision_limit, int max_insertions) {
+    this->epsilon = epsilon;
+    this->h = h;
+    this->tol = tol;
+    this->max_iter = max_iter;
+    this->precision_limit = precision_limit;
+    this->max_insertions = max_insertions;
 }
 
 // Apply map to a given point returning a Point (R, Z)
@@ -339,10 +349,10 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
 
     theta_lim = theta_lim * M_PI / 180.0; // Convert angle limit to radians
     double theta_lim_aux = theta_lim;
-    int insertion_count = 0;
+    int    insertion_count = 0;
 
     std::vector<interpolantArc> arcs = this->buildInterpolants(prev_seg);
-    size_t j = 1; // Start at the second point
+    size_t                      j = 1; // Start at the second point
 
     while (j < arcs.size()) {
 
@@ -417,7 +427,7 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
     size_t j = 1;                         // Start at the second point
     theta_lim = theta_lim * M_PI / 180.0; // Convert angle limit to radians
     double theta_lim_aux = theta_lim;     // Copy of the angle limit
-    int insertion_count = 0;              // Counter for insertions in the current segment
+    int    insertion_count = 0;           // Counter for insertions in the current segment
 
     while (j < prev_seg.size() - 1) {
         // Apply map to the points
@@ -490,7 +500,7 @@ void manifold::newSegment(std::vector<point> &prev_seg, std::vector<point> &new_
 
 // Print a progress bar
 void manifold::progressBar(int j, int nSeg) {
-    int barWidth = 50;
+    int   barWidth = 50;
     float progress = static_cast<float>(j) / nSeg;
 
     std::cout << "\nComputing primary segment " << j + 1 << " of " << nSeg << "...\n";
