@@ -55,7 +55,44 @@ cmake ..
 make
 ```
 
-### Step 3: (optional) Set the executables to your system PATH in your .bashrc
+### Step 3: (optional but recommended) Download test data and run tests
+Some tests in Maglib require sample M3D-C1 simulation data. The dataset is hosted on Figshare.
+
+1. Download the dataset archive from Figshare:
+   📦 https://doi.org/10.6084/m9.figshare.30593324.v1
+2. Extract the archive — this will create a folder named `data`.
+3. Move or copy the `data` folder into the `maglib/tests` directory. The final structure should look like:
+   
+      ```bash
+      maglib/
+    ├── build/
+    ├── fpgen/
+    ├── lbmap/
+    ├── maglit/
+    ├── mfgen/
+    ├── tests/
+    │   ├── data/
+    │       ├── C1.h5
+    │       └── ...
+    │   ├── CMakeLists.txt
+    │   └── ...
+    ```
+5. In the `build` directory
+   
+   ```bash
+   # run the full test suite
+   make test
+
+   # or run each test independently
+   ./tests/test_collider
+   ./tests/test_fpgen
+   ./tests/test_maglit
+   ./tests/test_mfgen
+   ./tests/test_sode
+   ```
+Full test suite execution should only take a couple minutes.
+   
+### Step 4: (optional) Set the executables to your system PATH in your .bashrc
 ```bash
 # set maglib directory
 export MAGLIB_ROOT=/path/to/your/maglib/root
