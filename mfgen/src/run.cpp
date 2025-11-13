@@ -11,7 +11,7 @@ int main() {
               << "-----------------------------------------------\n"
               << std::endl;
     input_read input(pathsFile);
-    bool       readStatus = input.readInputFile();
+    bool readStatus = input.readInputFile();
     if (!readStatus) {
         std::cerr << "Error reading input file." << std::endl;
         return 1;
@@ -42,6 +42,7 @@ int main() {
               << "max_iter: " << input.max_iter << "\n"
               << "precision: " << input.precision << "\n"
               << "max_insertions: " << input.max_insertions << "\n\n"
+              << "verbose: " << input.verbose << "\n"
               << "-----------------------------------------------" << std::endl;
 
     if (input.R_xPoint == 0 && input.Z_xPoint == 0) {
@@ -101,6 +102,9 @@ int main() {
                   << std::endl;
         manifold manifold(tracer, phi_rad, input.manifold);
         manifold.configure(input.epsilon, input.h_deriv, input.n_tol, input.max_iter, input.precision, input.max_insertions);
+        if (input.verbose == 1) {
+            manifold.setVerbose();
+        }
 
         // find the x-point
         std::cout << "\nFinding X-Point..."
@@ -117,7 +121,7 @@ int main() {
                   << "R: " << manifold.xPoint.R << " Z: " << manifold.xPoint.Z << "\n"
                   << std::endl;
 
-        size_t             num_points = 10;       // number of points in the primary segment
+        size_t num_points = 10;                   // number of points in the primary segment
         std::vector<point> first_primary_segment; // vector of points to store the first primary segment
 
         // compute first primary segment
@@ -131,6 +135,14 @@ int main() {
         }
         // concatenate input.output_path with the poincare sections
         std::string section_file = input.output_path + "_" + std::to_string(static_cast<int>(phi)) + ".dat";
+
+        // check if there is a saved file with the same name
+        std::ifstream test_file(section_file);
+        if (test_file.is_open()) {
+            std::cerr << "Warning: File " << section_file << " already exists. Saving to a new file to avoid overwriting your data." << std::endl;
+            section_file = input.output_path + "_" + std::to_string(static_cast<int>(phi)) + "_new.dat";
+        }
+        test_file.close();
 
         // save the primary segment to file section_file
         std::ofstream output_file(section_file);

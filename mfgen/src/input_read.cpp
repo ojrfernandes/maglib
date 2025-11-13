@@ -5,7 +5,7 @@ input_read::input_read(const std::string &readingPath) : reading_path(readingPat
 
 bool input_read::readInputFile() {
     std::ifstream file(this->reading_path);
-    std::string   line;
+    std::string line;
 
     // Open the file and check for errors
     if (!file) {
@@ -193,6 +193,13 @@ bool input_read::readInputFile() {
             // check if max_insertions is a positive integer
             if (this->max_insertions < 1) {
                 std::cerr << "Error: max_insertions must be a positive integer." << std::endl;
+                return false;
+            }
+        } else if (key == "verbose") {
+            this->verbose = std::stoi(value);
+            // check if verbose is 0 or 1
+            if (this->verbose != 0 && this->verbose != 1) {
+                std::cerr << "Error: verbose must be 0 (no) or 1 (yes)." << std::endl;
                 return false;
             }
         }

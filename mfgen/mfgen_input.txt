@@ -32,3 +32,4 @@
         max_iter = 50                   # maximum iterations for Newton's method
         precision = 1e-14               # precision for floating point comparison
         max_insertions = 100            # maximum new point insertions per segment
+        verbose = 0                     # basic info printed = 0; all info printed = 1

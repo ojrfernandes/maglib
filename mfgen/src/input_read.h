@@ -23,29 +23,30 @@ class input_read {
     std::string output_path; // path to the output file
 
     // Tracing parameters
-    int    timeslice; // timeslice to be read from the source file
-    int    manifold;  // stability of the manifold (stable or unstable)
-    int    method;    // method to be used for the manifold generation
-    double Phi;       // toroidal angle coordinate for of the poincaré section
-    int    nSegments; // number of primary segments to be mapped
+    int timeslice; // timeslice to be read from the source file
+    int manifold;  // stability of the manifold (stable or unstable)
+    int method;    // method to be used for the manifold generation
+    double Phi;    // toroidal angle coordinate for of the poincaré section
+    int nSegments; // number of primary segments to be mapped
 
     // Multiple Poincare sections
-    int    nSections; // number of poincare sections to be generated
-    double phi_0;     // initial toroidal angle coordinate
-    double phi_1;     // final toroidal angle coordinate
+    int nSections; // number of poincare sections to be generated
+    double phi_0;  // initial toroidal angle coordinate
+    double phi_1;  // final toroidal angle coordinate
 
     // Additional parameters
-    double epsilon;        // first primary segment distance to the x-point
-    double l_lim;          // distance treshold for the refinement process
-    double theta_lim;      // angle treshold for the refinement process
-    double h_init;         // initial step-size for integration
-    double h_min;          // minimum step-size for integration
-    double h_max;          // maximum step-size for integration
-    double h_deriv;        // step-size for numerical derivatives
-    double n_tol;          // tolerance for Newton's method
-    int    max_iter;       // maximum iterations for Newton's method
-    double precision;      // precision for floating point comparison
-    int    max_insertions; // maximum number of points per segment
+    double epsilon;     // first primary segment distance to the x-point
+    double l_lim;       // distance treshold for the refinement process
+    double theta_lim;   // angle treshold for the refinement process
+    double h_init;      // initial step-size for integration
+    double h_min;       // minimum step-size for integration
+    double h_max;       // maximum step-size for integration
+    double h_deriv;     // step-size for numerical derivatives
+    double n_tol;       // tolerance for Newton's method
+    int max_iter;       // maximum iterations for Newton's method
+    double precision;   // precision for floating point comparison
+    int max_insertions; // maximum number of points per segment
+    int verbose;        // version of the input file reader
 
     // X-point coordinates for HDF5 reading
     double R_xPoint = 0; // R coordinate of the x-point

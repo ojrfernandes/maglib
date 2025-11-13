@@ -21,7 +21,7 @@ class MfgenTest : public ::testing::Test {
         tracer = nullptr;
     }
 
-    static maglit     *tracer;
+    static maglit *tracer;
     static std::string source_path;
 
     void SetUp() override {
@@ -85,7 +85,8 @@ class MfgenTest : public ::testing::Test {
             << "        n_tol = 1e-14                 # tolerance for Newton's method\n"
             << "        max_iter = 100             # maximum iterations for Newton's method\n"
             << "        precision = 1e-8           # precision for calculations\n"
-            << "        max_insertions = 50         # maximum insertions allowed\n";
+            << "        max_insertions = 50         # maximum insertions allowed\n"
+            << "        verbose = 0                 # verbosity flag (0 or 1)\n";
         valid_input.close();
     }
 
@@ -114,27 +115,28 @@ class MfgenTest : public ::testing::Test {
         // Edge case values
         std::ofstream edge_case_input(edge_case_input_file);
         edge_case_input
-            << "source_path = \n"       // Empty string
-            << "output_path = a\n"      // Single character
-            << "timeslice = 0\n"        // zero value
-            << "manifold  = -1\n"       // negative value
-            << "method = 9999\n"        // very large value
-            << "Phi = -360\n"           // negative angle
-            << "nSections = 0\n"        // zero sections
-            << "phi_0 = 360\n"          // large angle
-            << "phi_1 = -360\n"         // negative angle
-            << "epsilon = -1e-6\n"      // negative perturbation size
-            << "nSegments = 0\n"        // zero segments
-            << "l_lim = -0.01\n"        // negative maximum segment length
-            << "theta_lim = -10\n"      // negative angle limit
-            << "h_init = -1e-2\n"       // negative step-size
-            << "h_min = -1e-6\n"        // negative minimum step-size
-            << "h_max = -1e-2\n"        // negative maximum step-size
-            << "h_deriv = -1e-3\n"      // negative step size for derivative calculation
-            << "n_tol = -10\n"          // negative tolerance for Newton's method
-            << "max_iter = -100\n"      // negative maximum iterations for Newton's method
-            << "precision = -1e-8\n"    // negative precision for calculations
-            << "max_insertions = -5\n"; // negative maximum insertions allowed
+            << "source_path = \n"      // Empty string
+            << "output_path = a\n"     // Single character
+            << "timeslice = 0\n"       // zero value
+            << "manifold  = -1\n"      // negative value
+            << "method = 9999\n"       // very large value
+            << "Phi = -360\n"          // negative angle
+            << "nSections = 0\n"       // zero sections
+            << "phi_0 = 360\n"         // large angle
+            << "phi_1 = -360\n"        // negative angle
+            << "epsilon = -1e-6\n"     // negative perturbation size
+            << "nSegments = 0\n"       // zero segments
+            << "l_lim = -0.01\n"       // negative maximum segment length
+            << "theta_lim = -10\n"     // negative angle limit
+            << "h_init = -1e-2\n"      // negative step-size
+            << "h_min = -1e-6\n"       // negative minimum step-size
+            << "h_max = -1e-2\n"       // negative maximum step-size
+            << "h_deriv = -1e-3\n"     // negative step size for derivative calculation
+            << "n_tol = -10\n"         // negative tolerance for Newton's method
+            << "max_iter = -100\n"     // negative maximum iterations for Newton's method
+            << "precision = -1e-8\n"   // negative precision for calculations
+            << "max_insertions = -5\n" // negative maximum insertions allowed
+            << "verbose = 1\n";        // verbosity flag set to 1
 
         edge_case_input.close();
 
@@ -182,7 +184,7 @@ class MfgenTest : public ::testing::Test {
 // Test: Constructor initializes reading_path correctly
 TEST_F(MfgenTest, InputRead_Constructor) {
     std::string test_path = "test_path.txt";
-    input_read  reader(test_path);
+    input_read reader(test_path);
 
     // test that the constructor doesn't crash
     EXPECT_NO_THROW(input_read reader2(test_path));
@@ -191,7 +193,7 @@ TEST_F(MfgenTest, InputRead_Constructor) {
 // Test: Valid input file reading
 TEST_F(MfgenTest, InputRead_ValidFile) {
     input_read reader(valid_input_file);
-    bool       result = reader.readInputFile();
+    bool result = reader.readInputFile();
 
     EXPECT_TRUE(result) << "Should successfully read valid input file";
 
@@ -219,12 +221,13 @@ TEST_F(MfgenTest, InputRead_ValidFile) {
     EXPECT_EQ(reader.max_iter, 100);
     EXPECT_DOUBLE_EQ(reader.precision, 1e-8);
     EXPECT_EQ(reader.max_insertions, 50);
+    EXPECT_EQ(reader.verbose, 0);
 }
 
 // Test: Invalid file handling
 TEST_F(MfgenTest, InputRead_InvalidFile) {
     input_read reader(invalid_input_file);
-    bool       result = reader.readInputFile();
+    bool result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for invalid file";
 }
@@ -232,7 +235,7 @@ TEST_F(MfgenTest, InputRead_InvalidFile) {
 // Test: Nonexistent file handling
 TEST_F(MfgenTest, InputRead_NonexistentFile) {
     input_read reader(nonexistent_file);
-    bool       result = reader.readInputFile();
+    bool result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for nonexistent file";
 }
@@ -240,7 +243,7 @@ TEST_F(MfgenTest, InputRead_NonexistentFile) {
 // Test: Malformed file handling
 TEST_F(MfgenTest, InputRead_MalformedFile) {
     input_read reader(malformed_input_file);
-    bool       result = reader.readInputFile();
+    bool result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for malformed file";
 }
@@ -248,7 +251,7 @@ TEST_F(MfgenTest, InputRead_MalformedFile) {
 // Test: Empty file handling
 TEST_F(MfgenTest, InputRead_EmptyFile) {
     input_read reader(empty_input_file);
-    bool       result = reader.readInputFile();
+    bool result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for empty file";
 }
@@ -256,7 +259,7 @@ TEST_F(MfgenTest, InputRead_EmptyFile) {
 // Test: Edge case values
 TEST_F(MfgenTest, InputRead_EdgeCaseValues) {
     input_read reader(edge_case_input_file);
-    bool       result = reader.readInputFile();
+    bool result = reader.readInputFile();
 
     if (result) {
         // Check string parameters
@@ -283,6 +286,7 @@ TEST_F(MfgenTest, InputRead_EdgeCaseValues) {
         EXPECT_EQ(reader.max_iter, -100);
         EXPECT_DOUBLE_EQ(reader.precision, -1e-8);
         EXPECT_EQ(reader.max_insertions, -5);
+        EXPECT_EQ(reader.verbose, 1);
     }
 
     EXPECT_NO_THROW(reader.readInputFile());
@@ -291,7 +295,7 @@ TEST_F(MfgenTest, InputRead_EdgeCaseValues) {
 // Test: Comments and whitespace handling
 TEST_F(MfgenTest, InputRead_CommentsAndWhitespace) {
     input_read reader(comment_whitespace_input_file);
-    bool       result = reader.readInputFile();
+    bool result = reader.readInputFile();
 
     EXPECT_TRUE(result) << "Should handle comments and whitespace correctly";
 
@@ -330,7 +334,7 @@ TEST_F(MfgenTest, InputRead_MultipleReads) {
 
     // Store values from first read
     std::string first_source = reader.source_path;
-    int         first_segments = reader.nSegments;
+    int first_segments = reader.nSegments;
 
     // Second read should give same results
     bool result2 = reader.readInputFile();
