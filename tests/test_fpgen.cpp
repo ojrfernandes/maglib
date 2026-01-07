@@ -325,14 +325,14 @@ TEST_F(FpgenTest, Footprint_OutputDataInitialization) {
     // Check that outputData is properly sized
     EXPECT_EQ(fp.outputData.size(), nRZ * nPhi);
 
-    // Check that each row has 5 columns
+    // Check that each row has 6 columns
     if (fp.outputData.size() > 0) {
-        EXPECT_EQ(fp.outputData[0].size(), 5);
+        EXPECT_EQ(fp.outputData[0].size(), 6);
     }
 
     // Check all rows are properly initialized
     for (const auto &row : fp.outputData) {
-        EXPECT_EQ(row.size(), 5);
+        EXPECT_EQ(row.size(), 6);
     }
 }
 
@@ -354,16 +354,16 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
     // Check that outputData is populated
     EXPECT_EQ(fp.outputData.size(), nR * nZ);
 
-    // Check that each row has 5 columns
+    // Check that each row has 6 columns
     if (fp.outputData.size() > 0) {
-        EXPECT_EQ(fp.outputData[0].size(), 5);
+        EXPECT_EQ(fp.outputData[0].size(), 6);
     }
 
     // Check that data values (within 3 digit precision) are
-    // 0.435000 -0.239000 0.000000 4.699479 0.995964
-    // 0.435000 -0.232000 0.000000 10.802152 1.001697
-    // 0.435000 -0.239000 3.141593 4.852588 0.995996
-    // 0.435000 -0.232000 3.141593 10.739208 1.009234
+    // 0.435000 -0.239000 0.000000 4.699479 0.995964 1
+    // 0.435000 -0.232000 0.000000 10.802152 1.001697 3
+    // 0.435000 -0.239000 3.141593 4.852588 0.995996 2
+    // 0.435000 -0.232000 3.141593 10.739208 1.009234 3
     EXPECT_NEAR(fp.outputData[0][0], 0.435000, 1e-3);
     EXPECT_NEAR(fp.outputData[1][0], 0.435000, 1e-3);
     EXPECT_NEAR(fp.outputData[2][0], 0.435000, 1e-3);
@@ -388,6 +388,11 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
     EXPECT_NEAR(fp.outputData[1][4], 1.001697, 1e-3);
     EXPECT_NEAR(fp.outputData[2][4], 0.995996, 1e-3);
     EXPECT_NEAR(fp.outputData[3][4], 1.009234, 1e-3);
+
+    EXPECT_EQ(fp.outputData[0][5], 1);
+    EXPECT_EQ(fp.outputData[1][5], 3);
+    EXPECT_EQ(fp.outputData[2][5], 2);
+    EXPECT_EQ(fp.outputData[3][5], 3);
 }
 
 // Test: Simple 2 x 2 tcabr floor grid run limited to 50 turns
@@ -408,16 +413,16 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     // Check that outputData is populated
     EXPECT_EQ(fp.outputData.size(), nR * nZ);
 
-    // Check that each row has 5 columns
+    // Check that each row has 6 columns
     if (fp.outputData.size() > 0) {
-        EXPECT_EQ(fp.outputData[0].size(), 5);
+        EXPECT_EQ(fp.outputData[0].size(), 6);
     }
 
     // Check that data values (within 3 digit precision) are
-    // 0.51 -0.24 0 10.5302 0.974279
-    // 0.54 -0.24 0 8.5844 1.05251
-    // 0.51 -0.24 3.14159 47.3727 0.882983
-    // 0.54 -0.24 3.14159 8.80513 1.0541
+    // 0.51 -0.24 0 10.5302 0.974279 3
+    // 0.54 -0.24 0 8.5844 1.05251 2
+    // 0.51 -0.24 3.14159 47.3727 0.882983 13
+    // 0.54 -0.24 3.14159 8.80513 1.0541 2
     EXPECT_NEAR(fp.outputData[0][0], 0.51, 1e-3);
     EXPECT_NEAR(fp.outputData[1][0], 0.54, 1e-3);
     EXPECT_NEAR(fp.outputData[2][0], 0.51, 1e-3);
@@ -442,4 +447,9 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     EXPECT_NEAR(fp.outputData[1][4], 1.05251, 1e-3);
     EXPECT_NEAR(fp.outputData[2][4], 0.882983, 1e-3);
     EXPECT_NEAR(fp.outputData[3][4], 1.0541, 1e-3);
+
+    EXPECT_EQ(fp.outputData[0][5], 3);
+    EXPECT_EQ(fp.outputData[1][5], 2);
+    EXPECT_EQ(fp.outputData[2][5], 13);
+    EXPECT_EQ(fp.outputData[3][5], 2);
 }

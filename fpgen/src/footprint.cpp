@@ -1,7 +1,7 @@
 #include "footprint.h"
 
 footprint::footprint(const int manifold, const double grid_R1, const double grid_Z1, const double grid_R2, const double grid_Z2, const int nRZ, const int nPhi, const int max_turns) : manifold(manifold), grid_R1(grid_R1), grid_Z1(grid_Z1), grid_R2(grid_R2), grid_Z2(grid_Z2), nRZ(nRZ), nPhi(nPhi), max_turns(max_turns) {
-    this->outputData.resize(nRZ * nPhi, std::vector<double>(5));
+    this->outputData.resize(nRZ * nPhi, std::vector<double>(6));
 }
 
 void footprint::runGrid(maglit &tracer) {
@@ -44,6 +44,7 @@ void footprint::runGrid(maglit &tracer) {
             outputData[index][2] = phi_init;
             outputData[index][3] = scalars.length;
             outputData[index][4] = scalars.psimin;
+            outputData[index][5] = scalars.turn;
 
             // Print progress bar only in the first thread (thread 0)
             if (omp_get_thread_num() == 0) {
@@ -65,6 +66,7 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     double  psin0 = 5.0;
     double *psin1 = &psin0;
     scalars.psimin = *psin1;
+    scalars.turn = 0;
     tracer.reset();
     do {
         R0 = R1;
@@ -77,6 +79,10 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
             if (*psin1 < scalars.psimin) {
                 scalars.psimin = *psin1;
             }
+
+            int old_turn = static_cast<int>(floor(phi0 / (2 * M_PI)));
+            int new_turn = static_cast<int>(floor(phi1 / (2 * M_PI)));
+            scalars.turn += (new_turn - old_turn);
         }
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
     scalars.length = arc;

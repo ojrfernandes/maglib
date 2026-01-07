@@ -21,6 +21,7 @@ class footprint {
     {
         double length;
         double psimin;
+        int    turn;
     } map_scalars; // structure to store the connection length and the minimum psi value
 
     // integrate the field line from a given initial condition
