@@ -122,29 +122,35 @@ void maglit::clear_hint() {
 
 // evaluate normalized poloidal flux
 void maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
-    int status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field, &opt);
-    if (status != FIO_SUCCESS) {
-        std::cerr << "Error evaluating normalized poloidal flux" << std::endl;
-        psin_field = 0;
-        return;
+    if (!psin_field) {
+        int status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field, &opt);
+        if (status != FIO_SUCCESS) {
+            std::cerr << "Error initializing normalized poloidal flux" << std::endl;
+            psin_field = nullptr;
+            return;
+        }
     }
+
     double x[3] = {R, Phi, Z};
-    bool   result = psin_field->eval(x, psin, hint);
-    if (result != FIO_SUCCESS && this->warnings) {
+    int    result = psin_field->eval(x, psin, hint);
+    if (result != FIO_SUCCESS && warnings) {
         std::cerr << "Fio psin field returned " << result << std::endl;
     }
 }
 
 // evaluate poloidal flux
 void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
-    int status = src->get_field(FIO_POLOIDAL_FLUX, &psi_field, &opt);
-    if (status != FIO_SUCCESS) {
-        std::cerr << "Error initializing poloidal flux" << std::endl;
-        psi_field = 0;
-        return;
+    if (!psi_field) {
+        int status = src->get_field(FIO_POLOIDAL_FLUX, &psi_field, &opt);
+        if (status != FIO_SUCCESS) {
+            std::cerr << "Error initializing poloidal flux" << std::endl;
+            psi_field = nullptr;
+            return;
+        }
     }
+
     double x[3] = {R, Phi, Z};
-    bool   result = psi_field->eval(x, psi, hint);
+    int    result = psi_field->eval(x, psi, hint);
     if (result != FIO_SUCCESS && this->warnings) {
         std::cerr << "Fio psi field returned " << result << std::endl;
     }
