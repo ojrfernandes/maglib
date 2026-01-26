@@ -178,7 +178,8 @@ int mag_system(double *f, double *x, double t, void *mgl) {
 void maglit::set_monitor(const std::string &collider_path) {
     if (!boundary.load_shape(collider_path)) {
         std::cerr << "Error loading collider shape from " << collider_path << std::endl;
-        return;
+        // stop the program if collider cannot be loaded
+        exit(EXIT_FAILURE);
     }
 
     solver.set_monitor(&maglit::monitor_boundary);
