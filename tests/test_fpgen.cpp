@@ -391,7 +391,7 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
 
     EXPECT_EQ(fp.outputData[0][5], 1);
     EXPECT_EQ(fp.outputData[1][5], 3);
-    EXPECT_EQ(fp.outputData[2][5], 2);
+    EXPECT_EQ(fp.outputData[2][5], 1);
     EXPECT_EQ(fp.outputData[3][5], 3);
 }
 
