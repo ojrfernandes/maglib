@@ -60,11 +60,12 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     R1 = R0;
     Z1 = Z0;
     phi1 = phi0;
-    int     status;
-    double  phi_max = this->max_turns * 2 * M_PI;
-    double  arc = 0;
-    double  psin0 = 5.0;
-    double *psin1 = &psin0;
+    int          status;
+    double       phi_max = this->max_turns * 2 * M_PI;
+    double       arc = 0;
+    double       psin0 = 5.0;
+    double      *psin1 = &psin0;
+    const double phi_start = phi0;
     scalars.psimin = *psin1;
     scalars.turn = 0;
     tracer.reset();
@@ -80,11 +81,12 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
                 scalars.psimin = *psin1;
             }
 
-            int old_turn = static_cast<int>(floor(phi0 / (2 * M_PI)));
-            int new_turn = static_cast<int>(floor(phi1 / (2 * M_PI)));
-            scalars.turn += (new_turn - old_turn);
+            int old_turn = static_cast<int>(floor((phi0 - phi_start) / (2 * M_PI)));
+            int new_turn = static_cast<int>(floor((phi1 - phi_start) / (2 * M_PI)));
         }
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
+
+    scalars.turn = static_cast<int>(floor((phi1 - phi_start) / (2 * M_PI)));
     scalars.length = arc;
 }
 
