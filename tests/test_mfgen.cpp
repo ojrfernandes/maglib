@@ -21,7 +21,7 @@ class MfgenTest : public ::testing::Test {
         tracer = nullptr;
     }
 
-    static maglit *tracer;
+    static maglit     *tracer;
     static std::string source_path;
 
     void SetUp() override {
@@ -184,7 +184,7 @@ class MfgenTest : public ::testing::Test {
 // Test: Constructor initializes reading_path correctly
 TEST_F(MfgenTest, InputRead_Constructor) {
     std::string test_path = "test_path.txt";
-    input_read reader(test_path);
+    input_read  reader(test_path);
 
     // test that the constructor doesn't crash
     EXPECT_NO_THROW(input_read reader2(test_path));
@@ -193,7 +193,7 @@ TEST_F(MfgenTest, InputRead_Constructor) {
 // Test: Valid input file reading
 TEST_F(MfgenTest, InputRead_ValidFile) {
     input_read reader(valid_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_TRUE(result) << "Should successfully read valid input file";
 
@@ -227,7 +227,7 @@ TEST_F(MfgenTest, InputRead_ValidFile) {
 // Test: Invalid file handling
 TEST_F(MfgenTest, InputRead_InvalidFile) {
     input_read reader(invalid_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for invalid file";
 }
@@ -235,7 +235,7 @@ TEST_F(MfgenTest, InputRead_InvalidFile) {
 // Test: Nonexistent file handling
 TEST_F(MfgenTest, InputRead_NonexistentFile) {
     input_read reader(nonexistent_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for nonexistent file";
 }
@@ -243,7 +243,7 @@ TEST_F(MfgenTest, InputRead_NonexistentFile) {
 // Test: Malformed file handling
 TEST_F(MfgenTest, InputRead_MalformedFile) {
     input_read reader(malformed_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for malformed file";
 }
@@ -251,7 +251,7 @@ TEST_F(MfgenTest, InputRead_MalformedFile) {
 // Test: Empty file handling
 TEST_F(MfgenTest, InputRead_EmptyFile) {
     input_read reader(empty_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_FALSE(result) << "Should return false for empty file";
 }
@@ -259,7 +259,7 @@ TEST_F(MfgenTest, InputRead_EmptyFile) {
 // Test: Edge case values
 TEST_F(MfgenTest, InputRead_EdgeCaseValues) {
     input_read reader(edge_case_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     if (result) {
         // Check string parameters
@@ -295,7 +295,7 @@ TEST_F(MfgenTest, InputRead_EdgeCaseValues) {
 // Test: Comments and whitespace handling
 TEST_F(MfgenTest, InputRead_CommentsAndWhitespace) {
     input_read reader(comment_whitespace_input_file);
-    bool result = reader.readInputFile();
+    bool       result = reader.readInputFile();
 
     EXPECT_TRUE(result) << "Should handle comments and whitespace correctly";
 
@@ -334,13 +334,25 @@ TEST_F(MfgenTest, InputRead_MultipleReads) {
 
     // Store values from first read
     std::string first_source = reader.source_path;
-    int first_segments = reader.nSegments;
+    int         first_segments = reader.nSegments;
 
     // Second read should give same results
     bool result2 = reader.readInputFile();
     EXPECT_TRUE(result2);
     EXPECT_EQ(reader.source_path, first_source);
     EXPECT_EQ(reader.nSegments, first_segments);
+}
+
+// Test: HDF5 file reading (assuming test HDF5 file exists)
+TEST_F(MfgenTest, InputRead_HDF5File) {
+    input_read reader(valid_input_file);
+    reader.source_path = std::string(TEST_DATA_DIR) + "/C1.h5"; // Set to valid HDF5 file
+    bool result = reader.readHDF5File();
+    EXPECT_TRUE(result) << "Should successfully read HDF5 file";
+
+    // Check that coordinates are within reasonable bounds
+    EXPECT_NEAR(reader.R_xPoint, 0.497998952865601, 1e-6);
+    EXPECT_NEAR(reader.Z_xPoint, -0.218603119254112, 1e-6);
 }
 
 // ==================== MANIFOLD TESTS ====================/
