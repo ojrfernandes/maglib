@@ -1,6 +1,6 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-#define INPUT_READ_V 250324 // version (yy.mm.dd)
+#define INPUT_READ_V 260127 // version (yy.mm.dd)
 
 #include <fstream>
 #include <hdf5.h>
@@ -24,11 +24,8 @@ class input_read {
     std::string perturbedFile;
     std::string intersectionFile;
     std::string lobeFile;
-    double xmag; // R coordinate of the x-point
-    double zmag; // Z coordinate of the x-point
-
-    // Set verbose to debug
-    bool verbose = false;
+    double      xmag; // R coordinate of the magnetic axis
+    double      zmag; // Z coordinate of the magnetic axis
 
   private:
     std::string reading_path; // File path

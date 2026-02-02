@@ -5,15 +5,26 @@
 
 int main() {
     // read params from input file
-    std::string pathsFile = "lb_input.txt";
+    std::string pathsFile = "lbmap_input.txt";
 
-    // read input file
+    std::cout << "\n-----------------------------------------------\n"
+              << "LBMAP - Lobe and Boundary Mapping Tool\n"
+              << "-----------------------------------------------\n"
+              << std::endl;
     input_read input(pathsFile);
-    bool readStatus = input.readInputFile();
+    bool       readStatus = input.readInputFile();
     if (!readStatus) {
         std::cerr << "Error reading input file." << std::endl;
         return 1;
     }
+
+    std::cout << "--------------- I/O FILES ---------------------\n\n"
+              << "hdf5File: " << input.hdf5File << "\n"
+              << "equilibriumFile: " << input.equilibriumFile << "\n"
+              << "perturbedFile: " << input.perturbedFile << "\n"
+              << "intersectionFile: " << input.intersectionFile << "\n"
+              << "lobeFile: " << input.lobeFile << "\n\n"
+              << "-----------------------------------------------" << std::endl;
 
     // read xmag and zmag from the HDF5 file
     bool hdf5Status = input.readHDF5File();
@@ -50,7 +61,7 @@ int main() {
     lobeFile << "#Rmid Zmid polAngle Perimeter Area H-Parameter" << std::endl;
 
     for (size_t i = 0; i < intersection.size() - 1; ++i) {
-        lobe lobe_i(intersection[i], intersection[i + 1], equilibrium, perturbed, magAxisCoord, xPoint);
+        lobe   lobe_i(intersection[i], intersection[i + 1], equilibrium, perturbed, magAxisCoord, xPoint);
         double newAngle = lobe_i.referenceAngle;
         lobeFile << std::setprecision(5) << lobe_i.midpoint.R << " " << lobe_i.midpoint.Z << " " << std::setprecision(15) << newAngle << " " << lobe_i.perimeter << " " << lobe_i.area << " " << lobe_i.hParameter << std::endl;
     }
