@@ -52,13 +52,10 @@ maglit::~maglit() {
 
 // optional: sets the inverse map of the dynamical system
 void maglit::inverse_map(bool inverse) {
-    switch (inverse) {
-    case true:
-        inv_factor = -1;
-        break;
-    case false:
-        inv_factor = 1;
-        break;
+    if (inverse == true) {
+      inv_factor = -1;
+    } else {
+      inv_factor = 1;
     }
 }
 

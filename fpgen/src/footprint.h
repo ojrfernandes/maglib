@@ -4,6 +4,7 @@
 
 #include "input_read.h"
 #include <iomanip>
+#include <limits>
 #include <maglit.h>
 #include <omp.h>
 #include <thread>
@@ -21,8 +22,8 @@ class footprint {
     {
         double length;
         double psimin;
-        int    turn;
-    } map_scalars; // structure to store the connection length and the minimum psi value
+        int    turn; // toroidal turn number
+    } map_scalars;   // structure to store the connection length and the minimum psi value
 
     // integrate the field line from a given initial condition
     void evolve_line(maglit &tracer, double R0, double Z0, double phi0, double &R1, double &Z1, double &phi1, map_scalars &scalars);

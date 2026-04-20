@@ -92,7 +92,7 @@ bool input_read::readInputFile() {
             this->manifold = std::stoi(value);
             // check if manifold is 0 or 1
             if (this->manifold != 0 && this->manifold != 1) {
-                std::cerr << "Error: Manifold must be 0 (unstable) or 1 (stable)." << std::endl;
+                std::cerr << "Error: Manifold must be 1 (unstable) or 0 (stable)." << std::endl;
                 return false;
             }
         } else if (key == "grid_R1") {

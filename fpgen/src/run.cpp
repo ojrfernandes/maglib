@@ -91,16 +91,16 @@ int main() {
     // write output file header
     f0 << "#R0" << std::string(17, ' ') << "Z0" << std::string(17, ' ')
        << "phi0" << std::string(15, ' ') << "length" << std::string(13, ' ')
-       << "psiMin" << std::string(13, ' ') << "turn\n";
+       << "psiMin" << std::string(13, ' ') << "turn\n"; // NEW column
 
     // Write output file data
     for (const auto &row : footprint.outputData) {
         f0 << std::fixed << std::setprecision(16)
            << row[0] << " " << row[1] << " " << row[2]
-           << " " << row[3] << " " << row[4] << " " << row[5] << "\n";
+           << " " << row[3] << " " << row[4] << " "
+           << std::setprecision(0)
+           << row[5] << "\n";
     }
-
-    footprint.outputData.shrink_to_fit();
 
     // close output file
     f0.close();

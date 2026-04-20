@@ -50,7 +50,6 @@ void footprint::runGrid(maglit &tracer) {
             if (omp_get_thread_num() == 0) {
                 float progress = (float)(i * nRZ + j) / (nRZ * nPhi);
                 this->progressBar(progress);
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
     }
@@ -60,13 +59,19 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     R1 = R0;
     Z1 = Z0;
     phi1 = phi0;
-    int          status;
-    double       phi_max = this->max_turns * 2 * M_PI;
-    double       arc = 0;
-    double       psin0 = 5.0;
-    double      *psin1 = &psin0;
-    const double phi_start = phi0;
+
+    // integration variables
+    int    status;
+    double phi_max = this->max_turns * 2 * M_PI;
+    double arc = 0;
+
+    // poloidal flux evaluation variables
+    double  psin0 = std::numeric_limits<double>::max();
+    double *psin1 = &psin0;
     scalars.psimin = *psin1;
+
+    // toroidal turn counting variables
+    const double phi_start = phi0;
     scalars.turn = 0;
     tracer.reset();
     do {
@@ -80,9 +85,6 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
             if (*psin1 < scalars.psimin) {
                 scalars.psimin = *psin1;
             }
-
-            int old_turn = static_cast<int>(floor((phi0 - phi_start) / (2 * M_PI)));
-            int new_turn = static_cast<int>(floor((phi1 - phi_start) / (2 * M_PI)));
         }
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
 
