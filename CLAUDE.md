@@ -97,3 +97,34 @@ key = value   # inline comments supported with #
 ### External dependency: Fusion-IO
 
 `FUSION_IO_DIR` must point to a Fusion-IO build containing `lib/libfusionio.so` and `lib/libm3dc1.so` (shared libraries — CMake builds may produce static libs with different names; rename as needed). Headers must be at `$FUSION_IO_DIR/include`.
+
+### Field source abstraction
+
+`maglit` no longer couples directly to Fusion-IO. The abstract `FieldSource` interface (`maglit/field_source.h`) defines three methods: `eval_B`, `eval_psin`, `eval_psi`. `M3DC1Source` (`maglit/m3dc1_source.h/.cpp`) is the concrete implementation for M3D-C1 data via Fusion-IO. New source types (GEQDSK, analytic, etc.) only need to implement this interface. `maglit.h` does not include any Fusion-IO headers.
+
+Usage pattern:
+```cpp
+M3DC1Source source("C1.h5", timeslice);
+maglit tracer(source);  // source must outlive tracer
+```
+
+## Active refactor — `refactor` branch
+
+The project is being incrementally refactored toward Python/C++ interoperability. Current state on the `refactor` branch:
+
+| Component | Status |
+|-----------|--------|
+| `sode` Python bindings | Done — `maglib.Sode`, `SodeMethod`, `SodeStatus` |
+| `FieldSource` abstraction + `M3DC1Source` | Done |
+| `collider` Python bindings | **Next step** |
+| `maglit` + `M3DC1Source` Python bindings | Planned |
+| Decouple `footprint`/`manifold` from `input_read`, then bind | Planned |
+| `lbmap` | To be discontinued; reimplemented in Python using shapely |
+
+### Python binding conventions
+
+- The compiled extension `_maglib.so` lives in `python/maglib/` alongside `__init__.py`
+- `python/src/sode_wrapper.h/.cpp` — C++ wrapper bridging `sode`'s raw function pointers to `std::function` (pattern to follow for future wrappers)
+- `python/src/maglib_module.cpp` — pybind11 module entry point; add new bindings here
+- `python/CMakeLists.txt` — compile sources directly into the extension to control which system libraries are needed
+- Python tests go in `tests/python/` using pytest; `conftest.py` handles path setup automatically
