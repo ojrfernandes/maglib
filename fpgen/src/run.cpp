@@ -1,5 +1,6 @@
 #include "footprint.h"
 #include "input_read.h"
+#include <m3dc1_source.h>
 
 int main() {
     // read params from input file
@@ -46,24 +47,28 @@ int main() {
     omp_set_num_threads(input.num_threads);
 
     if (input.num_threads > 1) {
-        std::cout << "\nA maglit object must be created for each thread. \nYou shall see the same message printed a number of times."
+        std::cout << "\nA source and tracer object must be created for each thread. \nYou shall see the same message printed a number of times."
                   << std::endl;
     } else {
-        std::cout << "\nCreating maglit object..."
+        std::cout << "\nCreating source and tracer objects..."
                   << std::endl;
     }
 
-    std::vector<maglit> tracer;
+    // Each thread needs its own M3DC1Source (Fusion-IO is not thread-safe).
+    // unique_ptr keeps each source at a stable address for the maglit references.
+    std::vector<std::unique_ptr<M3DC1Source>> sources;
+    std::vector<maglit>                       tracer;
+    sources.reserve(input.num_threads);
     tracer.reserve(input.num_threads);
     for (int i = 0; i < input.num_threads; ++i) {
-        // Construct a maglit object directly in the vector
-        tracer.emplace_back(input.source_path.c_str(), FIO_M3DC1_SOURCE, input.timeslice);
-        // Configure the newly created maglit object
+        sources.push_back(std::make_unique<M3DC1Source>(
+            input.source_path.c_str(), input.timeslice));
+        tracer.emplace_back(*sources.back());
         tracer.back().set_monitor(input.shape_path);
         tracer.back().configure(input.h_init, input.h_min, input.h_max);
     }
 
-    std::cout << "\nMaglit object(s) created successfully."
+    std::cout << "\nSource and tracer object(s) created successfully."
               << std::endl;
 
     std::cout << "\nRunning grid...\n"

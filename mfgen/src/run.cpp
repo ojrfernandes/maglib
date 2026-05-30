@@ -1,5 +1,6 @@
 #include "input_read.h"
 #include "manifold.h"
+#include <m3dc1_source.h>
 
 int main() {
 
@@ -81,6 +82,10 @@ int main() {
         std::cout << "\nPoincaré section defined at Phi (deg) = " << input.Phi << std::endl;
     }
 
+    // Create source once — reused across all Poincaré sections.
+    std::cout << "\nOpening M3DC1 source...\n" << std::endl;
+    M3DC1Source source(input.source_path.c_str(), input.timeslice);
+
     // loop over Poincaré sections
     for (const auto &phi : poincare_sections) {
         double phi_rad = phi * M_PI / 180.0; // convert degrees to radians
@@ -94,7 +99,7 @@ int main() {
         // create maglit object
         std::cout << "\nCreating maglit object...\n"
                   << std::endl;
-        maglit tracer(input.source_path.c_str(), FIO_M3DC1_SOURCE, input.timeslice);
+        maglit tracer(source);
         tracer.configure(input.h_init, input.h_min, input.h_max);
 
         // create manifold object

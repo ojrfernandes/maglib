@@ -6,26 +6,31 @@
 // Include the fpgen headers
 #include "../fpgen/src/footprint.h"
 #include "../fpgen/src/input_read.h"
+#include "../maglit/m3dc1_source.h"
 
 // Test fixture for fpgen tests
 class FpgenTest : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
-        std::string source_path = std::string(TEST_DATA_DIR) + "/C1.h5";
+        std::string src_path   = std::string(TEST_DATA_DIR) + "/C1.h5";
         std::string shape_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
-        tracer = new maglit(source_path.c_str(), FIO_M3DC1_SOURCE, 1);
+        source = new M3DC1Source(src_path.c_str(), 1);
+        tracer = new maglit(*source);
         tracer->configure(0.01, 1e-6, 0.1);
         tracer->set_monitor(shape_path);
     }
 
     static void TearDownTestSuite() {
         delete tracer;
+        delete source;
         tracer = nullptr;
+        source = nullptr;
     }
 
-    static maglit     *tracer;
-    static std::string source_path;
-    static std::string shape_path;
+    static M3DC1Source *source;
+    static maglit      *tracer;
+    static std::string  source_path;
+    static std::string  shape_path;
 
     void SetUp() override {
         // Create temporary directory for test files
@@ -305,7 +310,8 @@ TEST_F(FpgenTest, InputRead_MultipleReads) {
 // ==================== FOOTPRINT TESTS ====================/
 
 // Static member definitions
-maglit *FpgenTest::tracer = nullptr;
+M3DC1Source *FpgenTest::source = nullptr;
+maglit      *FpgenTest::tracer = nullptr;
 
 // Test: Constructor and basic initialization
 TEST_F(FpgenTest, Footprint_Constructor) {

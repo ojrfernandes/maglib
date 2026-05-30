@@ -31,9 +31,7 @@ void footprint::runGrid(maglit &tracer) {
             double R_final, phi_final, Z_final;
 
             // evolve lines
-            tracer.alloc_hint();
             this->evolve_line(tracer, R_init, Z_init, phi_init, R_final, Z_final, phi_final, scalars);
-            tracer.clear_hint();
 
             // Calculate the index for dataWrite
             int index = i * nRZ + j;

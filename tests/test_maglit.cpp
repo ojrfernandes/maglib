@@ -1,7 +1,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 
-// Include the maglit header
+#include "../maglit/m3dc1_source.h"
 #include "../maglit/maglit.h"
 
 // Test fixture for maglit functionality
@@ -10,29 +10,36 @@ class MaglitTest : public ::testing::Test {
     static void SetUpTestSuite() {
         std::snprintf(source_path, sizeof(source_path),
                       "%s/C1.h5", TEST_DATA_DIR);
-        shape_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
-        tracer_vac = new maglit(source_path, FIO_M3DC1_SOURCE, -1);
+        shape_path  = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+        source_vac  = new M3DC1Source(source_path, -1);
+        tracer_vac  = new maglit(*source_vac);
         tracer_vac->configure(0.01, 1e-6, 0.1);
-        tracer_resp = new maglit(source_path, FIO_M3DC1_SOURCE, 1);
+        source_resp = new M3DC1Source(source_path, 1);
+        tracer_resp = new maglit(*source_resp);
         tracer_resp->configure(0.01, 1e-6, 0.1);
     }
 
     static void TearDownTestSuite() {
+        // Delete tracers before sources (tracers hold references to sources).
         delete tracer_vac;
         delete tracer_resp;
-        tracer_vac = nullptr;
+        delete source_vac;
+        delete source_resp;
+        tracer_vac  = nullptr;
         tracer_resp = nullptr;
+        source_vac  = nullptr;
+        source_resp = nullptr;
     }
 
-    void SetUp() override {
-        tolerance = 1e-6;
-    }
+    void SetUp() override { tolerance = 1e-6; }
 
-    double             tolerance;
-    static char        source_path[256];
-    static std::string shape_path;
-    static maglit     *tracer_vac;
-    static maglit     *tracer_resp;
+    double              tolerance;
+    static char         source_path[256];
+    static std::string  shape_path;
+    static M3DC1Source *source_vac;
+    static M3DC1Source *source_resp;
+    static maglit      *tracer_vac;
+    static maglit      *tracer_resp;
 
     bool values_are_close(double a, double b, double tol) {
         return std::fabs(a - b) < tol;
@@ -40,10 +47,12 @@ class MaglitTest : public ::testing::Test {
 };
 
 // Static member definitions
-maglit     *MaglitTest::tracer_vac = nullptr;
-maglit     *MaglitTest::tracer_resp = nullptr;
-char        MaglitTest::source_path[256];
-std::string MaglitTest::shape_path;
+M3DC1Source *MaglitTest::source_vac  = nullptr;
+M3DC1Source *MaglitTest::source_resp = nullptr;
+maglit      *MaglitTest::tracer_vac  = nullptr;
+maglit      *MaglitTest::tracer_resp = nullptr;
+char         MaglitTest::source_path[256];
+std::string  MaglitTest::shape_path;
 
 // ==================== MAGLIT INTEGRATION TESTS ====================
 
@@ -97,7 +106,6 @@ TEST_F(MaglitTest, InverseMap) {
     double phi_max = M_PI / 2; // 90 degrees
 
     tracer_vac->reset();
-    tracer_vac->alloc_hint();
     tracer_vac->inverse_map(false); // Forward map
     int status_fwd = SODE_CONTINUE_GOOD_STEP;
     while (status_fwd == SODE_CONTINUE_GOOD_STEP || status_fwd == SODE_CONTINUE_BAD_STEP) {
@@ -113,7 +121,6 @@ TEST_F(MaglitTest, InverseMap) {
     while (status_inv == SODE_CONTINUE_GOOD_STEP || status_inv == SODE_CONTINUE_BAD_STEP) {
         status_inv = tracer_vac->step(R, Z, phi, phi_max, 0);
     }
-    tracer_vac->clear_hint();
 
     EXPECT_EQ(status_inv, SODE_SUCCESS_TIME);
     EXPECT_TRUE(values_are_close(R, 0.7, tolerance));
@@ -132,7 +139,6 @@ TEST_F(MaglitTest, ColliderMonitorIntegration) {
     double phi_max = 10000 * 2 * M_PI; // Large phi to ensure crossing
 
     tracer_resp->reset();
-    tracer_resp->alloc_hint();
     tracer_resp->set_monitor(shape_path);
     tracer_vac->inverse_map(false); // Forward map
 
@@ -143,7 +149,6 @@ TEST_F(MaglitTest, ColliderMonitorIntegration) {
         last_Z = Z;
         status = tracer_resp->step(R, Z, phi, phi_max, -1);
     }
-    tracer_resp->clear_hint();
 
     // If collider works, integration should stop due to monitor trigger
     EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
@@ -161,7 +166,6 @@ TEST_F(MaglitTest, InverseColliderMonitorIntegration) {
     double phi_max = 10000 * 2 * M_PI; // Large phi to ensure crossing
 
     tracer_resp->reset();
-    tracer_resp->alloc_hint();
     tracer_resp->set_monitor(shape_path);
     tracer_vac->inverse_map(true); // Inverse map
 
@@ -172,7 +176,6 @@ TEST_F(MaglitTest, InverseColliderMonitorIntegration) {
         last_Z = Z;
         status = tracer_resp->step(R, Z, phi, phi_max, -1);
     }
-    tracer_resp->clear_hint();
 
     // If collider works, integration should stop due to monitor trigger
     EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
@@ -190,7 +193,6 @@ TEST_F(MaglitTest, OnBoundaryColliderMonitorIntegration) {
     double phi_max = 10000 * 2 * M_PI; // Large phi to ensure crossing
 
     tracer_resp->reset();
-    tracer_resp->alloc_hint();
     tracer_resp->set_monitor(shape_path);
     tracer_vac->inverse_map(false); // Forward map
 
@@ -203,7 +205,6 @@ TEST_F(MaglitTest, OnBoundaryColliderMonitorIntegration) {
         status = tracer_resp->step(R, Z, phi, phi_max, -1);
         step_count++;
     }
-    tracer_resp->clear_hint();
 
     // If collider works, integration should stop due to monitor trigger
     EXPECT_GT(step_count, 0);

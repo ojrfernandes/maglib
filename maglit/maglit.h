@@ -1,69 +1,56 @@
 #ifndef MAGLIT_H
 #define MAGLIT_H
-#define MAGLIT_V 251103 // version (yy.mm.dd)
+#define MAGLIT_V 260530
 
 #include "collider.h"
-#include "fusion_io.h"
+#include "field_source.h"
 #include "sode.h"
-#include <functional>
 #include <iostream>
 #include <string>
 
 class maglit {
   public:
-    // maglit class constructor
-    // opens source and enters additional parameters
-    // source_type: FIO_M3DC1_SOURCE, FIO_GEQDSK_SOURCE, FIO_GPEC_SOURCE
-    maglit(const char *source_path, int source_type, int timeslice);
+    // source must outlive this maglit instance.
+    explicit maglit(FieldSource &source);
 
-    // class destructor
-    ~maglit();
+    ~maglit() = default;
 
     // set the inverse map of the dynamical system
     void inverse_map(bool inverse);
     // evaluate the magnetic field in cylindrical coordinates
-    bool calc_mag_field(double *x, double *B); // x:(R, phi, Z)
-    // configure solver's step control parameter
+    bool calc_mag_field(double *x, double *B); // x: (R, phi, Z)
+    // configure solver step control parameters
     void configure(double dphi_init, double dphi_min, double dphi_max);
-    // performs step up to phi_max or if inside changes
-    // dir = -1 (true->false), 0 (dont monitor), 1 (false->true)
+    // perform one step up to phi_max, or until the monitor changes
+    // dir = -1 (true→false), 0 (don't monitor), 1 (false→true)
     int step(double &R, double &Z, double &phi, double phi_max, int dir);
-    // reset integrator (run before start new field line)
+    // reset integrator (call before starting a new field line)
     void reset();
-    // run to print detailed messages
+    // enable verbose output
     void set_verb();
-    // run to print warning messages
+    // enable warning output
     void set_warnings();
-    // allocate search hint
-    void alloc_hint();
-    // clear hint allocated memory
-    void clear_hint();
     // evaluate the normalized poloidal flux
     void psin_eval(double &R, double &Phi, double &Z, double *psin);
     // evaluate the poloidal flux
     void psi_eval(double &R, double &Phi, double &Z, double *psi);
-    // set monitor for inside region of interest
+    // load vessel shape and activate boundary monitor
     void set_monitor(const std::string &path);
 
-    int      inv_factor = 1; // factor for inverse map
-    collider boundary;       // boundary to be monitored
+    int      inv_factor = 1;
+    collider boundary;
 
   private:
-    bool            verb = false;     // verbose mode
-    bool            warnings = false; // warning mode
-    fio_source     *src;              // fusion-io data source
-    fio_field      *mag_field;        // fusion-io magnetic field
-    fio_field      *psin_field;       // fusion-io normalized poloidal flux
-    fio_field      *psi_field;        // fusion-io poloidal flux
-    fio_option_list opt;              // fusion-io field options
-    sode            solver;           // solver for the dynamical system
-    fio_hint        hint;             // fusion-io hint for finite element search
-    double          x[2];             // auxiliary orbit variable
+    bool         verb     = false;
+    bool         warnings = false;
+    FieldSource *source_;  // non-owning
+    sode         solver_;
+    double       x[2];
 
     static bool monitor_boundary(double *x, double t, void *mgl);
 };
 
-// map of dynamical system x: (R,z); t: phi
+// Right-hand side of the field-line ODE: x = (R, Z), t = phi
 int mag_system(double *f, double *x, double t, void *mgl);
 
 #endif // MAGLIT_H

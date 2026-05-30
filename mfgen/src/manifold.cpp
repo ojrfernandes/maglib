@@ -36,17 +36,13 @@ void manifold::configure(double epsilon, double h, double tol, int max_iter, dou
 // Apply map to a given point returning a Point (R, Z)
 point manifold::apply_map(double R, double Z, double Phi, int nTurns) {
 
-    // Reset the source and allocate hint
     int status = SODE_CONTINUE_GOOD_STEP;
     tracer.reset();
-    tracer.alloc_hint();
     double phi_max = Phi + nTurns * 2 * M_PI;
 
-    // Apply the map
     do {
         status = tracer.step(R, Z, Phi, phi_max, 0);
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
-    tracer.clear_hint();
 
     // Check if the map was successful
     if (status == SODE_SUCCESS_TIME) {

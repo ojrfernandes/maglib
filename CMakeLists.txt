@@ -99,6 +99,27 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
 
 #=============================================================================
 
+# Python bindings (requires Python development headers; skipped if not found)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings via pybind11" ON)
+if(BUILD_PYTHON_BINDINGS)
+    find_package(Python COMPONENTS Interpreter Development QUIET)
+    if(Python_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            pybind11
+            GIT_REPOSITORY https://github.com/pybind/pybind11.git
+            GIT_TAG        v2.13.6
+        )
+        FetchContent_MakeAvailable(pybind11)
+        add_subdirectory(python)
+        message(STATUS "Python bindings enabled (Python ${Python_VERSION})")
+    else()
+        message(STATUS "Python development headers not found — skipping Python bindings")
+    endif()
+endif()
+
+#=============================================================================
+
 # Include subdirectories
 add_subdirectory(maglit)
 add_subdirectory(fpgen)

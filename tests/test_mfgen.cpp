@@ -4,6 +4,7 @@
 #include <string>
 
 // Include the mfgen headers
+#include "../maglit/m3dc1_source.h"
 #include "../mfgen/src/input_read.h"
 #include "../mfgen/src/manifold.h"
 
@@ -11,18 +12,22 @@
 class MfgenTest : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
-        std::string source_path = std::string(TEST_DATA_DIR) + "/C1.h5";
-        tracer = new maglit(source_path.c_str(), FIO_M3DC1_SOURCE, 1);
+        std::string src_path = std::string(TEST_DATA_DIR) + "/C1.h5";
+        source = new M3DC1Source(src_path.c_str(), 1);
+        tracer = new maglit(*source);
         tracer->configure(1e-2, 1e-6, 1e-2);
     }
 
     static void TearDownTestSuite() {
         delete tracer;
+        delete source;
         tracer = nullptr;
+        source = nullptr;
     }
 
-    static maglit     *tracer;
-    static std::string source_path;
+    static M3DC1Source *source;
+    static maglit      *tracer;
+    static std::string  source_path;
 
     void SetUp() override {
         // Create temporary directory for test files
@@ -358,7 +363,8 @@ TEST_F(MfgenTest, InputRead_HDF5File) {
 // ==================== MANIFOLD TESTS ====================/
 
 // Static member definitions
-maglit *MfgenTest::tracer = nullptr;
+M3DC1Source *MfgenTest::source = nullptr;
+maglit      *MfgenTest::tracer = nullptr;
 
 // Test: Constructor and basic initialization
 TEST_F(MfgenTest, Manifold_Constructor) {

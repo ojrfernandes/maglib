@@ -1,191 +1,81 @@
 #include "maglit.h"
 
-// constructor
-maglit::maglit(const char *source_path, int source_type, const int timeslice) : src(nullptr), mag_field(nullptr), psin_field(nullptr), psi_field(nullptr), solver(SODE_RK56_CK, 2) {
-    // load source from file
-    int result = fio_open_source(&src, source_type, source_path);
-    if (result != FIO_SUCCESS) {
-        std::cerr << "Error opening file: " << source_path << std::endl;
-        delete (src);
-        return;
-    }
-
-    // set options for fields obtained from this source
-    src->get_field_options(&opt);
-    opt.set_option(FIO_TIMESLICE, timeslice);
-    opt.set_option(FIO_PART, FIO_TOTAL);
-
-    // get magnetic field from source
-    result = src->get_field(FIO_MAGNETIC_FIELD, &mag_field, &opt);
-    if (result != FIO_SUCCESS) {
-        std::cerr << "Error opening magnetic field" << std::endl;
-        mag_field = 0;
-        return;
-    }
-
-    // set dynamical system
-    solver.set_system(mag_system);
-
-    // configure precision of solution
-    solver.configure(1e-8, 1e-12, 1e-15, 0.9);
+maglit::maglit(FieldSource &source)
+    : source_(&source), solver_(SODE_RK56_CK, 2) {
+    solver_.set_system(mag_system);
+    solver_.configure(1e-8, 1e-12, 1e-15, 0.9);
 }
 
-// destructor
-maglit::~maglit() {
-    if (mag_field != nullptr) {
-        fio_close_field(&mag_field);
-        mag_field = nullptr;
-    }
-    if (psin_field != nullptr) {
-        fio_close_field(&psin_field);
-        psin_field = nullptr;
-    }
-    if (psi_field != nullptr) {
-        fio_close_field(&psi_field);
-        psi_field = nullptr;
-    }
-    if (src != nullptr) {
-        fio_close_source(&src);
-        src = nullptr;
-    }
-}
-
-// optional: sets the inverse map of the dynamical system
 void maglit::inverse_map(bool inverse) {
-    if (inverse == true) {
-      inv_factor = -1;
-    } else {
-      inv_factor = 1;
-    }
+    inv_factor = inverse ? -1 : 1;
 }
 
-// evaluate magnetic field B at point x
 bool maglit::calc_mag_field(double *x, double *B) {
-    int result = mag_field->eval(x, B, hint);
-    if (result != FIO_SUCCESS) {
-        if (this->warnings) {
-            std::cerr << "Fio mag field returned " << result << std::endl;
-        }
-        return false;
-    } else
-        return true;
+    bool ok = source_->eval_B(x[0], x[1], x[2], B);
+    if (!ok && warnings)
+        std::cerr << "maglit: eval_B failed at R=" << x[0]
+                  << " phi=" << x[1] << " Z=" << x[2] << std::endl;
+    return ok;
 }
 
-// configure solvers step control parameter
 void maglit::configure(double dphi_init, double dphi_min, double dphi_max) {
-    solver.configure(dphi_init, dphi_min, dphi_max);
+    solver_.configure(dphi_init, dphi_min, dphi_max);
 }
 
-// performs step up to phi_max or if inside changes
-// dir = -1 (true->false), 0 (dont monitor), 1 (false->true)
 int maglit::step(double &R, double &Z, double &phi, double phi_max, int dir) {
-    x[0] = R;
-    x[1] = Z;
-    int status = solver.evolve(x, &phi, phi_max, dir, this);
-    R = x[0];
-    Z = x[1];
+    x[0]       = R;
+    x[1]       = Z;
+    int status = solver_.evolve(x, &phi, phi_max, dir, this);
+    R          = x[0];
+    Z          = x[1];
     return status;
 }
 
-// reset solver
 void maglit::reset() {
-    solver.reset();
+    solver_.reset();
 }
 
-// set verbose mode
 void maglit::set_verb() {
-    this->verb = true;
-    solver.set_verb();
+    verb = true;
+    solver_.set_verb();
 }
 
-// set warning mode
 void maglit::set_warnings() {
-    this->warnings = true;
+    warnings = true;
 }
 
-// allocate memory for hint
-void maglit::alloc_hint() {
-    int result = src->allocate_search_hint(&hint);
-    if (hint == nullptr || result != FIO_SUCCESS) {
-        std::cerr << "Failed to allocate memory for hint." << std::endl;
-        return;
-    }
-}
-
-// // clear hint memory
-void maglit::clear_hint() {
-    src->deallocate_search_hint(&hint);
-}
-
-// evaluate normalized poloidal flux
 void maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
-    if (!psin_field) {
-        int status = src->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field, &opt);
-        if (status != FIO_SUCCESS) {
-            std::cerr << "Error initializing normalized poloidal flux" << std::endl;
-            psin_field = nullptr;
-            return;
-        }
-    }
-
-    double x[3] = {R, Phi, Z};
-    int    result = psin_field->eval(x, psin, hint);
-    if (result != FIO_SUCCESS && warnings) {
-        std::cerr << "Fio psin field returned " << result << std::endl;
-    }
+    if (!source_->eval_psin(R, Phi, Z, *psin) && warnings)
+        std::cerr << "maglit: eval_psin failed" << std::endl;
 }
 
-// evaluate poloidal flux
 void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
-    if (!psi_field) {
-        int status = src->get_field(FIO_POLOIDAL_FLUX, &psi_field, &opt);
-        if (status != FIO_SUCCESS) {
-            std::cerr << "Error initializing poloidal flux" << std::endl;
-            psi_field = nullptr;
-            return;
-        }
-    }
-
-    double x[3] = {R, Phi, Z};
-    int    result = psi_field->eval(x, psi, hint);
-    if (result != FIO_SUCCESS && this->warnings) {
-        std::cerr << "Fio psi field returned " << result << std::endl;
-    }
+    if (!source_->eval_psi(R, Phi, Z, *psi) && warnings)
+        std::cerr << "maglit: eval_psi failed" << std::endl;
 }
 
-// map of dynamical system x: (R,z); t: phi
-int mag_system(double *f, double *x, double t, void *mgl) {
-    maglit *tracer = (maglit *)mgl;
-    double  aux_x[3];
-    double  aux_b[3];
-    aux_x[0] = x[0];                                     // R
-    aux_x[1] = t;                                        // phi
-    aux_x[2] = x[1];                                     // z
-    bool success = tracer->calc_mag_field(aux_x, aux_b); // (B_R, B_phi, B_z)
-    if (success) {
-        f[0] = (aux_x[0] * aux_b[0] / aux_b[1]) * tracer->inv_factor;
-        f[1] = (aux_x[0] * aux_b[2] / aux_b[1]) * tracer->inv_factor;
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-// set monitor for boundary
 void maglit::set_monitor(const std::string &collider_path) {
     if (!boundary.load_shape(collider_path)) {
-        std::cerr << "Error loading collider shape from " << collider_path << std::endl;
-        // stop the program if collider cannot be loaded
+        std::cerr << "maglit: error loading collider shape from "
+                  << collider_path << std::endl;
         exit(EXIT_FAILURE);
     }
-
-    solver.set_monitor(&maglit::monitor_boundary);
-    solver.set_aux(this);
+    solver_.set_monitor(&maglit::monitor_boundary);
+    solver_.set_aux(this);
 }
 
-// monitor for inside region of interest
 bool maglit::monitor_boundary(double *x, double t, void *mgl) {
     maglit *self = static_cast<maglit *>(mgl);
-    // x: (R,z); t: phi
     return self->boundary.inside(x[0], x[1]);
+}
+
+int mag_system(double *f, double *x, double t, void *mgl) {
+    maglit *tracer = static_cast<maglit *>(mgl);
+    double  aux_x[3] = {x[0], t, x[1]}; // R, phi, Z
+    double  aux_b[3];
+    if (!tracer->calc_mag_field(aux_x, aux_b))
+        return 1;
+    f[0] = (aux_x[0] * aux_b[0] / aux_b[1]) * tracer->inv_factor;
+    f[1] = (aux_x[0] * aux_b[2] / aux_b[1]) * tracer->inv_factor;
+    return 0;
 }
