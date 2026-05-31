@@ -14,11 +14,13 @@ pybind11_add_module(_maglib
     src/field_source_bindings.cpp
     src/maglit_bindings.cpp
     src/footprint_bindings.cpp
+    src/manifold_bindings.cpp
     ${CMAKE_SOURCE_DIR}/maglit/sode.cpp
     ${CMAKE_SOURCE_DIR}/maglit/collider.cpp
     ${CMAKE_SOURCE_DIR}/maglit/maglit.cpp
     ${CMAKE_SOURCE_DIR}/maglit/m3dc1_source.cpp
     ${CMAKE_SOURCE_DIR}/fpgen/src/footprint.cpp
+    ${CMAKE_SOURCE_DIR}/mfgen/src/manifold.cpp
 )
 
 target_link_libraries(_maglib PRIVATE
@@ -31,6 +33,7 @@ target_link_libraries(_maglib PRIVATE
 target_include_directories(_maglib PRIVATE
     ${CMAKE_SOURCE_DIR}/maglit
     ${CMAKE_SOURCE_DIR}/fpgen/src
+    ${CMAKE_SOURCE_DIR}/mfgen/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${HDF5_INCLUDE_DIRS}
     ${FUSION_IO_INCLUDE_DIR}

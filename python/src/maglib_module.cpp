@@ -10,4 +10,5 @@ PYBIND11_MODULE(_maglib, m) {
     bind_field_source(m);
     bind_maglit(m);
     bind_footprint(m);
+    bind_manifold(m);
 }
