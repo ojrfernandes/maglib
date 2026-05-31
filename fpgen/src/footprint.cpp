@@ -1,4 +1,5 @@
 #include "footprint.h"
+#include <fstream>
 
 footprint::footprint(const int manifold, const double grid_R1, const double grid_Z1, const double grid_R2, const double grid_Z2, const int nRZ, const int nPhi, const int max_turns) : manifold(manifold), grid_R1(grid_R1), grid_Z1(grid_Z1), grid_R2(grid_R2), grid_Z2(grid_Z2), nRZ(nRZ), nPhi(nPhi), max_turns(max_turns) {
     this->outputData.resize(nRZ * nPhi, std::vector<double>(6));
@@ -94,6 +95,50 @@ double footprint::connection_length(double R0, double Z0, double phi0, double R1
     double dy = R1 * sin(phi1) - R0 * sin(phi0);
     double dz = Z1 - Z0;
     return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+bool footprint::save(const std::string &path) const {
+    auto ends_with = [&](const std::string &ext) {
+        return path.size() >= ext.size() &&
+               path.substr(path.size() - ext.size()) == ext;
+    };
+
+    bool is_csv = ends_with(".csv");
+    bool is_txt = ends_with(".dat") || ends_with(".txt");
+
+    if (!is_csv && !is_txt) {
+        std::cerr << "Error: unsupported extension in \"" << path
+                  << "\". Use .dat, .txt, or .csv." << std::endl;
+        return false;
+    }
+
+    std::ofstream f(path);
+    if (!f.is_open()) {
+        std::cerr << "Error: could not open output file: " << path << std::endl;
+        return false;
+    }
+
+    if (is_csv) {
+        f << "R0,Z0,phi0,length,psiMin,turn\n";
+        for (const auto &row : outputData) {
+            f << std::fixed << std::setprecision(16)
+              << row[0] << "," << row[1] << "," << row[2] << ","
+              << row[3] << "," << row[4] << ","
+              << std::setprecision(0) << row[5] << "\n";
+        }
+    } else {
+        f << "#R0" << std::string(17, ' ') << "Z0" << std::string(17, ' ')
+          << "phi0" << std::string(15, ' ') << "length" << std::string(13, ' ')
+          << "psiMin" << std::string(13, ' ') << "turn\n";
+        for (const auto &row : outputData) {
+            f << std::fixed << std::setprecision(16)
+              << row[0] << " " << row[1] << " " << row[2]
+              << " " << row[3] << " " << row[4] << " "
+              << std::setprecision(0) << row[5] << "\n";
+        }
+    }
+
+    return true;
 }
 
 // Print a progress bar

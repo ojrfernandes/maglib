@@ -19,6 +19,12 @@ public:
   // or a single-element vector for serial execution.
   void run(std::vector<maglit *> &tracers);
 
+  // Save outputData to file. Format is inferred from the extension:
+  //   .dat / .txt  — space-separated with header
+  //   .csv         — comma-separated with header
+  // Returns false if the extension is unsupported or the file cannot be opened.
+  bool save(const std::string &path) const;
+
   std::vector<std::vector<double>>
       outputData; // two dimensional vector to store the output data
 

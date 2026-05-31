@@ -13,16 +13,19 @@ pybind11_add_module(_maglib
     ${CMAKE_SOURCE_DIR}/maglit/collider.cpp
     ${CMAKE_SOURCE_DIR}/maglit/maglit.cpp
     ${CMAKE_SOURCE_DIR}/maglit/m3dc1_source.cpp
+    ${CMAKE_SOURCE_DIR}/fpgen/src/footprint.cpp
 )
 
 target_link_libraries(_maglib PRIVATE
     ${HDF5_LIBRARIES}
     ${FUSION_IO_LIB_DIR}/libfusionio.so
     ${FUSION_IO_LIB_DIR}/libm3dc1.so
+    OpenMP::OpenMP_CXX
 )
 
 target_include_directories(_maglib PRIVATE
     ${CMAKE_SOURCE_DIR}/maglit
+    ${CMAKE_SOURCE_DIR}/fpgen/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${HDF5_INCLUDE_DIRS}
     ${FUSION_IO_INCLUDE_DIR}

@@ -462,6 +462,66 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     EXPECT_EQ(fp.outputData[3][5], 2);
 }
 
+// ==================== SAVE TESTS ====================
+
+// Helper: run a tiny grid and return the populated footprint.
+static footprint make_small_fp(maglit *tr) {
+    footprint fp(0, 0.435, -0.239, 0.435, -0.232, 2, 2, 50);
+    std::vector<maglit*> tracers = {tr};
+    fp.run(tracers);
+    return fp;
+}
+
+TEST_F(FpgenTest, Footprint_Save_Dat) {
+    footprint fp = make_small_fp(tracer);
+    std::string path = test_dir + "/out.dat";
+    EXPECT_TRUE(fp.save(path));
+    EXPECT_TRUE(std::filesystem::exists(path));
+
+    std::ifstream f(path);
+    std::string line;
+    std::getline(f, line);
+    EXPECT_EQ(line[0], '#');     // header starts with '#'
+
+    int data_lines = 0;
+    while (std::getline(f, line)) ++data_lines;
+    EXPECT_EQ(data_lines, 4);    // nRZ * nPhi = 2 * 2
+}
+
+TEST_F(FpgenTest, Footprint_Save_Txt) {
+    footprint fp = make_small_fp(tracer);
+    std::string path = test_dir + "/out.txt";
+    EXPECT_TRUE(fp.save(path));
+    EXPECT_TRUE(std::filesystem::exists(path));
+
+    std::ifstream f(path);
+    std::string line;
+    std::getline(f, line);
+    EXPECT_EQ(line[0], '#');
+}
+
+TEST_F(FpgenTest, Footprint_Save_Csv) {
+    footprint fp = make_small_fp(tracer);
+    std::string path = test_dir + "/out.csv";
+    EXPECT_TRUE(fp.save(path));
+    EXPECT_TRUE(std::filesystem::exists(path));
+
+    std::ifstream f(path);
+    std::string header;
+    std::getline(f, header);
+    EXPECT_EQ(header, "R0,Z0,phi0,length,psiMin,turn");
+
+    int data_lines = 0;
+    std::string line;
+    while (std::getline(f, line)) ++data_lines;
+    EXPECT_EQ(data_lines, 4);
+}
+
+TEST_F(FpgenTest, Footprint_Save_UnknownExtension) {
+    footprint fp = make_small_fp(tracer);
+    EXPECT_FALSE(fp.save(test_dir + "/out.xyz"));
+}
+
 // ==================== PARALLEL CONSISTENCY TESTS ====================
 
 // Helper: create a fresh, configured tracer from C1.h5 timeslice 1.

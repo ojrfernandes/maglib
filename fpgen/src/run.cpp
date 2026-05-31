@@ -82,35 +82,21 @@ int main() {
 
     footprint.run(tracer_ptrs);
 
-    // check if output data ends with .dat
-    if (input.output_path.size() >= 4 &&
-        input.output_path.substr(input.output_path.size() - 4) != ".dat") {
+    // Append .dat if no recognised extension is present
+    auto has_ext = [](const std::string &p, const std::string &ext) {
+        return p.size() >= ext.size() && p.substr(p.size() - ext.size()) == ext;
+    };
+    if (!has_ext(input.output_path, ".dat") &&
+        !has_ext(input.output_path, ".txt") &&
+        !has_ext(input.output_path, ".csv")) {
         input.output_path += ".dat";
     }
-    // create output file
+
     std::cout << "\nSaving output file at " << input.output_path << std::endl;
-    std::ofstream f0(input.output_path);
-    if (!f0.is_open()) {
-        std::cerr << "Failed to open file at " << input.output_path << std::endl;
+    if (!footprint.save(input.output_path)) {
+        std::cerr << "Failed to save output file." << std::endl;
         return 1;
     }
-
-    // write output file header
-    f0 << "#R0" << std::string(17, ' ') << "Z0" << std::string(17, ' ')
-       << "phi0" << std::string(15, ' ') << "length" << std::string(13, ' ')
-       << "psiMin" << std::string(13, ' ') << "turn\n"; // NEW column
-
-    // Write output file data
-    for (const auto &row : footprint.outputData) {
-        f0 << std::fixed << std::setprecision(16)
-           << row[0] << " " << row[1] << " " << row[2]
-           << " " << row[3] << " " << row[4] << " "
-           << std::setprecision(0)
-           << row[5] << "\n";
-    }
-
-    // close output file
-    f0.close();
 
     // print success message
     std::cout << "\nOutput file saved successfully.\n";
