@@ -9,6 +9,11 @@
 pybind11_add_module(_maglib
     src/sode_wrapper.cpp
     src/maglib_module.cpp
+    src/sode_bindings.cpp
+    src/collider_bindings.cpp
+    src/field_source_bindings.cpp
+    src/maglit_bindings.cpp
+    src/footprint_bindings.cpp
     ${CMAKE_SOURCE_DIR}/maglit/sode.cpp
     ${CMAKE_SOURCE_DIR}/maglit/collider.cpp
     ${CMAKE_SOURCE_DIR}/maglit/maglit.cpp
