@@ -6,6 +6,7 @@ Reference values mirror those in tests/test_mfgen.cpp.
 
 import math
 import os
+import tempfile
 
 import numpy as np
 import pytest
@@ -173,3 +174,122 @@ def test_new_segment_wrong_shape_raises(manifold_at_xpoint):
     bad = np.zeros((5, 3))
     with pytest.raises((ValueError, RuntimeError)):
         manifold_at_xpoint.new_segment(bad, phi=0.0, l_lim=0.005, theta_lim=20.0)
+
+
+# ── output_data ───────────────────────────────────────────────────────────────
+
+def test_output_data_empty_before_computation(tracer_and_source):
+    _, t = tracer_and_source
+    mf = Manifold(t, phi=0.0, stability=0)
+    assert mf.output_data == []
+
+
+def test_output_data_accumulates(manifold_at_xpoint, primary_seg):
+    # manifold_at_xpoint fixture already called find_x_point; primary_seg called
+    # primary_segment once — outputData has at least 1 entry from the fixture.
+    # Build a fresh manifold so we control the count exactly.
+    src = M3DC1Source(C1_H5, 1)
+    t   = Maglit(src)
+    t.configure(1e-2, 1e-6, 1e-2)
+    mf = Manifold(t, phi=0.0, stability=0)
+    mf.configure(epsilon=1e-6, h=1e-8, tol=1e-14,
+                 max_iter=50, precision_limit=1e-14, max_insertions=100)
+    mf.find_x_point(0.497999, -0.218603)
+
+    assert mf.output_data == []
+
+    seg0 = mf.primary_segment(10)
+    assert len(mf.output_data) == 1
+    assert mf.output_data[0].shape == (11, 2)
+
+    mf.new_segment(seg0, phi=0.0, l_lim=0.005, theta_lim=20.0)
+    assert len(mf.output_data) == 2
+
+    mf.new_segment(seg0, phi=0.0, n_seg=2, l_lim=0.005, theta_lim=20.0)
+    assert len(mf.output_data) == 3
+
+
+def test_output_data_types(manifold_at_xpoint, primary_seg):
+    src = M3DC1Source(C1_H5, 1)
+    t   = Maglit(src)
+    t.configure(1e-2, 1e-6, 1e-2)
+    mf = Manifold(t, phi=0.0, stability=0)
+    mf.configure(epsilon=1e-6, h=1e-8, tol=1e-14,
+                 max_iter=50, precision_limit=1e-14, max_insertions=100)
+    mf.find_x_point(0.497999, -0.218603)
+    seg0 = mf.primary_segment(10)
+    mf.new_segment(seg0, phi=0.0, l_lim=0.005, theta_lim=20.0)
+
+    for arr in mf.output_data:
+        assert isinstance(arr, np.ndarray)
+        assert arr.ndim == 2
+        assert arr.shape[1] == 2
+        assert arr.dtype == np.float64
+
+
+# ── save ──────────────────────────────────────────────────────────────────────
+
+@pytest.fixture(scope="module")
+def manifold_with_output():
+    """Manifold with 2 segments (primary + 1 new) for save tests."""
+    src = M3DC1Source(C1_H5, 1)
+    t   = Maglit(src)
+    t.configure(1e-2, 1e-6, 1e-2)
+    mf = Manifold(t, phi=0.0, stability=0)
+    mf.configure(epsilon=1e-6, h=1e-8, tol=1e-14,
+                 max_iter=50, precision_limit=1e-14, max_insertions=100)
+    mf.find_x_point(0.497999, -0.218603)
+    seg0 = mf.primary_segment(10)
+    mf.new_segment(seg0, phi=0.0, l_lim=0.005, theta_lim=20.0)
+    return mf
+
+
+def test_save_dat(manifold_with_output):
+    with tempfile.NamedTemporaryFile(suffix=".dat", delete=False) as tmp:
+        path = tmp.name
+    manifold_with_output.save(path)
+    with open(path) as f:
+        lines = f.readlines()
+    assert lines[0].startswith("#")           # header
+    assert lines[1].startswith("0 ")          # first data row: segment 0
+    assert any(l.startswith("1 ") for l in lines)  # segment 1 present
+    os.unlink(path)
+
+
+def test_save_txt(manifold_with_output):
+    with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp:
+        path = tmp.name
+    manifold_with_output.save(path)
+    with open(path) as f:
+        header = f.readline()
+    assert header.startswith("#")
+    os.unlink(path)
+
+
+def test_save_csv(manifold_with_output):
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+        path = tmp.name
+    manifold_with_output.save(path)
+    with open(path) as f:
+        lines = f.readlines()
+    assert lines[0].strip() == "seg,R,Z"
+    assert lines[1].startswith("0,")
+    assert any(l.startswith("1,") for l in lines)
+    os.unlink(path)
+
+
+def test_save_npz(manifold_with_output):
+    with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmp:
+        path = tmp.name
+    manifold_with_output.save(path)
+    data = np.load(path)
+    assert "seg_0" in data
+    assert "seg_1" in data
+    assert data["seg_0"].shape == (11, 2)
+    assert data["seg_0"].dtype == np.float64
+    os.unlink(path)
+
+
+def test_save_unsupported_raises(manifold_with_output):
+    with pytest.raises((ValueError, RuntimeError)):
+        manifold_with_output.save("/tmp/manifold_test.xyz")

@@ -230,5 +230,49 @@ Returns
 )doc")
 
         .def("progress_bar", &manifold::progressBar, "j"_a, "n_seg"_a,
-             "Print a progress bar for segment j of n_seg to stdout.");
+             "Print a progress bar for segment j of n_seg to stdout.")
+
+        .def_property_readonly("output_data",
+            [seg_to_numpy](const manifold &self) {
+                py::list result;
+                for (const auto &seg : self.outputData)
+                    result.append(seg_to_numpy(seg));
+                return result;
+            },
+            R"doc(
+Accumulated segment data as a list of (N_i, 2) float64 arrays.
+
+Each call to primary_segment() appends its result here; each call to
+new_segment() appends the new segment (second element of the returned tuple).
+Columns: [R, Z].
+)doc")
+
+        .def("save", [seg_to_numpy](const manifold &self, const std::string &path) {
+            auto ends_with = [&](const std::string &ext) {
+                return path.size() >= ext.size() &&
+                       path.substr(path.size() - ext.size()) == ext;
+            };
+            if (ends_with(".npz")) {
+                py::object savez = py::module_::import("numpy").attr("savez_compressed");
+                py::tuple  args  = py::make_tuple(py::str(path));
+                py::dict   kw;
+                for (size_t i = 0; i < self.outputData.size(); ++i)
+                    kw[("seg_" + std::to_string(i)).c_str()] = seg_to_numpy(self.outputData[i]);
+                py::object r = py::reinterpret_steal<py::object>(
+                    PyObject_Call(savez.ptr(), args.ptr(), kw.ptr()));
+                if (!r) throw py::error_already_set();
+            } else {
+                if (!self.save(path))
+                    throw std::runtime_error("Failed to save: " + path);
+            }
+        }, "path"_a,
+        R"doc(
+Save accumulated segment data to file. Format is inferred from the extension:
+
+  .dat / .txt  — space-separated text with header (columns: seg, R, Z)
+  .csv         — comma-separated text with header (columns: seg, R, Z)
+  .npz         — numpy compressed archive; arrays stored as seg_0, seg_1, ...
+
+Raises RuntimeError for unsupported extensions.
+)doc");
 }

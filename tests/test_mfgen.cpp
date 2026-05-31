@@ -38,6 +38,10 @@ class MfgenTest : public ::testing::Test {
         valid_input_file = test_dir + "/valid_input.txt";
         createValidInputFile();
 
+        // Create input file with optional x-point coordinates
+        xpoint_input_file = test_dir + "/xpoint_input.txt";
+        createXPointInputFile();
+
         // Create invalid test files
         invalid_input_file = test_dir + "/invalid_input.txt";
         malformed_input_file = test_dir + "/malformed_input.txt";
@@ -93,6 +97,35 @@ class MfgenTest : public ::testing::Test {
             << "        max_insertions = 50         # maximum insertions allowed\n"
             << "        verbose = 0                 # verbosity flag (0 or 1)\n";
         valid_input.close();
+    }
+
+    void createXPointInputFile() {
+        std::ofstream f(xpoint_input_file);
+        f   << "source_path = test_source.h5\n"
+            << "output_path = test_output.dat\n"
+            << "timeslice = 1\n"
+            << "manifold  = 0\n"
+            << "method = 1\n"
+            << "Phi = 0\n"
+            << "nSections = 1\n"
+            << "phi_0 = 0\n"
+            << "phi_1 = 0\n"
+            << "epsilon = 1e-6\n"
+            << "nSegments = 2\n"
+            << "l_lim = 0.005\n"
+            << "theta_lim = 20\n"
+            << "h_init = 1e-2\n"
+            << "h_min = 1e-6\n"
+            << "h_max = 1e-2\n"
+            << "h_deriv = 1e-8\n"
+            << "n_tol = 1e-14\n"
+            << "max_iter = 50\n"
+            << "precision = 1e-14\n"
+            << "max_insertions = 100\n"
+            << "verbose = 0\n"
+            << "R_xPoint = 0.497999\n"
+            << "Z_xPoint = -0.218603\n";
+        f.close();
     }
 
     void createInvalidInputFiles() {
@@ -176,6 +209,7 @@ class MfgenTest : public ::testing::Test {
 
     std::string test_dir;
     std::string valid_input_file;
+    std::string xpoint_input_file;
     std::string invalid_input_file;
     std::string malformed_input_file;
     std::string empty_input_file;
@@ -227,6 +261,9 @@ TEST_F(MfgenTest, InputRead_ValidFile) {
     EXPECT_DOUBLE_EQ(reader.precision, 1e-8);
     EXPECT_EQ(reader.max_insertions, 50);
     EXPECT_EQ(reader.verbose, 0);
+    // Optional keys absent → default to 0 (HDF5 fallback will be used)
+    EXPECT_DOUBLE_EQ(reader.R_xPoint, 0.0);
+    EXPECT_DOUBLE_EQ(reader.Z_xPoint, 0.0);
 }
 
 // Test: Invalid file handling
@@ -358,6 +395,26 @@ TEST_F(MfgenTest, InputRead_HDF5File) {
     // Check that coordinates are within reasonable bounds
     EXPECT_NEAR(reader.R_xPoint, 0.497998952865601, 1e-6);
     EXPECT_NEAR(reader.Z_xPoint, -0.218603119254112, 1e-6);
+}
+
+// Test: R_xPoint / Z_xPoint default to 0 when absent from input file
+TEST_F(MfgenTest, InputRead_XPoint_DefaultsToZero) {
+    input_read reader(valid_input_file);
+    bool result = reader.readInputFile();
+
+    EXPECT_TRUE(result);
+    EXPECT_DOUBLE_EQ(reader.R_xPoint, 0.0);
+    EXPECT_DOUBLE_EQ(reader.Z_xPoint, 0.0);
+}
+
+// Test: R_xPoint / Z_xPoint are parsed when present in input file
+TEST_F(MfgenTest, InputRead_XPoint_ParsedFromFile) {
+    input_read reader(xpoint_input_file);
+    bool result = reader.readInputFile();
+
+    EXPECT_TRUE(result);
+    EXPECT_DOUBLE_EQ(reader.R_xPoint, 0.497999);
+    EXPECT_DOUBLE_EQ(reader.Z_xPoint, -0.218603);
 }
 
 // ==================== MANIFOLD TESTS ====================/
@@ -521,4 +578,97 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrimary) {
     EXPECT_NEAR(new_seg_3[29].Z, -0.1813653722927497, 1e-6);
     EXPECT_NEAR(new_seg_3[34].R, 0.6131264483728508, 1e-6);
     EXPECT_NEAR(new_seg_3[34].Z, -0.171105326569633, 1e-6);
+}
+
+// Test: outputData is empty before any computation
+TEST_F(MfgenTest, Manifold_OutputData_Empty) {
+    manifold mf(*tracer, 0, 0);
+    EXPECT_TRUE(mf.outputData.empty());
+}
+
+// Test: outputData accumulates after primarySegment and newSegment calls
+TEST_F(MfgenTest, Manifold_OutputData_Accumulates) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf.xPoint.R = 0.4979691771716279;
+    mf.xPoint.Z = -0.2185980054447758;
+
+    std::vector<point> primary = mf.primarySegment(10);
+    EXPECT_EQ(mf.outputData.size(), 1u);
+    EXPECT_EQ(mf.outputData[0].size(), 11u);
+
+    mf.newSegment(primary, 0, 0.005, 20); // interpolant method
+    EXPECT_EQ(mf.outputData.size(), 2u);
+
+    mf.newSegment(primary, 0, 2, 0.005, 20); // exact-map method
+    EXPECT_EQ(mf.outputData.size(), 3u);
+}
+
+// Test: save() writes a .dat file with correct header and structure
+TEST_F(MfgenTest, Manifold_Save_Dat) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf.xPoint.R = 0.4979691771716279;
+    mf.xPoint.Z = -0.2185980054447758;
+    mf.primarySegment(10);
+
+    std::string path = test_dir + "/manifold_test.dat";
+    EXPECT_TRUE(mf.save(path));
+
+    std::ifstream f(path);
+    ASSERT_TRUE(f.is_open());
+
+    // First line is a comment header
+    std::string header;
+    std::getline(f, header);
+    EXPECT_EQ(header[0], '#');
+
+    // First data line: segment index 0
+    std::string first_data;
+    std::getline(f, first_data);
+    EXPECT_EQ(first_data[0], '0');
+}
+
+// Test: save() writes a .csv file with correct header
+TEST_F(MfgenTest, Manifold_Save_Csv) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf.xPoint.R = 0.4979691771716279;
+    mf.xPoint.Z = -0.2185980054447758;
+
+    std::vector<point> primary = mf.primarySegment(10);
+    mf.newSegment(primary, 0, 0.005, 20);
+
+    std::string path = test_dir + "/manifold_test.csv";
+    EXPECT_TRUE(mf.save(path));
+
+    std::ifstream f(path);
+    ASSERT_TRUE(f.is_open());
+
+    std::string header;
+    std::getline(f, header);
+    EXPECT_EQ(header, "seg,R,Z");
+
+    // First data row: segment 0
+    std::string row0;
+    std::getline(f, row0);
+    EXPECT_EQ(row0[0], '0');
+    EXPECT_NE(row0.find(','), std::string::npos);
+
+    // Skip the remaining 10 rows of seg 0 (primary has 11 pts; 1 already read)
+    for (int i = 0; i < 10; ++i) std::getline(f, row0);
+    std::string row1;
+    std::getline(f, row1);
+    EXPECT_EQ(row1[0], '1');
+}
+
+// Test: save() returns false for unsupported extension
+TEST_F(MfgenTest, Manifold_Save_UnsupportedFormat) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf.xPoint.R = 0.4979691771716279;
+    mf.xPoint.Z = -0.2185980054447758;
+    mf.primarySegment(10);
+
+    EXPECT_FALSE(mf.save(test_dir + "/manifold_test.xyz"));
 }

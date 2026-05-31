@@ -104,6 +104,19 @@ int main() {
         maglit tracer(source);
         tracer.configure(input.h_init, input.h_min, input.h_max);
 
+        // determine output file path for this section
+        std::string base_path = input.output_path;
+        if (base_path.size() >= 4 && base_path.substr(base_path.size() - 4) == ".dat")
+            base_path = base_path.substr(0, base_path.size() - 4);
+        std::string section_file = base_path + "_" + std::to_string(static_cast<int>(phi)) + ".dat";
+        {
+            std::ifstream test_file(section_file);
+            if (test_file.is_open()) {
+                std::cerr << "Warning: File " << section_file << " already exists. Saving to a new file to avoid overwriting your data." << std::endl;
+                section_file = base_path + "_" + std::to_string(static_cast<int>(phi)) + "_new.dat";
+            }
+        }
+
         // create manifold object
         std::cout << "\nCreating manifold object...\n"
                   << std::endl;
@@ -132,33 +145,6 @@ int main() {
         std::cout << "\nComputing the first primary segment...\n"
                   << std::endl;
         std::vector<point> first_primary_segment = manifold.primarySegment(10);
-        // if input.output_path ends with .dat, remove it
-        if (input.output_path.size() >= 4 &&
-            input.output_path.substr(input.output_path.size() - 4) == ".dat") {
-            input.output_path = input.output_path.substr(0, input.output_path.size() - 4);
-        }
-        // concatenate input.output_path with the poincare sections
-        std::string section_file = input.output_path + "_" + std::to_string(static_cast<int>(phi)) + ".dat";
-
-        // check if there is a saved file with the same name
-        std::ifstream test_file(section_file);
-        if (test_file.is_open()) {
-            std::cerr << "Warning: File " << section_file << " already exists. Saving to a new file to avoid overwriting your data." << std::endl;
-            section_file = input.output_path + "_" + std::to_string(static_cast<int>(phi)) + "_new.dat";
-        }
-        test_file.close();
-
-        // save the primary segment to file section_file
-        std::ofstream output_file(section_file);
-        if (!output_file) {
-            std::cerr << "Error opening output file: " << section_file << std::endl;
-            return 1;
-        }
-        output_file << std::fixed << std::setprecision(16);
-        for (const auto &pt : first_primary_segment) {
-            output_file << pt.R << " " << pt.Z << "\n";
-        }
-        output_file.close();
 
         // loop to create new segments
         for (int i = 1; i < input.nSegments; ++i) {
@@ -175,18 +161,11 @@ int main() {
                 std::cerr << "Invalid method selected. Please choose 0 or 1." << std::endl;
                 return 1;
             }
+        }
 
-            // append the new segment to file section_file
-            std::ofstream output_file(section_file, std::ios::app);
-            if (!output_file) {
-                std::cerr << "Error opening output file: " << section_file << std::endl;
-                return 1;
-            }
-            output_file << std::fixed << std::setprecision(16);
-            for (const auto &pt : new_segment) {
-                output_file << pt.R << " " << pt.Z << "\n";
-            }
-            output_file.close();
+        if (!manifold.save(section_file)) {
+            std::cerr << "Error saving output file: " << section_file << std::endl;
+            return 1;
         }
 
         std::cout << "\nManifold successfully computed for Poincaré section phi = " << static_cast<int>(phi) << "\n"

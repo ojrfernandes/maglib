@@ -1,6 +1,7 @@
 #include "manifold.h"
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
@@ -164,6 +165,7 @@ std::vector<point> manifold::primarySegment(size_t n_intervals) {
         double t = static_cast<double>(i) / static_cast<double>(n_intervals);
         segment.push_back(pivot_pt * (1.0 - t) + T_pivot * t);
     }
+    outputData.push_back(segment);
     return segment;
 }
 
@@ -304,6 +306,7 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi
         if (inserted) arcs = buildInterpolants(prev_seg);
     }
 
+    outputData.push_back(new_seg);
     return new_seg;
 }
 
@@ -365,7 +368,45 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi
         }
     }
 
+    outputData.push_back(new_seg);
     return new_seg;
+}
+
+bool manifold::save(const std::string &path) const {
+    auto ends_with = [&](const std::string &ext) {
+        return path.size() >= ext.size() &&
+               path.substr(path.size() - ext.size()) == ext;
+    };
+
+    bool is_csv = ends_with(".csv");
+    bool is_txt = ends_with(".dat") || ends_with(".txt");
+
+    if (!is_csv && !is_txt) {
+        std::cerr << "Error: unsupported extension in \"" << path
+                  << "\". Use .dat, .txt, or .csv." << std::endl;
+        return false;
+    }
+
+    std::ofstream f(path);
+    if (!f.is_open()) {
+        std::cerr << "Error: could not open output file: " << path << std::endl;
+        return false;
+    }
+
+    f << std::fixed << std::setprecision(16);
+    if (is_csv) {
+        f << "seg,R,Z\n";
+        for (size_t s = 0; s < outputData.size(); ++s)
+            for (const auto &pt : outputData[s])
+                f << s << "," << pt.R << "," << pt.Z << "\n";
+    } else {
+        f << "#seg R" << std::string(18, ' ') << "Z\n";
+        for (size_t s = 0; s < outputData.size(); ++s)
+            for (const auto &pt : outputData[s])
+                f << s << " " << pt.R << " " << pt.Z << "\n";
+    }
+
+    return true;
 }
 
 void manifold::progressBar(int j, int nSeg) {

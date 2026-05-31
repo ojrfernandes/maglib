@@ -3,6 +3,7 @@
 #define MANIFOLD_V 260531 // version (yy.mm.dd)
 
 #include <maglit.h>
+#include <string>
 #include <vector>
 
 struct point {
@@ -45,10 +46,15 @@ class manifold {
     // Configure numerical parameters
     void configure(double epsilon, double h, double tol, int max_iter,
                    double precision_limit, int max_insertions);
+    // Save all accumulated segments to file. Format inferred from extension:
+    //   .dat / .txt  — space-separated text with header (columns: seg, R, Z)
+    //   .csv         — comma-separated text with header (columns: seg, R, Z)
+    bool save(const std::string &path) const;
 
     std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
 
     point xPoint; // X-point coordinates (set by find_xPoint)
+    std::vector<std::vector<point>> outputData; // segments accumulated by primarySegment/newSegment
 
   private:
     void eval_jacobian(double R, double Z, double Phi, double h, double jacobian[2][2]);

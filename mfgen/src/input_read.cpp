@@ -202,6 +202,10 @@ bool input_read::readInputFile() {
                 std::cerr << "Error: verbose must be 0 (no) or 1 (yes)." << std::endl;
                 return false;
             }
+        } else if (key == "R_xPoint") {
+            this->R_xPoint = std::stod(value);
+        } else if (key == "Z_xPoint") {
+            this->Z_xPoint = std::stod(value);
         }
 
         else {

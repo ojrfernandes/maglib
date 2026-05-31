@@ -33,3 +33,8 @@
         precision = 1e-14               # precision for floating point comparison
         max_insertions = 100            # maximum new point insertions per segment
         verbose = 0                     # basic info printed = 0; all info printed = 1
+#
+#=============== OPTIONAL X-POINT INITIAL GUESS
+#
+#       R_xPoint = 0.498               # initial R guess for X-point (overrides HDF5 auto-read)
+#       Z_xPoint = -0.219              # initial Z guess for X-point (overrides HDF5 auto-read)
