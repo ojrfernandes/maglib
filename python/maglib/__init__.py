@@ -1,3 +1,3 @@
-from ._maglib import Sode, SodeMethod, SodeStatus, Collider
+from ._maglib import Sode, SodeMethod, SodeStatus, Collider, FieldSource, M3DC1Source, Maglit
 
-__all__ = ["Sode", "SodeMethod", "SodeStatus", "Collider"]
+__all__ = ["Sode", "SodeMethod", "SodeStatus", "Collider", "FieldSource", "M3DC1Source", "Maglit"]

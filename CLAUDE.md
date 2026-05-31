@@ -117,8 +117,8 @@ The project is being incrementally refactored toward Python/C++ interoperability
 | `sode` Python bindings | Done — `maglib.Sode`, `SodeMethod`, `SodeStatus` |
 | `FieldSource` abstraction + `M3DC1Source` | Done |
 | `collider` Python bindings | Done — `maglib.Collider` |
-| `maglit` + `M3DC1Source` Python bindings | **Next step** |
-| Decouple `footprint`/`manifold` from `input_read`, then bind | Planned |
+| `maglit` + `M3DC1Source` Python bindings | Done — `maglib.Maglit`, `M3DC1Source`, `FieldSource` |
+| Decouple `footprint`/`manifold` from `input_read`, then bind | **Next step** |
 | `lbmap` | To be discontinued; reimplemented in Python using shapely |
 
 ### Python binding conventions
