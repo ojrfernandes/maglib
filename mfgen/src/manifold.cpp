@@ -230,7 +230,7 @@ void manifold::insertPoint(std::vector<point> &segment, interpolantArc &arc, boo
     }
 }
 
-std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi,
+std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
                                          double l_lim, double theta_lim) {
     if (prev_seg.size() < 3) {
         std::cerr << "Error: Previous segment must have at least three points.\n";
@@ -253,9 +253,9 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi
     size_t j = 1;
 
     while (j < arcs.size()) {
-        point x_i = apply_map(arcs[j - 1].x0.R, arcs[j - 1].x0.Z, Phi, 1);
-        point x_j = apply_map(arcs[j].x0.R,     arcs[j].x0.Z,     Phi, 1);
-        point x_k = apply_map(arcs[j].x1.R,     arcs[j].x1.Z,     Phi, 1);
+        point x_i = apply_map(arcs[j - 1].x0.R, arcs[j - 1].x0.Z, phi, 1);
+        point x_j = apply_map(arcs[j].x0.R,     arcs[j].x0.Z,     phi, 1);
+        point x_k = apply_map(arcs[j].x1.R,     arcs[j].x1.Z,     phi, 1);
 
         double l_i     = computeDistance(x_i, x_j);
         double l_ii    = computeDistance(x_j, x_k);
@@ -310,7 +310,7 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi
     return new_seg;
 }
 
-std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi,
+std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
                                          int nSeg, double l_lim, double theta_lim) {
     std::vector<point> new_seg;
     size_t j = 1;
@@ -321,9 +321,9 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi
     bool   overlap         = false;
 
     while (j < prev_seg.size() - 1) {
-        point x_i = apply_map(prev_seg[j - 1].R, prev_seg[j - 1].Z, Phi, nSeg);
-        point x_j = apply_map(prev_seg[j].R,     prev_seg[j].Z,     Phi, nSeg);
-        point x_k = apply_map(prev_seg[j + 1].R, prev_seg[j + 1].Z, Phi, nSeg);
+        point x_i = apply_map(prev_seg[j - 1].R, prev_seg[j - 1].Z, phi, nSeg);
+        point x_j = apply_map(prev_seg[j].R,     prev_seg[j].Z,     phi, nSeg);
+        point x_k = apply_map(prev_seg[j + 1].R, prev_seg[j + 1].Z, phi, nSeg);
 
         double l_i     = computeDistance(x_i, x_j);
         double l_ii    = computeDistance(x_j, x_k);
@@ -370,6 +370,19 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, double Phi
 
     outputData.push_back(new_seg);
     return new_seg;
+}
+
+void manifold::run(size_t n_intervals, int n_segments, int method,
+                   double l_lim, double theta_lim) {
+    std::vector<point> prev_seg = primarySegment(n_intervals);
+    for (int i = 1; i < n_segments; ++i) {
+        progressBar(i, n_segments);
+        if (method == 0) {
+            newSegment(prev_seg, i, l_lim, theta_lim);
+        } else {
+            prev_seg = newSegment(prev_seg, l_lim, theta_lim);
+        }
+    }
 }
 
 bool manifold::save(const std::string &path) const {

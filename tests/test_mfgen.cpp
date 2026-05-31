@@ -496,9 +496,9 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrevious) {
         {0.4979855389268979, -0.2185929033960707}};
 
     std::vector<point> new_seg_1, new_seg_2, new_seg_3;
-    EXPECT_NO_THROW(new_seg_1 = mf.newSegment(primary_seg, 0, 0.005, 20));
-    EXPECT_NO_THROW(new_seg_2 = mf.newSegment(new_seg_1, 0, 0.005, 20));
-    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(new_seg_2, 0, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_1 = mf.newSegment(primary_seg, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_2 = mf.newSegment(new_seg_1, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(new_seg_2, 0.005, 20));
 
     // Check a few new_seg_3 points within reasonable bounds
     // R: 0.5012464706502761 Z: -0.2174148574827388 0
@@ -551,7 +551,7 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrimary) {
         {0.4979855389268979, -0.2185929033960707}};
 
     std::vector<point> new_seg_3;
-    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(primary_seg, 0, 3, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(primary_seg, 3, 0.005, 20));
 
     // Check a few new_seg_3 points within reasonable bounds
     // R: 0.5037194321479069 Z: -0.2167180039510279 0
@@ -597,10 +597,10 @@ TEST_F(MfgenTest, Manifold_OutputData_Accumulates) {
     EXPECT_EQ(mf.outputData.size(), 1u);
     EXPECT_EQ(mf.outputData[0].size(), 11u);
 
-    mf.newSegment(primary, 0, 0.005, 20); // interpolant method
+    mf.newSegment(primary, 0.005, 20); // interpolant method
     EXPECT_EQ(mf.outputData.size(), 2u);
 
-    mf.newSegment(primary, 0, 2, 0.005, 20); // exact-map method
+    mf.newSegment(primary, 2, 0.005, 20); // exact-map method
     EXPECT_EQ(mf.outputData.size(), 3u);
 }
 
@@ -637,7 +637,7 @@ TEST_F(MfgenTest, Manifold_Save_Csv) {
     mf.xPoint.Z = -0.2185980054447758;
 
     std::vector<point> primary = mf.primarySegment(10);
-    mf.newSegment(primary, 0, 0.005, 20);
+    mf.newSegment(primary, 0.005, 20);
 
     std::string path = test_dir + "/manifold_test.csv";
     EXPECT_TRUE(mf.save(path));
@@ -671,4 +671,40 @@ TEST_F(MfgenTest, Manifold_Save_UnsupportedFormat) {
     mf.primarySegment(10);
 
     EXPECT_FALSE(mf.save(test_dir + "/manifold_test.xyz"));
+}
+
+// Test: run() produces the correct number of segments in outputData
+TEST_F(MfgenTest, Manifold_Run_OutputDataSize) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf.xPoint.R = 0.4979691771716279;
+    mf.xPoint.Z = -0.2185980054447758;
+
+    mf.run(10, 4, 1, 0.005, 20); // 4 total: 1 primary + 3 new (interpolant)
+    EXPECT_EQ(mf.outputData.size(), 4u);
+    EXPECT_EQ(mf.outputData[0].size(), 11u); // primary: n_intervals=10 → 11 pts
+}
+
+// Test: run() (exact-map) first new segment matches newSegment called directly
+TEST_F(MfgenTest, Manifold_Run_ExactMap_MatchesDirect) {
+    // Reference: compute seg 1 via run(method=0)
+    manifold mf1(*tracer, 0, 0);
+    mf1.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf1.xPoint.R = 0.4979691771716279;
+    mf1.xPoint.Z = -0.2185980054447758;
+    mf1.run(10, 2, 0, 0.005, 20); // 1 primary + 1 exact-map new
+
+    // Direct: compute seg 1 via primarySegment + newSegment
+    manifold mf2(*tracer, 0, 0);
+    mf2.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf2.xPoint.R = 0.4979691771716279;
+    mf2.xPoint.Z = -0.2185980054447758;
+    std::vector<point> primary = mf2.primarySegment(10);
+    std::vector<point> seg1    = mf2.newSegment(primary, 1, 0.005, 20);
+
+    ASSERT_EQ(mf1.outputData[1].size(), seg1.size());
+    for (size_t i = 0; i < seg1.size(); ++i) {
+        EXPECT_DOUBLE_EQ(mf1.outputData[1][i].R, seg1[i].R);
+        EXPECT_DOUBLE_EQ(mf1.outputData[1][i].Z, seg1[i].Z);
+    }
 }

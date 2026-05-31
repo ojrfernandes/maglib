@@ -164,25 +164,25 @@ np.ndarray, shape (n_intervals+1, 2)
         .def("new_segment",
             [seg_to_numpy, numpy_to_seg](manifold &self,
                 py::array_t<double, py::array::c_style | py::array::forcecast> prev_arr,
-                double phi, double l_lim, double theta_lim) {
+                double l_lim, double theta_lim) {
                 std::vector<point> prev = numpy_to_seg(prev_arr);
                 std::vector<point> new_seg;
                 {
                     py::gil_scoped_release release;
-                    new_seg = self.newSegment(prev, phi, l_lim, theta_lim);
+                    new_seg = self.newSegment(prev, l_lim, theta_lim);
                 }
                 return py::make_tuple(seg_to_numpy(prev), seg_to_numpy(new_seg));
             },
-            "prev_seg"_a, "phi"_a, "l_lim"_a, "theta_lim"_a,
+            "prev_seg"_a, "l_lim"_a, "theta_lim"_a,
             R"doc(
 Compute a refined segment from a previous segment (interpolant method).
+
+The Poincaré section angle is the one set at construction time.
 
 Parameters
 ----------
 prev_seg : np.ndarray, shape (N, 2)
     Input segment; may be refined with additional points.
-phi : float
-    Toroidal angle of the Poincaré section (radians).
 l_lim : float
     Arc-length threshold for segment refinement (metres).
 theta_lim : float
@@ -198,25 +198,25 @@ Returns
         .def("new_segment",
             [seg_to_numpy, numpy_to_seg](manifold &self,
                 py::array_t<double, py::array::c_style | py::array::forcecast> prev_arr,
-                double phi, int n_seg, double l_lim, double theta_lim) {
+                int n_seg, double l_lim, double theta_lim) {
                 std::vector<point> prev = numpy_to_seg(prev_arr);
                 std::vector<point> new_seg;
                 {
                     py::gil_scoped_release release;
-                    new_seg = self.newSegment(prev, phi, n_seg, l_lim, theta_lim);
+                    new_seg = self.newSegment(prev, n_seg, l_lim, theta_lim);
                 }
                 return py::make_tuple(seg_to_numpy(prev), seg_to_numpy(new_seg));
             },
-            "prev_seg"_a, "phi"_a, "n_seg"_a, "l_lim"_a, "theta_lim"_a,
+            "prev_seg"_a, "n_seg"_a, "l_lim"_a, "theta_lim"_a,
             R"doc(
 Compute a refined segment by applying the map n_seg times (exact-map method).
+
+The Poincaré section angle is the one set at construction time.
 
 Parameters
 ----------
 prev_seg : np.ndarray, shape (N, 2)
     Primary segment (used as source; not modified).
-phi : float
-    Toroidal angle of the Poincaré section (radians).
 n_seg : int
     Number of Poincaré map applications.
 l_lim : float
@@ -227,6 +227,34 @@ theta_lim : float
 Returns
 -------
 (prev_seg, new_seg) : tuple of np.ndarray, shapes (N, 2) and (K, 2)
+)doc")
+
+        .def("run",
+            [](manifold &self, size_t n_intervals, int n_segments, int method,
+               double l_lim, double theta_lim) {
+                py::gil_scoped_release release;
+                self.run(n_intervals, n_segments, method, l_lim, theta_lim);
+            },
+            "n_intervals"_a, "n_segments"_a, "method"_a, "l_lim"_a, "theta_lim"_a,
+            R"doc(
+Compute all manifold segments in one call.
+
+Requires x_point to be set (call find_x_point first). Results are
+accumulated in output_data and can be saved with save().
+
+Parameters
+----------
+n_intervals : int
+    Intervals for the primary segment; produces n_intervals+1 points.
+n_segments : int
+    Total number of segments including the primary (>= 1).
+method : int
+    0 = exact-map (each segment mapped directly from the primary),
+    1 = interpolant (each segment mapped from the previous one).
+l_lim : float
+    Arc-length threshold for refinement (metres).
+theta_lim : float
+    Turning-angle threshold in degrees.
 )doc")
 
         .def("progress_bar", &manifold::progressBar, "j"_a, "n_seg"_a,

@@ -153,9 +153,9 @@ int main() {
 
             std::vector<point> new_segment;
             if (input.method == 0) {
-                new_segment = manifold.newSegment(first_primary_segment, phi_rad, i, input.l_lim, input.theta_lim);
+                new_segment = manifold.newSegment(first_primary_segment, i, input.l_lim, input.theta_lim);
             } else if (input.method == 1) {
-                new_segment = manifold.newSegment(first_primary_segment, phi_rad, input.l_lim, input.theta_lim);
+                new_segment = manifold.newSegment(first_primary_segment, input.l_lim, input.theta_lim);
                 first_primary_segment = new_segment;
             } else {
                 std::cerr << "Invalid method selected. Please choose 0 or 1." << std::endl;

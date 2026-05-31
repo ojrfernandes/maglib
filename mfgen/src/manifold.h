@@ -34,11 +34,14 @@ class manifold {
     // Compute the primary segment (n_intervals+1 points)
     std::vector<point> primarySegment(size_t n_intervals);
     // Compute a refined new segment from a previous segment (interpolant method)
-    std::vector<point> newSegment(std::vector<point> &prev_seg, double Phi,
+    std::vector<point> newSegment(std::vector<point> &prev_seg,
                                   double l_lim, double theta_lim);
     // Compute a refined new segment by applying the map nSeg times (exact-map method)
-    std::vector<point> newSegment(std::vector<point> &prev_seg, double Phi, int nSeg,
+    std::vector<point> newSegment(std::vector<point> &prev_seg, int nSeg,
                                   double l_lim, double theta_lim);
+    // Compute all segments in one call: primarySegment + (n_segments-1) newSegment calls
+    void run(size_t n_intervals, int n_segments, int method,
+             double l_lim, double theta_lim);
     // Print a progress bar
     void progressBar(int j, int nSeg);
     // Enable verbose diagnostic output
