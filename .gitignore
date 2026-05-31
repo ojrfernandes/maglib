@@ -3,6 +3,7 @@ external
 .vscode
 magplot/magplot/__pycache__
 tests/data
+CLAUDE.md
 # Compiled Python extension (placed next to __init__.py by CMake)
 python/maglib/_maglib*.so
 python/maglib/__pycache__

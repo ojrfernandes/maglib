@@ -12,7 +12,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Find standard dependencies
 find_package(HDF5 REQUIRED COMPONENTS C)
-find_package(Armadillo REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # Custom dependency - fusion-io

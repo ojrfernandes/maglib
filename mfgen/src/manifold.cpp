@@ -145,42 +145,38 @@ point manifold::pivot() {
     std::cout << "[" << jacobian[1][0] << " " << jacobian[1][1] << "]\n"
               << std::endl;
 
-    // Convert the jacobian to an armadillo matrix
-    arma::mat jacobian_arma = {{jacobian[0][0], jacobian[0][1]}, {jacobian[1][0], jacobian[1][1]}};
+    // Analytic 2×2 eigendecomposition.
+    // The Poincaré map Jacobian at a hyperbolic X-point has real eigenvalues
+    // (discriminant > 0), so no complex arithmetic is needed.
+    double tr   = jacobian[0][0] + jacobian[1][1];
+    double det  = jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
+    double sq   = std::sqrt(tr * tr - 4.0 * det);
+    double lam1 = (tr + sq) / 2.0;
+    double lam2 = (tr - sq) / 2.0;
 
-    // Compute the eigenvalues and eigenvectors of the jacobian
-    arma::cx_vec eigval;
-    arma::cx_mat eigvec;
-    arma::eig_gen(eigval, eigvec, jacobian_arma);
-
-    // Print the eigenvalues and eigenvectors
     std::cout << "Eigenvalues: " << std::endl;
-    std::cout << eigval[0].real() << " " << eigval[1].real() << "\n"
-              << std::endl;
+    std::cout << lam1 << " " << lam2 << "\n" << std::endl;
 
-    std::cout << "Eigenvectors: " << std::endl;
-    std::cout << "[" << eigvec.col(0)[0].real() << " " << eigvec.col(0)[1].real() << "]" << std::endl;
-    std::cout << "[" << eigvec.col(1)[0].real() << " " << eigvec.col(1)[1].real() << "]\n"
-              << std::endl;
+    // Select the unstable eigenvalue (|λ| > 1)
+    double lam = (std::abs(lam1) > 1.0) ? lam1 : lam2;
 
-    // Find the eigenvector corresponding to the eigenvalue with |lambda| > 1
-    arma::cx_vec selected_eigvec;
-    for (size_t i = 0; i < eigval.n_elem; ++i) {
-        if (std::abs(eigval[i]) > 1) {
-            selected_eigvec = eigvec.col(i);
-            break;
-        }
+    // Eigenvector from the null space of (J - λI).
+    // Use the row whose off-diagonal entry is larger for numerical stability.
+    double v_R, v_Z;
+    if (std::abs(jacobian[0][1]) >= std::abs(jacobian[1][0])) {
+        v_R = jacobian[0][1];
+        v_Z = lam - jacobian[0][0];
+    } else {
+        v_R = lam - jacobian[1][1];
+        v_Z = jacobian[1][0];
     }
 
-    // Normalize the selected eigenvector to get the unit vector
-    selected_eigvec = selected_eigvec / arma::norm(selected_eigvec);
+    double norm = std::sqrt(v_R * v_R + v_Z * v_Z);
+    v_R /= norm;
+    v_Z  = (v_Z / norm) * this->s_factor;
 
-    // Extract real parts of the eigenvector (assuming they are real)
-    double v_R = selected_eigvec[0].real();
-    double v_Z = selected_eigvec[1].real() * this->s_factor;
     std::cout << "Selected eigenvector (|lambda| > 1): " << std::endl;
-    std::cout << "[" << v_R << " " << v_Z << "]\n"
-              << std::endl;
+    std::cout << "[" << v_R << " " << v_Z << "]\n" << std::endl;
 
     // Calculate the new point (R_new, Z_new)
     double R_pivot = R_xPoint + this->epsilon * v_R;

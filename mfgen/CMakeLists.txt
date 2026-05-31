@@ -8,17 +8,15 @@ add_executable(mfgen ${MFGEN_SOURCES})
 
 # Link libraries using modern CMake
 target_link_libraries(mfgen PRIVATE
-    maglit                     
-    ${HDF5_LIBRARIES}          
-    OpenMP::OpenMP_CXX         
-    ${ARMADILLO_LIBRARIES}     
+    maglit
+    ${HDF5_LIBRARIES}
+    OpenMP::OpenMP_CXX
 )
 
 # Include directories
 target_include_directories(mfgen PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${HDF5_INCLUDE_DIRS}
-    ${ARMADILLO_INCLUDE_DIRS}
 )
 
 # Copy input file to build directory
