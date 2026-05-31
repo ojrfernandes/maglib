@@ -1,84 +1,77 @@
 #ifndef MANIFOLD_H
 #define MANIFOLD_H
-#define MANIFOLD_V 251110 // version (yy.mm.dd)
+#define MANIFOLD_V 260531 // version (yy.mm.dd)
 
-#include <chrono>
-#include <iomanip>
 #include <maglit.h>
-#include <thread>
-#include <utility>
+#include <vector>
 
-// Structure to store a point in the R-Z plane
 struct point {
     double R;
     double Z;
+
+    point operator+(const point &o) const { return {R + o.R, Z + o.Z}; }
+    point operator-(const point &o) const { return {R - o.R, Z - o.Z}; }
+    point operator*(double s)        const { return {R * s,   Z * s};   }
+    friend point operator*(double s, const point &p) { return p * s; }
+    bool operator==(const point &o)  const { return R == o.R && Z == o.Z; }
 };
 
-// Structure to store an interpolant arc
 struct interpolantArc {
     point  x0, x1;
     double a, b;
-    int    i0, i1; // indices of the points in the segment
+    int    i0, i1; // indices of the endpoints in the segment vector
 
     point evalNewPoint(double t) const;
 };
 
 class manifold {
   public:
-    // Constructor
     manifold(maglit &tracer, double phi, int stability);
-    // Iteratively find the closest 1 period fixed point from the initial guess
+
+    // Iteratively find the closest 1-period fixed point from the initial guess
     bool find_xPoint(double rGuess, double zGuess);
-    // Compute the primary segment
-    void primarySegment(std::vector<point> &segment, size_t num_points);
-    // Compute a refined new segment from a previous segment
-    void newSegment(std::vector<point> &prev_seg, std::vector<point> &new_seg, double Phi, double l_lim, double theta_lim);
-    // Compute a refined new segment from the first primary segment
-    void newSegment(std::vector<point> &primary_seg, std::vector<point> &new_seg, double Phi, int nSeg, double l_lim, double theta_lim);
+    // Compute the primary segment (n_intervals+1 points)
+    std::vector<point> primarySegment(size_t n_intervals);
+    // Compute a refined new segment from a previous segment (interpolant method)
+    std::vector<point> newSegment(std::vector<point> &prev_seg, double Phi,
+                                  double l_lim, double theta_lim);
+    // Compute a refined new segment by applying the map nSeg times (exact-map method)
+    std::vector<point> newSegment(std::vector<point> &prev_seg, double Phi, int nSeg,
+                                  double l_lim, double theta_lim);
     // Print a progress bar
     void progressBar(int j, int nSeg);
-    // Set warning flag
+    // Enable verbose diagnostic output
     void setVerbose();
-    // Configure parameters
-    void configure(double epsilon, double h, double tol, int max_iter, double precision_limit, int max_insertions);
+    // Configure numerical parameters
+    void configure(double epsilon, double h, double tol, int max_iter,
+                   double precision_limit, int max_insertions);
 
     std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
 
-    point xPoint; // x-point coordinates
+    point xPoint; // X-point coordinates (set by find_xPoint)
 
   private:
-    // Evaluate the jacobian of the map at a given point
     void eval_jacobian(double R, double Z, double Phi, double h, double jacobian[2][2]);
-    // Insert a new point in the vector by linear interpolation
-    void insertPoint(std::vector<point> &segment, size_t index);
-    // Insert a new point in the vector by interpolant arc
-    void insertPoint(std::vector<point> &segment, interpolantArc &arc);
-    // Compute distance between two points
-    double computeDistance(double R1, double Z1, double R2, double Z2);
-    // Compute angle between two vectors
-    double computeAngle(double R0, double Z0, double R1, double Z1, double R2, double Z2);
-    // Apply map to a given point returning a Point (R, Z)
+    void insertPoint(std::vector<point> &segment, size_t index, bool &overlap);
+    void insertPoint(std::vector<point> &segment, interpolantArc &arc, bool &overlap);
+    static double computeDistance(point a, point b);
+    static double computeAngle(point a, point b, point c);
     point apply_map(double R, double Z, double Phi, int nTurns);
-    // Find the pivot point for the fisrt primary segment
     point pivot();
 
-    // User defined parameters
-    int    stability; // 0: forward, 1: backward
-    double phi;       // toroidal angle
+    int    stability;
+    double phi;
 
-    // Additional parameters
-    double epsilon = 1e-6;          // distance from the x-point to the pivot point
-    bool   verbose = false;         // verbose flag
-    int    s_factor = 1;            // sign factor for the manifold stability
-    double h = 1e-8;                // step size for numerical derivatives
-    double tol = 1e-14;             // tolerance for Newton's method
-    int    max_iter = 50;           // maximum number of iterations for Newton's method
-    double precision_limit = 1e-14; // precision limit for floating point comparisons
-    bool   refining_angle = false;  // flag to indicate if the angle is being refined
-    bool   overlap = false;         // flag to indicate floating point precision limit overlap
-    int    max_insertions = 100;    // Max limit for new point insertions in a segment
+    double epsilon         = 1e-6;
+    bool   verbose         = false;
+    int    s_factor        = 1;
+    double h               = 1e-8;
+    double tol             = 1e-14;
+    int    max_iter        = 50;
+    double precision_limit = 1e-14;
+    int    max_insertions  = 100;
 
-    maglit &tracer; // magnetic field lines tracer
+    maglit &tracer;
 };
 
 #endif // MANIFOLD_H

@@ -402,7 +402,7 @@ TEST_F(MfgenTest, Manifold_PrimarySegment) {
     mf.xPoint.Z = -0.2185980054447758;
 
     std::vector<point> segment;
-    EXPECT_NO_THROW(mf.primarySegment(segment, 10));
+    EXPECT_NO_THROW(segment = mf.primarySegment(10));
 
     // Check that the segment has the correct number of points
     EXPECT_EQ(segment.size(), 11);
@@ -438,12 +438,10 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrevious) {
         {0.4979839982422214, -0.2185933839109182},
         {0.4979855389268979, -0.2185929033960707}};
 
-    std::vector<point> new_seg_1;
-    std::vector<point> new_seg_2;
-    std::vector<point> new_seg_3;
-    EXPECT_NO_THROW(mf.newSegment(primary_seg, new_seg_1, 0, 0.005, 20));
-    EXPECT_NO_THROW(mf.newSegment(new_seg_1, new_seg_2, 0, 0.005, 20));
-    EXPECT_NO_THROW(mf.newSegment(new_seg_2, new_seg_3, 0, 0.005, 20));
+    std::vector<point> new_seg_1, new_seg_2, new_seg_3;
+    EXPECT_NO_THROW(new_seg_1 = mf.newSegment(primary_seg, 0, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_2 = mf.newSegment(new_seg_1, 0, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(new_seg_2, 0, 0.005, 20));
 
     // Check a few new_seg_3 points within reasonable bounds
     // R: 0.5012464706502761 Z: -0.2174148574827388 0
@@ -496,7 +494,7 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrimary) {
         {0.4979855389268979, -0.2185929033960707}};
 
     std::vector<point> new_seg_3;
-    EXPECT_NO_THROW(mf.newSegment(primary_seg, new_seg_3, 0, 3, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(primary_seg, 0, 3, 0.005, 20));
 
     // Check a few new_seg_3 points within reasonable bounds
     // R: 0.5037194321479069 Z: -0.2167180039510279 0

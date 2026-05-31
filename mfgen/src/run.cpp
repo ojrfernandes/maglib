@@ -1,6 +1,8 @@
 #include "input_read.h"
 #include "manifold.h"
+#include <chrono>
 #include <m3dc1_source.h>
+#include <thread>
 
 int main() {
 
@@ -126,13 +128,10 @@ int main() {
                   << "R: " << manifold.xPoint.R << " Z: " << manifold.xPoint.Z << "\n"
                   << std::endl;
 
-        size_t num_points = 10;                   // number of points in the primary segment
-        std::vector<point> first_primary_segment; // vector of points to store the first primary segment
-
-        // compute first primary segment
+        // compute first primary segment (10 intervals = 11 points)
         std::cout << "\nComputing the first primary segment...\n"
                   << std::endl;
-        manifold.primarySegment(first_primary_segment, num_points);
+        std::vector<point> first_primary_segment = manifold.primarySegment(10);
         // if input.output_path ends with .dat, remove it
         if (input.output_path.size() >= 4 &&
             input.output_path.substr(input.output_path.size() - 4) == ".dat") {
@@ -161,18 +160,16 @@ int main() {
         }
         output_file.close();
 
-        std::vector<point> new_segment; // vector of points to store the new segment
-
         // loop to create new segments
         for (int i = 1; i < input.nSegments; ++i) {
-            // print progress bar
             manifold.progressBar(i, input.nSegments);
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
+            std::vector<point> new_segment;
             if (input.method == 0) {
-                manifold.newSegment(first_primary_segment, new_segment, phi_rad, i, input.l_lim, input.theta_lim);
+                new_segment = manifold.newSegment(first_primary_segment, phi_rad, i, input.l_lim, input.theta_lim);
             } else if (input.method == 1) {
-                manifold.newSegment(first_primary_segment, new_segment, phi_rad, input.l_lim, input.theta_lim);
+                new_segment = manifold.newSegment(first_primary_segment, phi_rad, input.l_lim, input.theta_lim);
                 first_primary_segment = new_segment;
             } else {
                 std::cerr << "Invalid method selected. Please choose 0 or 1." << std::endl;
@@ -190,9 +187,6 @@ int main() {
                 output_file << pt.R << " " << pt.Z << "\n";
             }
             output_file.close();
-
-            // empty new segment vector
-            new_segment.clear();
         }
 
         std::cout << "\nManifold successfully computed for Poincaré section phi = " << static_cast<int>(phi) << "\n"
