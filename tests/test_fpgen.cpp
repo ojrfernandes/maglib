@@ -355,7 +355,8 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
     footprint fp(manifold, grid_R1, grid_Z1, grid_R2, grid_Z2, nR, nZ, max_turns);
 
     // Run the grid
-    EXPECT_NO_THROW(fp.runGrid(*tracer));
+    std::vector<maglit*> tracers = {tracer};
+    EXPECT_NO_THROW(fp.run(tracers));
 
     // Check that outputData is populated
     EXPECT_EQ(fp.outputData.size(), nR * nZ);
@@ -414,7 +415,8 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     footprint fp(manifold, grid_R1, grid_Z1, grid_R2, grid_Z2, nR, nZ, max_turns);
 
     // Run the grid
-    EXPECT_NO_THROW(fp.runGrid(*tracer));
+    std::vector<maglit*> tracers = {tracer};
+    EXPECT_NO_THROW(fp.run(tracers));
 
     // Check that outputData is populated
     EXPECT_EQ(fp.outputData.size(), nR * nZ);
@@ -458,4 +460,89 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     EXPECT_EQ(fp.outputData[1][5], 2);
     EXPECT_EQ(fp.outputData[2][5], 13);
     EXPECT_EQ(fp.outputData[3][5], 2);
+}
+
+// ==================== PARALLEL CONSISTENCY TESTS ====================
+
+// Helper: create a fresh, configured tracer from C1.h5 timeslice 1.
+// Returns source and tracer via output params; caller owns them.
+static void make_tracer(std::unique_ptr<M3DC1Source> &src_out,
+                        std::unique_ptr<maglit>       &tracer_out) {
+    std::string src_path   = std::string(TEST_DATA_DIR) + "/C1.h5";
+    std::string shape_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+    src_out    = std::make_unique<M3DC1Source>(src_path.c_str(), 1);
+    tracer_out = std::make_unique<maglit>(*src_out);
+    tracer_out->configure(0.01, 1e-6, 0.1);
+    tracer_out->set_monitor(shape_path);
+}
+
+// Test: 2-thread parallel run matches serial run for the wall grid (stable manifold).
+// Each grid point is independent so results must be bit-for-bit identical.
+TEST_F(FpgenTest, Footprint_ParallelConsistency_Wall) {
+    const int    manifold  = 0;    // stable manifold
+    const double grid_R1   = 0.435;
+    const double grid_Z1   = -0.239;
+    const double grid_R2   = 0.435;
+    const double grid_Z2   = -0.232;
+    const int    nRZ       = 2;
+    const int    nPhi      = 2;
+    const int    max_turns = 50;
+
+    // Serial run
+    footprint            fp_serial(manifold, grid_R1, grid_Z1, grid_R2, grid_Z2, nRZ, nPhi, max_turns);
+    std::vector<maglit*> serial_tracers = {tracer};
+    fp_serial.run(serial_tracers);
+
+    // Parallel run — second thread gets its own independent source+tracer
+    std::unique_ptr<M3DC1Source> src2;
+    std::unique_ptr<maglit>      tracer2;
+    make_tracer(src2, tracer2);
+
+    footprint            fp_parallel(manifold, grid_R1, grid_Z1, grid_R2, grid_Z2, nRZ, nPhi, max_turns);
+    std::vector<maglit*> parallel_tracers = {tracer, tracer2.get()};
+    fp_parallel.run(parallel_tracers);
+
+    // Every entry must match to numerical precision
+    ASSERT_EQ(fp_serial.outputData.size(), fp_parallel.outputData.size());
+    for (size_t i = 0; i < fp_serial.outputData.size(); ++i) {
+        for (size_t j = 0; j < fp_serial.outputData[i].size(); ++j) {
+            EXPECT_DOUBLE_EQ(fp_serial.outputData[i][j], fp_parallel.outputData[i][j])
+                << "Mismatch at row " << i << " col " << j;
+        }
+    }
+}
+
+// Test: 2-thread parallel run matches serial run for the floor grid (unstable manifold).
+TEST_F(FpgenTest, Footprint_ParallelConsistency_Floor) {
+    const int    manifold  = 1;    // unstable manifold
+    const double grid_R1   = 0.51;
+    const double grid_Z1   = -0.24;
+    const double grid_R2   = 0.54;
+    const double grid_Z2   = -0.24;
+    const int    nRZ       = 2;
+    const int    nPhi      = 2;
+    const int    max_turns = 50;
+
+    // Serial run
+    footprint            fp_serial(manifold, grid_R1, grid_Z1, grid_R2, grid_Z2, nRZ, nPhi, max_turns);
+    std::vector<maglit*> serial_tracers = {tracer};
+    fp_serial.run(serial_tracers);
+
+    // Parallel run — second thread gets its own independent source+tracer
+    std::unique_ptr<M3DC1Source> src2;
+    std::unique_ptr<maglit>      tracer2;
+    make_tracer(src2, tracer2);
+
+    footprint            fp_parallel(manifold, grid_R1, grid_Z1, grid_R2, grid_Z2, nRZ, nPhi, max_turns);
+    std::vector<maglit*> parallel_tracers = {tracer, tracer2.get()};
+    fp_parallel.run(parallel_tracers);
+
+    // Every entry must match to numerical precision
+    ASSERT_EQ(fp_serial.outputData.size(), fp_parallel.outputData.size());
+    for (size_t i = 0; i < fp_serial.outputData.size(); ++i) {
+        for (size_t j = 0; j < fp_serial.outputData[i].size(); ++j) {
+            EXPECT_DOUBLE_EQ(fp_serial.outputData[i][j], fp_parallel.outputData[i][j])
+                << "Mismatch at row " << i << " col " << j;
+        }
+    }
 }

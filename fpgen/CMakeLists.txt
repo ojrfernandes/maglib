@@ -17,7 +17,6 @@ target_link_libraries(fpgen PRIVATE
 target_include_directories(fpgen PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${HDF5_INCLUDE_DIRS}
-    ${ARMADILLO_INCLUDE_DIRS}
 )
 
 # Copy input file to build directory

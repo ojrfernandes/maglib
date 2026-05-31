@@ -4,50 +4,49 @@ footprint::footprint(const int manifold, const double grid_R1, const double grid
     this->outputData.resize(nRZ * nPhi, std::vector<double>(6));
 }
 
-void footprint::runGrid(maglit &tracer) {
-    map_scalars scalars;
+void footprint::run(std::vector<maglit*> &tracers) {
+    int nthreads = static_cast<int>(tracers.size());
 
-    if (manifold == 1) {
-        // evaluating unstable manifold
-        // since the field line is traced backwards, the map remains direct
-        tracer.inverse_map(false);
-    } else {
-        // evaluating stable manifold
-        // since the field line is traced backwards, the map becomes inverse
-        tracer.inverse_map(true);
+    // set manifold direction on all tracers
+    for (auto *t : tracers) {
+        if (manifold == 1) {
+            t->inverse_map(false); // unstable: forward map
+        } else {
+            t->inverse_map(true);  // stable: inverse map
+        }
     }
 
-// loop over the grid
+#pragma omp parallel num_threads(nthreads)
+    {
+        int     tid    = omp_get_thread_num();
+        maglit &tracer = *tracers[tid];
+
 #pragma omp for schedule(dynamic)
-    for (int i = 0; i < nPhi; i++) {
-        for (int j = 0; j < nRZ; j++) {
+        for (int i = 0; i < nPhi; i++) {
+            for (int j = 0; j < nRZ; j++) {
 
-            // set initial conditions
-            double R_init = grid_R1 + (grid_R2 - grid_R1) * j / (nRZ - 1);
-            double Z_init = grid_Z1 + (grid_Z2 - grid_Z1) * j / (nRZ - 1);
-            double phi_init = 2 * M_PI * i / nPhi;
+                double R_init   = grid_R1 + (grid_R2 - grid_R1) * j / (nRZ - 1);
+                double Z_init   = grid_Z1 + (grid_Z2 - grid_Z1) * j / (nRZ - 1);
+                double phi_init = 2 * M_PI * i / nPhi;
 
-            // variables to store final conditions
-            double R_final, phi_final, Z_final;
+                double      R_final, Z_final, phi_final;
+                map_scalars scalars; // local to each iteration — thread-safe
 
-            // evolve lines
-            this->evolve_line(tracer, R_init, Z_init, phi_init, R_final, Z_final, phi_final, scalars);
+                this->evolve_line(tracer, R_init, Z_init, phi_init,
+                                  R_final, Z_final, phi_final, scalars);
 
-            // Calculate the index for dataWrite
-            int index = i * nRZ + j;
+                int index          = i * nRZ + j;
+                outputData[index][0] = R_init;
+                outputData[index][1] = Z_init;
+                outputData[index][2] = phi_init;
+                outputData[index][3] = scalars.length;
+                outputData[index][4] = scalars.psimin;
+                outputData[index][5] = scalars.turn;
 
-            // Assign the values directly into the preallocated matrix
-            outputData[index][0] = R_init;
-            outputData[index][1] = Z_init;
-            outputData[index][2] = phi_init;
-            outputData[index][3] = scalars.length;
-            outputData[index][4] = scalars.psimin;
-            outputData[index][5] = scalars.turn;
-
-            // Print progress bar only in the first thread (thread 0)
-            if (omp_get_thread_num() == 0) {
-                float progress = (float)(i * nRZ + j) / (nRZ * nPhi);
-                this->progressBar(progress);
+                if (tid == 0) {
+                    float progress = (float)(i * nRZ + j) / (nRZ * nPhi);
+                    this->progressBar(progress);
+                }
             }
         }
     }

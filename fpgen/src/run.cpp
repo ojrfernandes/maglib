@@ -1,6 +1,7 @@
 #include "footprint.h"
 #include "input_read.h"
 #include <m3dc1_source.h>
+#include <memory>
 
 int main() {
     // read params from input file
@@ -57,16 +58,21 @@ int main() {
     // Each thread needs its own M3DC1Source (Fusion-IO is not thread-safe).
     // unique_ptr keeps each source at a stable address for the maglit references.
     std::vector<std::unique_ptr<M3DC1Source>> sources;
-    std::vector<maglit>                       tracer;
+    std::vector<std::unique_ptr<maglit>>      tracers;
     sources.reserve(input.num_threads);
-    tracer.reserve(input.num_threads);
+    tracers.reserve(input.num_threads);
     for (int i = 0; i < input.num_threads; ++i) {
         sources.push_back(std::make_unique<M3DC1Source>(
             input.source_path.c_str(), input.timeslice));
-        tracer.emplace_back(*sources.back());
-        tracer.back().set_monitor(input.shape_path);
-        tracer.back().configure(input.h_init, input.h_min, input.h_max);
+        tracers.push_back(std::make_unique<maglit>(*sources.back()));
+        tracers.back()->set_monitor(input.shape_path);
+        tracers.back()->configure(input.h_init, input.h_min, input.h_max);
     }
+
+    std::vector<maglit*> tracer_ptrs;
+    tracer_ptrs.reserve(input.num_threads);
+    for (auto &t : tracers)
+        tracer_ptrs.push_back(t.get());
 
     std::cout << "\nSource and tracer object(s) created successfully."
               << std::endl;
@@ -74,11 +80,7 @@ int main() {
     std::cout << "\nRunning grid...\n"
               << std::endl;
 
-#pragma omp parallel
-    {
-        int tid = omp_get_thread_num();
-        footprint.runGrid(tracer[tid]);
-    }
+    footprint.run(tracer_ptrs);
 
     // check if output data ends with .dat
     if (input.output_path.size() >= 4 &&
