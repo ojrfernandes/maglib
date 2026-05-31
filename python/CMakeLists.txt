@@ -9,6 +9,7 @@ pybind11_add_module(_maglib
     src/sode_wrapper.cpp
     src/maglib_module.cpp
     ${CMAKE_SOURCE_DIR}/maglit/sode.cpp
+    ${CMAKE_SOURCE_DIR}/maglit/collider.cpp
 )
 
 target_include_directories(_maglib PRIVATE
