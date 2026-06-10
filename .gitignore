@@ -1,6 +1,8 @@
 build
 external
 .vscode
+.pytest_cache
+.cache
 magplot/magplot/__pycache__
 tests/data
 CLAUDE.md

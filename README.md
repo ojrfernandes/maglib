@@ -1,109 +1,212 @@
-# Maglib
+# maglib
 
-Maglib is a library designed for computational tasks in plasma physics, leveraging the Fusion-IO framework for data extraction. It provides tools for generating high-resolution figures of magnetic footprints and invariant manifolds. 
+C++ library and Python package for magnetic field-line integration and tokamak plasmas analysis. Built on top of [Fusion-IO](https://github.com/nferraro/fusion-io) for field data, maglib provides:
 
-**Current Status**: Maglib is a work in progress and has currently only been tested on data from M3D-C1 simulations for the TCABR Tokamak. 
+- **Field-line tracing**
+- **Magnetic footprints** 
+- **Invariant manifolds**
+- **Magnetic Lobe analysis**
+- **Plotting**
 
-Developed at the Plasma Physics Laboratory, Institute of Physics - Universidade de São Paulo, Brazil.
+Developed at the Plasma Physics Laboratory, Institute of Physics — University of São Paulo, Brazil.
+
+> **Compatibility note:** maglib has been tested on M3D-C1 simulation data for the TCABR tokamak. Other Fusion-IO-compatible codes / experiments should work but have not been validated.
+
+---
 
 ## Prerequisites
 
-Before installing Maglib, ensure you have the following dependencies:
+### System
+- **CMake** ≥ 3.10
+- **C++17** compiler (GCC or Clang)
+- **HDF5** (C headers and libraries)
+- **OpenMP**
 
-### System Requirements
-- **CMake** (≥ 3.10): Build system generator  
-  📄 [CMake Documentation](https://cmake.org/)
+### Fusion-IO
+maglib requires [Fusion-IO](https://github.com/nferraro/fusion-io), developed by Nate Ferraro at PPPL.
 
-- **HDF5**: High-performance data management library (with C headers)  
-  📄 [HDF5 Documentation](https://www.hdfgroup.org/)
+> **Important:** maglib expects two shared libraries named `libfusionio.so` and `libm3dc1.so` in the Fusion-IO build directory. These are the default library names when "manually" building Fusion-IO with Makefiles. When building Fusion-IO with CMake, verify these names before proceeding.
 
-- **OpenMP**: API for parallel programming  
-  📄 [OpenMP Documentation](https://www.openmp.org/)
+### Python (optional, for bindings)
+- Python ≥ 3.8 with development headers
+- **numpy**
+- **matplotlib**
+- **shapely**
 
-- **Armadillo**: C++ library for linear algebra & scientific computing  
-  📄 [Armadillo Documentation](https://arma.sourceforge.net/)
+pybind11 is fetched automatically by CMake — no manual installation needed.
 
-### Fusion-IO Dependency
-Maglib requires **Fusion-IO**, an interface for extracting data from plasma simulation codes developed by Nate Ferraro at Princeton Plasma Physics Laboratory.
-
-📥 [Fusion-IO GitHub Repository](https://github.com/nferraro/fusion-io)
-
-⚠️ **Important Compatibility Note**: Maglib expects Fusion-IO libraries to be compiled as two shared libraries named `libfusionio.so` and `libm3dc1.so`. When installing Fusion-IO using CMake, these may be compiled as static libraries or with different names. Please ensure the correct shared library names before proceeding with installation.
+---
 
 ## Installation
 
-### Step 1: Set Environment Variable
-Add your Fusion-IO build directory to your environment variables:
+### 1. Set the Fusion-IO path
 
 ```bash
-export FUSION_IO_DIR=/path/to/your/fusion-io/build
+export FUSION_IO_DIR=/path/to/fusion-io/build
 ```
-or add this line to your `~/.bashrc` or `~/.zshrc` for persistence across sessions.
 
-### Step 2: Clone and Build
+Add this to `~/.bashrc` or `~/.zshrc` to persist across sessions.
+
+### 2. Build
+
 ```bash
-# Clone the repository (if not already done)
-git clone https://github.com/ojrfernandes/maglib.git maglib
+git clone https://github.com/ojrfernandes/maglib.git
 cd maglib
-
-# Create build directory
-mkdir build
-cd build
-
-# Configure and build
-cmake ..
-make
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
 ```
 
-### Step 3: (optional but recommended) Download test data and run tests
-Some tests in Maglib require sample M3D-C1 simulation data. The dataset is hosted on Figshare.
+The Python package is built automatically if Python development headers are found. To disable it explicitly:
 
-1. Download the dataset archive from Figshare:
-   📦 https://doi.org/10.6084/m9.figshare.30593324.v1
-2. Extract the archive — this will create a folder named `data`.
-3. Move or copy the `data` folder into the `maglib/tests` directory. The final structure should look like:
-   
-      ```bash
-      maglib/
-    ├── build/
-    ├── fpgen/
-    ├── maglit/
-    ├── mfgen/
-    ├── tests/
-    │   ├── data/
-    │       ├── C1.h5
-    │       └── ...
-    │   ├── CMakeLists.txt
-    │   └── ...
-    ```
-5. In the `build` directory
-   
-   ```bash
-   # run the full test suite
-   make test
-
-   # or run each test independently
-   ./tests/test_collider
-   ./tests/test_fpgen
-   ./tests/test_maglit
-   ./tests/test_mfgen
-   ./tests/test_sode
-   ```
-Full test suite execution should only take a couple minutes.
-   
-### Step 4: (optional) Set the executables to your system PATH in your .bashrc
 ```bash
-# set maglib directory
-export MAGLIB_ROOT=/path/to/your/maglib/root
- 
-# add executables to path
-export PATH=$MAGLIB_ROOT/build/bin:$PATH
+cmake -B build -DBUILD_PYTHON_BINDINGS=OFF
 ```
+
+### 3. Set up the Python package
+
+```bash
+# Make the package importable
+export PYTHONPATH=/path/to/maglib/python:$PYTHONPATH
+
+# Install Python dependencies
+pip install numpy
+pip install matplotlib
+pip install shapely
+```
+
+### 4. (Optional) Add C++ binaries to PATH
+
+```bash
+export PATH=/path/to/maglib/build/bin:$PATH
+```
+
+---
+
+## Usage
+
+### Python API
+
+```python
+import maglib
+
+# Load field data
+src = maglib.M3DC1Source("C1.h5", 0.0)
+src.open()
+
+# Create a tracer
+tracer = maglib.Maglit(src, r=1.12, z=0.0, phi=0.0)
+
+# Magnetic footprint — serial
+fp = maglib.Footprint(tracer, R1_min, Z1_min, R1_max, Z1_max,
+                      nRZ=100, nPhi=8, max_turns=200)
+fp.run([tracer])
+data = fp.output_data   # numpy (N, 6): R0, Z0, phi0, length, psiMin, turn
+fp.save("footprint.npz")
+maglib.plot_footprint(fp)
+
+# Magnetic footprint — parallel (one source+tracer per thread; Fusion-IO is not thread-safe)
+src2 = maglib.M3DC1Source("C1.h5", 0.0); src2.open()
+tracer2 = maglib.Maglit(src2, r=1.12, z=0.0, phi=0.0)
+fp.run([tracer, tracer2])   # 2 OpenMP threads; list length sets the thread count
+
+# Invariant manifold — single Poincaré section
+mf = maglib.Manifold(tracer, phi=0.0, stability=0)   # stability: 0 = unstable, 1 = stable
+mf.configure(epsilon=1e-4, h=1e-3, tol=1e-8,
+             max_iter=1000, precision_limit=1e-12, max_insertions=500)
+mf.find_x_point(r_guess=0.50, z_guess=-0.22)
+mf.run(n_intervals=10, n_segments=5,
+       method=0, l_lim=0.5, theta_lim=0.3)
+data = mf.output_data   # list of (N_i, 2) arrays [R, Z] per segment
+mf.save("manifold.npz")
+maglib.plot_manifold(mf)
+
+# Invariant manifold — multiple Poincaré sections (equivalent to mfgen nSections)
+import numpy as np
+for phi_deg in np.linspace(0, 90, 4):
+    mf = maglib.Manifold(tracer, phi=np.deg2rad(phi_deg), stability=0)
+    mf.configure(epsilon=1e-4, h=1e-3, tol=1e-8,
+                 max_iter=1000, precision_limit=1e-12, max_insertions=500)
+    mf.find_x_point(r_guess=0.50, z_guess=-0.22)
+    mf.run(n_intervals=10, n_segments=5, method=0, l_lim=0.5, theta_lim=0.3)
+    mf.save(f"manifold_{int(phi_deg)}.npz")
+# For parallel execution across sections use threading.Thread with one source+tracer per thread.
+
+# Lobe analysis (requires shapely)
+lobes = maglib.lobe_map(equilibrium, perturbed, mag_axis)
+# lobes: numpy (N_lobes, 6) — Rmid, Zmid, angle [rad], perimeter, area, h_param
+```
+
+### C++ binaries
+
+`fpgen` and `mfgen` are thin CLI wrappers over the same library code.
+Each reads a plain-text input file:
+
+```bash
+fpgen   # reads fpgen_input.txt  in the working directory
+mfgen   # reads mfgen_input.txt  in the working directory
+```
+
+See `fpgen/fpgen_input.txt` and `mfgen/mfgen_input.txt` for documented input formats.
+
+---
+
+## Testing
+
+### Test data
+
+C++ and Python tests require sample M3D-C1 data hosted on Figshare:
+
+📦 https://doi.org/10.6084/m9.figshare.30593324.v1
+
+Download and extract into `tests/data/` so the layout is:
+
+```
+tests/
+└── data/
+    ├── C1.h5
+    └── ...
+```
+
+### Test dependencies
+
+GoogleTest (C++) and pytest (Python) are the only additional dependencies needed to run the test suite.
+
+- **GoogleTest** is fetched automatically by CMake — no manual installation needed.
+- **pytest** must be installed manually: `pip install pytest`
+
+### Run tests
+
+```bash
+# C++ tests
+ctest --test-dir build
+
+# Python tests
+pytest tests/python/
+```
+
+---
+
+## Repository layout
+
+```
+maglib/
+├── maglit/          Core integrator (sode, collider, maglit, M3DC1Source, FieldSource)
+├── fpgen/           Footprint generator CLI (footprint.h/cpp, input_read, run.cpp)
+├── mfgen/           Manifold generator CLI (manifold.h/cpp, input_read, run.cpp)
+├── python/
+│   ├── src/         pybind11 binding sources (one file per component)
+│   └── maglib/      Python package (__init__.py, plot.py, manifold_tools.py)
+└── tests/
+    ├── data/        Test dataset
+    ├── *.cpp        C++ tests (GoogleTest)
+    └── python/      Python tests (pytest)
+```
+
+---
 
 ## Troubleshooting
 
-**Common Issues:**
-
-- **CMake can't find dependencies**: Ensure all prerequisites are properly installed and in your system PATH
-- **Fusion-IO linking errors**: Verify that `libfusionio.so` and `libm3dc1.so` exist in your Fusion-IO build/lib directory
-- **Build errors**: Check that all dependencies have development headers installed (especially HDF5)
+- **CMake can't find HDF5** — ensure HDF5 development headers are installed (`libhdf5-dev` on Debian/Ubuntu).
+- **Fusion-IO linking errors** — verify `libfusionio.so` and `libm3dc1.so` exist in `$FUSION_IO_DIR/lib`.
+- **`import maglib` fails** — check that `PYTHONPATH` includes the `python/` directory and that the build completed with Python bindings enabled.
+- **`lobe_map` / `simplify` ImportError** — install shapely: `pip install shapely`.
