@@ -9,7 +9,7 @@ using namespace py::literals;
 
 void bind_footprint(py::module_ &m) {
     auto fp_to_numpy = [](const footprint &fp) {
-        const auto   &data  = fp.outputData;
+        const auto   &data  = fp.get_output_data();
         py::ssize_t   nrows = static_cast<py::ssize_t>(data.size());
         auto          arr   = py::array_t<double>({nrows, static_cast<py::ssize_t>(6)});
         auto          buf   = arr.mutable_unchecked<2>();

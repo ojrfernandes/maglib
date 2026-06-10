@@ -1,8 +1,15 @@
 #include "footprint.h"
 #include <fstream>
+#include <stdexcept>
 
 footprint::footprint(const int manifold, const double grid_R1, const double grid_Z1, const double grid_R2, const double grid_Z2, const int nRZ, const int nPhi, const int max_turns) : manifold(manifold), grid_R1(grid_R1), grid_Z1(grid_Z1), grid_R2(grid_R2), grid_Z2(grid_Z2), nRZ(nRZ), nPhi(nPhi), max_turns(max_turns) {
+    if (nRZ < 1 || nPhi < 1)
+        throw std::invalid_argument("nRZ and nPhi must each be at least 1");
     this->outputData.resize(nRZ * nPhi, std::vector<double>(6));
+}
+
+const std::vector<std::vector<double>> &footprint::get_output_data() const {
+    return outputData;
 }
 
 void footprint::run(std::vector<maglit*> &tracers) {
@@ -26,8 +33,9 @@ void footprint::run(std::vector<maglit*> &tracers) {
         for (int i = 0; i < nPhi; i++) {
             for (int j = 0; j < nRZ; j++) {
 
-                double R_init   = grid_R1 + (grid_R2 - grid_R1) * j / (nRZ - 1);
-                double Z_init   = grid_Z1 + (grid_Z2 - grid_Z1) * j / (nRZ - 1);
+                double t        = (nRZ > 1) ? static_cast<double>(j) / (nRZ - 1) : 0.0;
+                double R_init   = grid_R1 + (grid_R2 - grid_R1) * t;
+                double Z_init   = grid_Z1 + (grid_Z2 - grid_Z1) * t;
                 double phi_init = 2 * M_PI * i / nPhi;
 
                 double      R_final, Z_final, phi_final;
@@ -63,12 +71,9 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     double phi_max = this->max_turns * 2 * M_PI;
     double arc = 0;
 
-    // poloidal flux evaluation variables
-    double  psin0 = std::numeric_limits<double>::max();
-    double *psin1 = &psin0;
-    scalars.psimin = *psin1;
+    double psin_current = std::numeric_limits<double>::max();
+    scalars.psimin = psin_current;
 
-    // toroidal turn counting variables
     const double phi_start = phi0;
     scalars.turn = 0;
     tracer.reset();
@@ -79,9 +84,9 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
         status = tracer.step(R1, Z1, phi1, phi_max, -1);
         if (status == SODE_CONTINUE_GOOD_STEP) {
             arc += this->connection_length(R0, Z0, phi0, R1, Z1, phi1);
-            tracer.psin_eval(R1, phi1, Z1, psin1);
-            if (*psin1 < scalars.psimin) {
-                scalars.psimin = *psin1;
+            if (tracer.psin_eval(R1, phi1, Z1, &psin_current)) {
+                if (psin_current < scalars.psimin)
+                    scalars.psimin = psin_current;
             }
         }
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);

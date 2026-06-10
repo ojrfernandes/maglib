@@ -1,6 +1,6 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-// Last modified: 25.11.06
+// Last modified: 26.06.10
 
 #include <fstream>
 #include <iostream>
@@ -21,21 +21,21 @@ class input_read {
     std::string output_path; // path to the output file
 
     // Mapping parameters
-    int    timeslice; // M3DC1 timeslice
-    int    manifold;  // unstable manifold=0; stable manifold=1
-    double grid_R1;   // first point (R,Z) delimiting the target plate mapped surface
-    double grid_Z1;   // first point (R,Z) delimiting the target plate mapped surface
-    double grid_R2;   // second point (R,Z) delimiting the target plate mapped surface
-    double grid_Z2;   // second point (R,Z) delimiting the target plate mapped surface
-    int    nRZ;       // grid dimension along the (R,Z) plane
-    int    nPhi;      // grid dimension along toroidal direction (Phi)
+    int    timeslice   = -1;  // M3DC1 timeslice
+    int    manifold    = 0;   // stable manifold=0; unstable manifold=1
+    double grid_R1     = 0.0; // first point (R,Z) delimiting the target plate mapped surface
+    double grid_Z1     = 0.0; // first point (R,Z) delimiting the target plate mapped surface
+    double grid_R2     = 0.0; // second point (R,Z) delimiting the target plate mapped surface
+    double grid_Z2     = 0.0; // second point (R,Z) delimiting the target plate mapped surface
+    int    nRZ         = 0;   // grid dimension along the (R,Z) plane
+    int    nPhi        = 0;   // grid dimension along toroidal direction (Phi)
 
     // Additional parameters
-    int    num_threads; // number of threads for OpenMP parallelization
-    int    max_turns;   // maximum toroidal turns for field line integration
-    double h_init;      // initial step size for field line integration
-    double h_min;       // minimum step size for field line integration
-    double h_max;       // maximum step size for field line integration
+    int    num_threads = 1;    // number of threads for OpenMP parallelization
+    int    max_turns   = 1000; // maximum toroidal turns for field line integration
+    double h_init      = 1e-2; // initial step size for field line integration
+    double h_min       = 1e-6; // minimum step size for field line integration
+    double h_max       = 1e-1; // maximum step size for field line integration
 
   private:
     std::string reading_path; // File path

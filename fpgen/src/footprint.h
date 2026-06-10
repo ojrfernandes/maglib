@@ -1,6 +1,6 @@
 #ifndef FOOTPRINT_H
 #define FOOTPRINT_H
-// Last modified: 26.05.31
+// Last modified: 26.06.10
 
 #include <iomanip>
 #include <limits>
@@ -25,8 +25,7 @@ public:
   // Returns false if the extension is unsupported or the file cannot be opened.
   bool save(const std::string &path) const;
 
-  std::vector<std::vector<double>>
-      outputData; // two dimensional vector to store the output data
+  const std::vector<std::vector<double>> &get_output_data() const;
 
 private:
   typedef struct {
@@ -45,7 +44,7 @@ private:
   // display a progress bar
   void progressBar(float progress);
 
-  int manifold;   // manifold type: unstable=0; stable=1
+  int manifold;   // stable=0; unstable=1
   double grid_R1; // first point R delimiting the target plate mapped surface
   double grid_Z1; // first point Z delimiting the target plate mapped surface
   double grid_R2; // second point R delimiting the target plate mapped surface
@@ -53,6 +52,8 @@ private:
   int nRZ;        // grid dimension along the (R,Z) plane
   int nPhi;       // grid dimension along the phi direction
   int max_turns = 1000; // maximum toroidal turns for field line integration
+
+  std::vector<std::vector<double>> outputData;
 };
 
 #endif // FOOTPRINT_H

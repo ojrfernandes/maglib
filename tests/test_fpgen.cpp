@@ -243,32 +243,11 @@ TEST_F(FpgenTest, InputRead_EmptyFile) {
     EXPECT_FALSE(result) << "Should return false for empty file";
 }
 
-// Test: Edge case values
+// Test: Edge case values — file contains invalid entries (empty source_path,
+// num_threads=0, h_min=0), so parsing must fail.
 TEST_F(FpgenTest, InputRead_EdgeCaseValues) {
     input_read reader(edge_case_input_file);
-    bool       result = reader.readInputFile();
-
-    if (result) {
-        EXPECT_EQ(reader.source_path, "");
-        EXPECT_EQ(reader.shape_path, "a");
-        EXPECT_EQ(reader.output_path,
-                  "very_long_filename_with_many_characters_to_test_string_handling.dat");
-        EXPECT_EQ(reader.timeslice, 999);
-        EXPECT_EQ(reader.manifold, 0);
-        EXPECT_DOUBLE_EQ(reader.grid_R1, -1.0);
-        EXPECT_DOUBLE_EQ(reader.grid_Z1, 1e6);
-        EXPECT_DOUBLE_EQ(reader.grid_R2, 0.0);
-        EXPECT_DOUBLE_EQ(reader.grid_Z2, -1e6);
-        EXPECT_EQ(reader.nRZ, 1);
-        EXPECT_EQ(reader.nPhi, 1000000);
-        EXPECT_EQ(reader.num_threads, 0);
-        EXPECT_EQ(reader.max_turns, 1);
-        EXPECT_DOUBLE_EQ(reader.h_init, 1e-10);
-        EXPECT_DOUBLE_EQ(reader.h_min, 0.0);
-        EXPECT_DOUBLE_EQ(reader.h_max, 1e10);
-    }
-
-    EXPECT_NO_THROW(reader.readInputFile());
+    EXPECT_FALSE(reader.readInputFile());
 }
 
 // Test: Comments and whitespace handling
@@ -329,15 +308,15 @@ TEST_F(FpgenTest, Footprint_OutputDataInitialization) {
     footprint fp(0, 0.5, 0.6, 0.4, 0.5, nRZ, nPhi, 1000);
 
     // Check that outputData is properly sized
-    EXPECT_EQ(fp.outputData.size(), nRZ * nPhi);
+    EXPECT_EQ(fp.get_output_data().size(), nRZ * nPhi);
 
     // Check that each row has 6 columns
-    if (fp.outputData.size() > 0) {
-        EXPECT_EQ(fp.outputData[0].size(), 6);
+    if (fp.get_output_data().size() > 0) {
+        EXPECT_EQ(fp.get_output_data()[0].size(), 6);
     }
 
     // Check all rows are properly initialized
-    for (const auto &row : fp.outputData) {
+    for (const auto &row : fp.get_output_data()) {
         EXPECT_EQ(row.size(), 6);
     }
 }
@@ -359,11 +338,11 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
     EXPECT_NO_THROW(fp.run(tracers));
 
     // Check that outputData is populated
-    EXPECT_EQ(fp.outputData.size(), nR * nZ);
+    EXPECT_EQ(fp.get_output_data().size(), nR * nZ);
 
     // Check that each row has 6 columns
-    if (fp.outputData.size() > 0) {
-        EXPECT_EQ(fp.outputData[0].size(), 6);
+    if (fp.get_output_data().size() > 0) {
+        EXPECT_EQ(fp.get_output_data()[0].size(), 6);
     }
 
     // Check that data values (within 3 digit precision) are
@@ -371,35 +350,35 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
     // 0.435000 -0.232000 0.000000 10.802152 1.001697 3
     // 0.435000 -0.239000 3.141593 4.852588 0.995996 2
     // 0.435000 -0.232000 3.141593 10.739208 1.009234 3
-    EXPECT_NEAR(fp.outputData[0][0], 0.435000, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][0], 0.435000, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][0], 0.435000, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][0], 0.435000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][0], 0.435000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][0], 0.435000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][0], 0.435000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][0], 0.435000, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][1], -0.239000, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][1], -0.232000, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][1], -0.239000, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][1], -0.232000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][1], -0.239000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][1], -0.232000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][1], -0.239000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][1], -0.232000, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][2], 0.000000, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][2], 0.000000, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][2], 3.141593, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][2], 3.141593, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][2], 0.000000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][2], 0.000000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][2], 3.141593, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][2], 3.141593, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][3], 4.699479, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][3], 10.802152, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][3], 4.852588, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][3], 10.739208, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][3], 4.699479, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][3], 10.802152, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][3], 4.852588, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][3], 10.739208, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][4], 0.995964, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][4], 1.001697, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][4], 0.995996, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][4], 1.009234, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][4], 0.995964, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][4], 1.001697, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][4], 0.995996, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][4], 1.009234, 1e-3);
 
-    EXPECT_EQ(fp.outputData[0][5], 1);
-    EXPECT_EQ(fp.outputData[1][5], 3);
-    EXPECT_EQ(fp.outputData[2][5], 1);
-    EXPECT_EQ(fp.outputData[3][5], 3);
+    EXPECT_EQ(fp.get_output_data()[0][5], 1);
+    EXPECT_EQ(fp.get_output_data()[1][5], 3);
+    EXPECT_EQ(fp.get_output_data()[2][5], 1);
+    EXPECT_EQ(fp.get_output_data()[3][5], 3);
 }
 
 // Test: Simple 2 x 2 tcabr floor grid run limited to 50 turns
@@ -419,11 +398,11 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     EXPECT_NO_THROW(fp.run(tracers));
 
     // Check that outputData is populated
-    EXPECT_EQ(fp.outputData.size(), nR * nZ);
+    EXPECT_EQ(fp.get_output_data().size(), nR * nZ);
 
     // Check that each row has 6 columns
-    if (fp.outputData.size() > 0) {
-        EXPECT_EQ(fp.outputData[0].size(), 6);
+    if (fp.get_output_data().size() > 0) {
+        EXPECT_EQ(fp.get_output_data()[0].size(), 6);
     }
 
     // Check that data values (within 3 digit precision) are
@@ -431,35 +410,35 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     // 0.54 -0.24 0 8.5844 1.05251 2
     // 0.51 -0.24 3.14159 47.3727 0.882983 13
     // 0.54 -0.24 3.14159 8.80513 1.0541 2
-    EXPECT_NEAR(fp.outputData[0][0], 0.51, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][0], 0.54, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][0], 0.51, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][0], 0.54, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][0], 0.51, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][0], 0.54, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][0], 0.51, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][0], 0.54, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][1], -0.24, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][1], -0.24, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][1], -0.24, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][1], -0.24, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][1], -0.24, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][1], -0.24, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][1], -0.24, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][1], -0.24, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][2], 0.000000, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][2], 0.000000, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][2], 3.141593, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][2], 3.141593, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][2], 0.000000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][2], 0.000000, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][2], 3.141593, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][2], 3.141593, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][3], 10.5302, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][3], 8.5844, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][3], 47.3727, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][3], 8.80513, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][3], 10.5302, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][3], 8.5844, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][3], 47.3727, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][3], 8.80513, 1e-3);
 
-    EXPECT_NEAR(fp.outputData[0][4], 0.974279, 1e-3);
-    EXPECT_NEAR(fp.outputData[1][4], 1.05251, 1e-3);
-    EXPECT_NEAR(fp.outputData[2][4], 0.882983, 1e-3);
-    EXPECT_NEAR(fp.outputData[3][4], 1.0541, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[0][4], 0.974279, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[1][4], 1.05251, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[2][4], 0.882983, 1e-3);
+    EXPECT_NEAR(fp.get_output_data()[3][4], 1.0541, 1e-3);
 
-    EXPECT_EQ(fp.outputData[0][5], 3);
-    EXPECT_EQ(fp.outputData[1][5], 2);
-    EXPECT_EQ(fp.outputData[2][5], 13);
-    EXPECT_EQ(fp.outputData[3][5], 2);
+    EXPECT_EQ(fp.get_output_data()[0][5], 3);
+    EXPECT_EQ(fp.get_output_data()[1][5], 2);
+    EXPECT_EQ(fp.get_output_data()[2][5], 13);
+    EXPECT_EQ(fp.get_output_data()[3][5], 2);
 }
 
 // ==================== SAVE TESTS ====================
@@ -563,10 +542,10 @@ TEST_F(FpgenTest, Footprint_ParallelConsistency_Wall) {
     fp_parallel.run(parallel_tracers);
 
     // Every entry must match to numerical precision
-    ASSERT_EQ(fp_serial.outputData.size(), fp_parallel.outputData.size());
-    for (size_t i = 0; i < fp_serial.outputData.size(); ++i) {
-        for (size_t j = 0; j < fp_serial.outputData[i].size(); ++j) {
-            EXPECT_DOUBLE_EQ(fp_serial.outputData[i][j], fp_parallel.outputData[i][j])
+    ASSERT_EQ(fp_serial.get_output_data().size(), fp_parallel.get_output_data().size());
+    for (size_t i = 0; i < fp_serial.get_output_data().size(); ++i) {
+        for (size_t j = 0; j < fp_serial.get_output_data()[i].size(); ++j) {
+            EXPECT_DOUBLE_EQ(fp_serial.get_output_data()[i][j], fp_parallel.get_output_data()[i][j])
                 << "Mismatch at row " << i << " col " << j;
         }
     }
@@ -598,10 +577,10 @@ TEST_F(FpgenTest, Footprint_ParallelConsistency_Floor) {
     fp_parallel.run(parallel_tracers);
 
     // Every entry must match to numerical precision
-    ASSERT_EQ(fp_serial.outputData.size(), fp_parallel.outputData.size());
-    for (size_t i = 0; i < fp_serial.outputData.size(); ++i) {
-        for (size_t j = 0; j < fp_serial.outputData[i].size(); ++j) {
-            EXPECT_DOUBLE_EQ(fp_serial.outputData[i][j], fp_parallel.outputData[i][j])
+    ASSERT_EQ(fp_serial.get_output_data().size(), fp_parallel.get_output_data().size());
+    for (size_t i = 0; i < fp_serial.get_output_data().size(); ++i) {
+        for (size_t j = 0; j < fp_serial.get_output_data()[i].size(); ++j) {
+            EXPECT_DOUBLE_EQ(fp_serial.get_output_data()[i][j], fp_parallel.get_output_data()[i][j])
                 << "Mismatch at row " << i << " col " << j;
         }
     }
