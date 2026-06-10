@@ -67,7 +67,6 @@ Some tests in Maglib require sample M3D-C1 simulation data. The dataset is hoste
       maglib/
     ├── build/
     ├── fpgen/
-    ├── lbmap/
     ├── maglit/
     ├── mfgen/
     ├── tests/
