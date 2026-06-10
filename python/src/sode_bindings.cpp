@@ -17,8 +17,7 @@ void bind_sode(py::module_ &m) {
         "Runge-Kutta method used by the adaptive ODE solver.")
         .value("RK56_FB", SODE_RK56_FB, "Fehlberg RK5(6)")
         .value("RK56_CK", SODE_RK56_CK, "Cash-Karp RK5(6)")
-        .value("RK78_DP", SODE_RK78_DP, "Dormand-Prince RK7(8)")
-        .export_values();
+        .value("RK78_DP", SODE_RK78_DP, "Dormand-Prince RK7(8)");
 
     py::enum_<sode_status>(m, "SodeStatus",
         "Return status from Sode.step() or Sode.integrate().")
@@ -28,8 +27,7 @@ void bind_sode(py::module_ &m) {
         .value("CONTINUE_GOOD",   SODE_CONTINUE_GOOD_STEP)
         .value("CONTINUE_BAD",    SODE_CONTINUE_BAD_STEP)
         .value("FAILED",          SODE_FAILED,          "Step size fell below h_min")
-        .value("BAD_FUNC",        SODE_BAD_FUNC,        "System function returned an error")
-        .export_values();
+        .value("BAD_FUNC",        SODE_BAD_FUNC,        "System function returned an error");
 
     py::class_<SodeSolver>(m, "Sode", R"doc(
 Adaptive-step ODE solver with event detection.

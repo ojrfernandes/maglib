@@ -26,6 +26,9 @@ class sode {
     sode(sode_type type, int dim);
     // class destructor
     ~sode();
+    // not copyable — owns raw heap memory
+    sode(const sode &)            = delete;
+    sode &operator=(const sode &) = delete;
     // configure stepsizes
     void configure(double h_init, double h_min, double h_max);
     // configure tolerances

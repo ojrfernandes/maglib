@@ -56,7 +56,7 @@ void sode::configure(double h_init, double h_min, double h_max) {
     this->h_init = h_init;
     this->h_min = h_min;
     this->h_max = h_max;
-    this->h = h_min;
+    this->h = h_init;
 }
 
 // set tolerances and damping factor
@@ -84,7 +84,7 @@ void sode::set_aux(void *aux) {
 
 // reset integrator (run before computing new orbits)
 void sode::reset() {
-    this->h = h_min;
+    this->h = h_init;
     this->bisecting = false;
 }
 
