@@ -1,6 +1,6 @@
 #ifndef COLLIDER
 #define COLLIDER
-// Last modified: 25.11.03
+// Last modified: 26.06.10
 
 #include <cmath>
 #include <fstream>
