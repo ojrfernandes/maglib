@@ -263,7 +263,7 @@ theta_lim : float
         .def_property_readonly("output_data",
             [seg_to_numpy](const manifold &self) {
                 py::list result;
-                for (const auto &seg : self.outputData)
+                for (const auto &seg : self.get_output_data())
                     result.append(seg_to_numpy(seg));
                 return result;
             },
@@ -284,8 +284,8 @@ Columns: [R, Z].
                 py::object savez = py::module_::import("numpy").attr("savez_compressed");
                 py::tuple  args  = py::make_tuple(py::str(path));
                 py::dict   kw;
-                for (size_t i = 0; i < self.outputData.size(); ++i)
-                    kw[("seg_" + std::to_string(i)).c_str()] = seg_to_numpy(self.outputData[i]);
+                for (size_t i = 0; i < self.get_output_data().size(); ++i)
+                    kw[("seg_" + std::to_string(i)).c_str()] = seg_to_numpy(self.get_output_data()[i]);
                 py::object r = py::reinterpret_steal<py::object>(
                     PyObject_Call(savez.ptr(), args.ptr(), kw.ptr()));
                 if (!r) throw py::error_already_set();

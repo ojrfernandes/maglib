@@ -298,40 +298,11 @@ TEST_F(MfgenTest, InputRead_EmptyFile) {
     EXPECT_FALSE(result) << "Should return false for empty file";
 }
 
-// Test: Edge case values
+// Test: Edge case values — file contains invalid entries (manifold=-1, method=9999,
+// negative step sizes, etc.) so parsing must fail.
 TEST_F(MfgenTest, InputRead_EdgeCaseValues) {
     input_read reader(edge_case_input_file);
-    bool       result = reader.readInputFile();
-
-    if (result) {
-        // Check string parameters
-        EXPECT_EQ(reader.source_path, "");
-        EXPECT_EQ(reader.output_path, "a");
-
-        // Check numeric parameters
-        EXPECT_EQ(reader.timeslice, 0);
-        EXPECT_EQ(reader.manifold, -1);
-        EXPECT_EQ(reader.method, 9999);
-        EXPECT_DOUBLE_EQ(reader.Phi, -360.0);
-        EXPECT_EQ(reader.nSections, 0);
-        EXPECT_DOUBLE_EQ(reader.phi_0, 360.0);
-        EXPECT_DOUBLE_EQ(reader.phi_1, -360.0);
-        EXPECT_DOUBLE_EQ(reader.epsilon, -1e-6);
-        EXPECT_EQ(reader.nSegments, 0);
-        EXPECT_DOUBLE_EQ(reader.l_lim, -0.01);
-        EXPECT_DOUBLE_EQ(reader.theta_lim, -10.0);
-        EXPECT_DOUBLE_EQ(reader.h_init, -1e-2);
-        EXPECT_DOUBLE_EQ(reader.h_min, -1e-6);
-        EXPECT_DOUBLE_EQ(reader.h_max, -1e-2);
-        EXPECT_DOUBLE_EQ(reader.h_deriv, -1e-3);
-        EXPECT_DOUBLE_EQ(reader.n_tol, -10);
-        EXPECT_EQ(reader.max_iter, -100);
-        EXPECT_DOUBLE_EQ(reader.precision, -1e-8);
-        EXPECT_EQ(reader.max_insertions, -5);
-        EXPECT_EQ(reader.verbose, 1);
-    }
-
-    EXPECT_NO_THROW(reader.readInputFile());
+    EXPECT_FALSE(reader.readInputFile());
 }
 
 // Test: Comments and whitespace handling
@@ -583,7 +554,7 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrimary) {
 // Test: outputData is empty before any computation
 TEST_F(MfgenTest, Manifold_OutputData_Empty) {
     manifold mf(*tracer, 0, 0);
-    EXPECT_TRUE(mf.outputData.empty());
+    EXPECT_TRUE(mf.get_output_data().empty());
 }
 
 // Test: outputData accumulates after primarySegment and newSegment calls
@@ -594,14 +565,14 @@ TEST_F(MfgenTest, Manifold_OutputData_Accumulates) {
     mf.xPoint.Z = -0.2185980054447758;
 
     std::vector<point> primary = mf.primarySegment(10);
-    EXPECT_EQ(mf.outputData.size(), 1u);
-    EXPECT_EQ(mf.outputData[0].size(), 11u);
+    EXPECT_EQ(mf.get_output_data().size(), 1u);
+    EXPECT_EQ(mf.get_output_data()[0].size(), 11u);
 
     mf.newSegment(primary, 0.005, 20); // interpolant method
-    EXPECT_EQ(mf.outputData.size(), 2u);
+    EXPECT_EQ(mf.get_output_data().size(), 2u);
 
     mf.newSegment(primary, 2, 0.005, 20); // exact-map method
-    EXPECT_EQ(mf.outputData.size(), 3u);
+    EXPECT_EQ(mf.get_output_data().size(), 3u);
 }
 
 // Test: save() writes a .dat file with correct header and structure
@@ -681,8 +652,8 @@ TEST_F(MfgenTest, Manifold_Run_OutputDataSize) {
     mf.xPoint.Z = -0.2185980054447758;
 
     mf.run(10, 4, 1, 0.005, 20); // 4 total: 1 primary + 3 new (interpolant)
-    EXPECT_EQ(mf.outputData.size(), 4u);
-    EXPECT_EQ(mf.outputData[0].size(), 11u); // primary: n_intervals=10 → 11 pts
+    EXPECT_EQ(mf.get_output_data().size(), 4u);
+    EXPECT_EQ(mf.get_output_data()[0].size(), 11u); // primary: n_intervals=10 → 11 pts
 }
 
 // Test: run() (exact-map) first new segment matches newSegment called directly
@@ -702,9 +673,9 @@ TEST_F(MfgenTest, Manifold_Run_ExactMap_MatchesDirect) {
     std::vector<point> primary = mf2.primarySegment(10);
     std::vector<point> seg1    = mf2.newSegment(primary, 1, 0.005, 20);
 
-    ASSERT_EQ(mf1.outputData[1].size(), seg1.size());
+    ASSERT_EQ(mf1.get_output_data()[1].size(), seg1.size());
     for (size_t i = 0; i < seg1.size(); ++i) {
-        EXPECT_DOUBLE_EQ(mf1.outputData[1][i].R, seg1[i].R);
-        EXPECT_DOUBLE_EQ(mf1.outputData[1][i].Z, seg1[i].Z);
+        EXPECT_DOUBLE_EQ(mf1.get_output_data()[1][i].R, seg1[i].R);
+        EXPECT_DOUBLE_EQ(mf1.get_output_data()[1][i].Z, seg1[i].Z);
     }
 }

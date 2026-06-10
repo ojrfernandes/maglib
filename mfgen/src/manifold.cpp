@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 
 manifold::manifold(maglit &tracer, double phi, int stability)
     : stability(stability), phi(phi), tracer(tracer) {
@@ -437,6 +438,10 @@ void manifold::progressBar(int j, int nSeg) {
     std::cout.flush();
 }
 
+const std::vector<std::vector<point>> &manifold::get_output_data() const {
+    return outputData;
+}
+
 std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point> &segment) {
     std::vector<interpolantArc> arcs;
     for (size_t i = 1; i < segment.size() - 2; ++i) {
@@ -463,10 +468,8 @@ std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point>
 }
 
 point interpolantArc::evalNewPoint(double t) const {
-    if (x0 == point{0, 0} && x1 == point{0, 0}) {
-        std::cerr << "Error: Interpolating between two zero points!\n";
-        std::exit(EXIT_FAILURE);
-    }
+    if (x0 == point{0, 0} && x1 == point{0, 0})
+        throw std::runtime_error("manifold: interpolating between two zero points");
 
     point  base   = x0 * (1.0 - t) + x1 * t;
     point  l      = x1 - x0;

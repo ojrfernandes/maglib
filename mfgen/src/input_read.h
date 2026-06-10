@@ -1,6 +1,6 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-// Last modified: 25.11.10
+// Last modified: 26.06.10
 
 #include <fstream>
 #include <hdf5.h>
@@ -23,34 +23,34 @@ class input_read {
     std::string output_path; // path to the output file
 
     // Tracing parameters
-    int timeslice; // timeslice to be read from the source file
-    int manifold;  // stability of the manifold (stable or unstable)
-    int method;    // method to be used for the manifold generation
-    double Phi;    // toroidal angle coordinate for of the poincaré section
-    int nSegments; // number of primary segments to be mapped
+    int    timeslice   = -1;  // timeslice to be read from the source file
+    int    manifold    = 0;   // stability of the manifold: stable=0, unstable=1
+    int    method      = 0;   // method: exact-map=0, interpolant=1
+    double Phi         = 0.0; // toroidal angle of the Poincaré section (rad)
+    int    nSegments   = 0;   // number of primary segments to be mapped
 
     // Multiple Poincare sections
-    int nSections; // number of poincare sections to be generated
-    double phi_0;  // initial toroidal angle coordinate
-    double phi_1;  // final toroidal angle coordinate
+    int    nSections   = 0;   // number of Poincaré sections to generate
+    double phi_0       = 0.0; // initial toroidal angle coordinate
+    double phi_1       = 0.0; // final toroidal angle coordinate
 
     // Additional parameters
-    double epsilon;     // first primary segment distance to the x-point
-    double l_lim;       // distance treshold for the refinement process
-    double theta_lim;   // angle treshold for the refinement process
-    double h_init;      // initial step-size for integration
-    double h_min;       // minimum step-size for integration
-    double h_max;       // maximum step-size for integration
-    double h_deriv;     // step-size for numerical derivatives
-    double n_tol;       // tolerance for Newton's method
-    int max_iter;       // maximum iterations for Newton's method
-    double precision;   // precision for floating point comparison
-    int max_insertions; // maximum number of points per segment
-    int verbose;        // version of the input file reader
+    double epsilon       = 0.0;  // first primary segment distance to the x-point
+    double l_lim         = 0.0;  // distance threshold for the refinement process
+    double theta_lim     = 0.0;  // angle threshold for the refinement process
+    double h_init        = 1e-2; // initial step-size for integration
+    double h_min         = 1e-6; // minimum step-size for integration
+    double h_max         = 1e-1; // maximum step-size for integration
+    double h_deriv       = 0.0;  // step-size for numerical derivatives
+    double n_tol         = 0.0;  // tolerance for Newton's method
+    int    max_iter      = 0;    // maximum iterations for Newton's method
+    double precision     = 0.0;  // precision for floating point comparison
+    int    max_insertions = 0;   // maximum number of points per segment
+    int    verbose       = 0;    // verbose output flag (0=off, 1=on)
 
-    // X-point coordinates for HDF5 reading
-    double R_xPoint = 0; // R coordinate of the x-point
-    double Z_xPoint = 0; // Z coordinate of the x-point
+    // X-point coordinates (optional; 0 triggers HDF5 fallback in run.cpp)
+    double R_xPoint = 0.0;
+    double Z_xPoint = 0.0;
 
   private:
     std::string reading_path; // File path

@@ -1,6 +1,6 @@
 #ifndef MANIFOLD_H
 #define MANIFOLD_H
-// Last modified: 26.05.31
+// Last modified: 26.06.10
 
 #include <maglit.h>
 #include <string>
@@ -53,16 +53,16 @@ class manifold {
     //   .dat / .txt  — space-separated text with header (columns: seg, R, Z)
     //   .csv         — comma-separated text with header (columns: seg, R, Z)
     bool save(const std::string &path) const;
-
-    std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
+    // Read-only access to accumulated segment data
+    const std::vector<std::vector<point>> &get_output_data() const;
 
     point xPoint; // X-point coordinates (set by find_xPoint)
-    std::vector<std::vector<point>> outputData; // segments accumulated by primarySegment/newSegment
 
   private:
     void eval_jacobian(double R, double Z, double Phi, double h, double jacobian[2][2]);
     void insertPoint(std::vector<point> &segment, size_t index, bool &overlap);
     void insertPoint(std::vector<point> &segment, interpolantArc &arc, bool &overlap);
+    std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
     static double computeDistance(point a, point b);
     static double computeAngle(point a, point b, point c);
     point apply_map(double R, double Z, double Phi, int nTurns);
@@ -81,6 +81,8 @@ class manifold {
     int    max_insertions  = 100;
 
     maglit &tracer;
+
+    std::vector<std::vector<point>> outputData;
 };
 
 #endif // MANIFOLD_H

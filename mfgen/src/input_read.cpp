@@ -155,11 +155,6 @@ bool input_read::readInputFile() {
             }
         } else if (key == "h_max") {
             this->h_max = std::stod(value);
-            // check if h_max is greater than or equal to h_min
-            if (this->h_max < this->h_min) {
-                std::cerr << "Error: h_max must be greater than or equal to h_min." << std::endl;
-                return false;
-            }
         } else if (key == "h_deriv") {
             this->h_deriv = std::stod(value);
             // check if h_deriv is positive
@@ -210,12 +205,19 @@ bool input_read::readInputFile() {
 
         else {
             std::cerr << "Error: Invalid key: " << key << std::endl;
+            return false;
         }
     }
 
     // Check that required parameters are set
     if (source_path.empty() || output_path.empty()) {
         std::cerr << "Error reading input: Missing required parameters." << std::endl;
+        return false;
+    }
+
+    // Validate step-size relationships after all keys are parsed
+    if (this->h_max < this->h_min) {
+        std::cerr << "Error: h_max must be greater than or equal to h_min." << std::endl;
         return false;
     }
 
