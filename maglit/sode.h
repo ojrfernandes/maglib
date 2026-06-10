@@ -1,6 +1,6 @@
 #ifndef SODE_H
 #define SODE_H
-#define SODE_V 230529 // version (yy.mm.dd)
+// Last modified: 26.06.10
 
 #include <math.h>
 #include <stdio.h>

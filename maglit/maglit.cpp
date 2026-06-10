@@ -1,4 +1,5 @@
 #include "maglit.h"
+#include <stdexcept>
 
 maglit::maglit(FieldSource &source)
     : source_(&source), solver_(SODE_RK56_CK, 2) {
@@ -44,22 +45,28 @@ void maglit::set_warnings() {
     warnings = true;
 }
 
-void maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
-    if (!source_->eval_psin(R, Phi, Z, *psin) && warnings)
+bool maglit::psin_eval(double &R, double &Phi, double &Z, double *psin) {
+    bool ok = source_->eval_psin(R, Phi, Z, *psin);
+    if (!ok && warnings)
         std::cerr << "maglit: eval_psin failed" << std::endl;
+    return ok;
 }
 
-void maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
-    if (!source_->eval_psi(R, Phi, Z, *psi) && warnings)
+bool maglit::psi_eval(double &R, double &Phi, double &Z, double *psi) {
+    bool ok = source_->eval_psi(R, Phi, Z, *psi);
+    if (!ok && warnings)
         std::cerr << "maglit: eval_psi failed" << std::endl;
+    return ok;
+}
+
+const collider &maglit::get_boundary() const {
+    return boundary;
 }
 
 void maglit::set_monitor(const std::string &collider_path) {
-    if (!boundary.load_shape(collider_path)) {
-        std::cerr << "maglit: error loading collider shape from "
-                  << collider_path << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    if (!boundary.load_shape(collider_path))
+        throw std::runtime_error("maglit: failed to load collider shape from \"" +
+                                 collider_path + "\"");
     solver_.set_monitor(&maglit::monitor_boundary);
     solver_.set_aux(this);
 }

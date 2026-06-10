@@ -1,6 +1,6 @@
 #ifndef COLLIDER
 #define COLLIDER
-#define COLLIDER_V 251103 // version (yy.mm.dd)
+// Last modified: 25.11.03
 
 #include <cmath>
 #include <fstream>

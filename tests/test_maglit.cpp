@@ -140,7 +140,7 @@ TEST_F(MaglitTest, ColliderMonitorIntegration) {
 
     tracer_resp->reset();
     tracer_resp->set_monitor(shape_path);
-    tracer_vac->inverse_map(false); // Forward map
+    tracer_resp->inverse_map(false); // Forward map
 
     // Integrate while checking for wall crossings (handled internally by monitor)
     int status = SODE_CONTINUE_GOOD_STEP;
@@ -152,8 +152,8 @@ TEST_F(MaglitTest, ColliderMonitorIntegration) {
 
     // If collider works, integration should stop due to monitor trigger
     EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
-    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z));
-    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z));
+    EXPECT_TRUE(tracer_resp->get_boundary().inside(last_R, last_Z));
+    EXPECT_FALSE(tracer_resp->get_boundary().inside(R, Z));
 }
 
 TEST_F(MaglitTest, InverseColliderMonitorIntegration) {
@@ -167,7 +167,7 @@ TEST_F(MaglitTest, InverseColliderMonitorIntegration) {
 
     tracer_resp->reset();
     tracer_resp->set_monitor(shape_path);
-    tracer_vac->inverse_map(true); // Inverse map
+    tracer_resp->inverse_map(true); // Inverse map
 
     // Integrate while checking for wall crossings (handled internally by monitor)
     int status = SODE_CONTINUE_GOOD_STEP;
@@ -179,8 +179,9 @@ TEST_F(MaglitTest, InverseColliderMonitorIntegration) {
 
     // If collider works, integration should stop due to monitor trigger
     EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
-    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z));
-    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z));
+    EXPECT_TRUE(tracer_resp->get_boundary().inside(last_R, last_Z));
+    EXPECT_FALSE(tracer_resp->get_boundary().inside(R, Z));
+    tracer_resp->inverse_map(false); // restore default
 }
 
 TEST_F(MaglitTest, OnBoundaryColliderMonitorIntegration) {
@@ -194,7 +195,7 @@ TEST_F(MaglitTest, OnBoundaryColliderMonitorIntegration) {
 
     tracer_resp->reset();
     tracer_resp->set_monitor(shape_path);
-    tracer_vac->inverse_map(false); // Forward map
+    tracer_resp->inverse_map(false); // Forward map
 
     // Integrate while checking for wall crossings (handled internally by monitor)
     int status = SODE_CONTINUE_GOOD_STEP;
@@ -209,6 +210,6 @@ TEST_F(MaglitTest, OnBoundaryColliderMonitorIntegration) {
     // If collider works, integration should stop due to monitor trigger
     EXPECT_GT(step_count, 0);
     EXPECT_EQ(status, SODE_SUCCESS_MONITOR);
-    EXPECT_TRUE(tracer_resp->boundary.inside(last_R, last_Z));
-    EXPECT_FALSE(tracer_resp->boundary.inside(R, Z));
+    EXPECT_TRUE(tracer_resp->get_boundary().inside(last_R, last_Z));
+    EXPECT_FALSE(tracer_resp->get_boundary().inside(R, Z));
 }

@@ -1,6 +1,6 @@
 #ifndef MANIFOLD_H
 #define MANIFOLD_H
-#define MANIFOLD_V 260531 // version (yy.mm.dd)
+// Last modified: 26.05.31
 
 #include <maglit.h>
 #include <string>

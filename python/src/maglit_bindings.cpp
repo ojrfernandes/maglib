@@ -86,20 +86,20 @@ Returns
 
         .def("psin_eval", [](maglit &self, double R, double phi, double Z) {
             double psin;
-            self.psin_eval(R, phi, Z, &psin);
-            return psin;
+            bool ok = self.psin_eval(R, phi, Z, &psin);
+            return py::make_tuple(ok, psin);
         },
         "R"_a, "phi"_a, "Z"_a,
-        "Return the normalised poloidal flux psi_N at (R, phi, Z).")
+        "Return (ok, psi_N) at (R, phi, Z). ok is False if the point is outside the domain.")
 
         .def("psi_eval", [](maglit &self, double R, double phi, double Z) {
             double psi;
-            self.psi_eval(R, phi, Z, &psi);
-            return psi;
+            bool ok = self.psi_eval(R, phi, Z, &psi);
+            return py::make_tuple(ok, psi);
         },
         "R"_a, "phi"_a, "Z"_a,
-        "Return the poloidal flux psi at (R, phi, Z).")
+        "Return (ok, psi) at (R, phi, Z). ok is False if the point is outside the domain.")
 
-        .def_readonly("boundary", &maglit::boundary,
+        .def_property_readonly("boundary", &maglit::get_boundary,
             "Vessel wall boundary (Collider). Populated after set_monitor() is called.");
 }

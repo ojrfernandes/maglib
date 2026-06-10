@@ -1,5 +1,5 @@
 #pragma once
-#define M3DC1SOURCE_V 260530
+// Last modified: 26.05.30
 
 #include "field_source.h"
 #include "fusion_io.h"

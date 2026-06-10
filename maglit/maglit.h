@@ -1,6 +1,6 @@
 #ifndef MAGLIT_H
 #define MAGLIT_H
-#define MAGLIT_V 260530
+// Last modified: 26.06.10
 
 #include "collider.h"
 #include "field_source.h"
@@ -30,17 +30,18 @@ class maglit {
     void set_verb();
     // enable warning output
     void set_warnings();
-    // evaluate the normalized poloidal flux
-    void psin_eval(double &R, double &Phi, double &Z, double *psin);
-    // evaluate the poloidal flux
-    void psi_eval(double &R, double &Phi, double &Z, double *psi);
+    // evaluate the normalized poloidal flux; returns false if out of domain
+    bool psin_eval(double &R, double &Phi, double &Z, double *psin);
+    // evaluate the poloidal flux; returns false if out of domain
+    bool psi_eval(double &R, double &Phi, double &Z, double *psi);
     // load vessel shape and activate boundary monitor
     void set_monitor(const std::string &path);
-
-    int      inv_factor = 1;
-    collider boundary;
+    // read-only access to the vessel boundary
+    const collider &get_boundary() const;
 
   private:
+    int          inv_factor = 1;
+    collider     boundary;
     bool         verb     = false;
     bool         warnings = false;
     FieldSource *source_;  // non-owning
@@ -48,6 +49,9 @@ class maglit {
     double       x[2];
 
     static bool monitor_boundary(double *x, double t, void *mgl);
+
+    // mag_system needs access to inv_factor and calc_mag_field
+    friend int mag_system(double *f, double *x, double t, void *mgl);
 };
 
 // Right-hand side of the field-line ODE: x = (R, Z), t = phi

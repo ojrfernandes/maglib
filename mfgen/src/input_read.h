@@ -1,6 +1,6 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-#define INPUT_READ_V 251110 // version (yy.mm.dd)
+// Last modified: 25.11.10
 
 #include <fstream>
 #include <hdf5.h>

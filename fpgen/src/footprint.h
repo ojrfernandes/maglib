@@ -1,6 +1,6 @@
 #ifndef FOOTPRINT_H
 #define FOOTPRINT_H
-#define FOOTPRINT_V 260531 // version (yy.mm.dd)
+// Last modified: 26.05.31
 
 #include <iomanip>
 #include <limits>

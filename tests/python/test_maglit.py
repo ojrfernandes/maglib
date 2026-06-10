@@ -94,13 +94,15 @@ def test_calc_mag_field_nonzero(tracer_vac):
 # ── Flux evaluation ───────────────────────────────────────────────────────────
 
 def test_psi_eval(tracer_vac):
-    psi = tracer_vac.psi_eval(R=0.7, phi=0.0, Z=0.0)
+    ok, psi = tracer_vac.psi_eval(R=0.7, phi=0.0, Z=0.0)
+    assert ok
     assert isinstance(psi, float)
     assert abs(psi - (-0.00988012)) < TOL
 
 
 def test_psin_eval(tracer_vac):
-    psin = tracer_vac.psin_eval(R=0.7, phi=0.0, Z=0.0)
+    ok, psin = tracer_vac.psin_eval(R=0.7, phi=0.0, Z=0.0)
+    assert ok
     assert isinstance(psin, float)
     assert abs(psin - 0.328436) < TOL
 
@@ -138,18 +140,19 @@ def test_inverse_map_roundtrip(tracer_vac):
     R0, Z0, phi0 = 0.7, 0.0, 0.0
     phi_half = math.pi / 2
 
-    tracer_vac.inverse_map(False)
-    R1, Z1, phi1, status = _integrate(tracer_vac, R0, Z0, phi0, phi_half)
-    assert status == SodeStatus.SUCCESS_TIME
+    try:
+        tracer_vac.inverse_map(False)
+        R1, Z1, phi1, status = _integrate(tracer_vac, R0, Z0, phi0, phi_half)
+        assert status == SodeStatus.SUCCESS_TIME
 
-    tracer_vac.inverse_map(True)
-    phi_back = phi1 + phi_half
-    R2, Z2, phi2, status = _integrate(tracer_vac, R1, Z1, phi1, phi_back)
-    assert status == SodeStatus.SUCCESS_TIME
-    assert abs(R2 - R0) < TOL
-    assert abs(Z2 - Z0) < TOL
-
-    tracer_vac.inverse_map(False)  # restore default
+        tracer_vac.inverse_map(True)
+        phi_back = phi1 + phi_half
+        R2, Z2, phi2, status = _integrate(tracer_vac, R1, Z1, phi1, phi_back)
+        assert status == SodeStatus.SUCCESS_TIME
+        assert abs(R2 - R0) < TOL
+        assert abs(Z2 - Z0) < TOL
+    finally:
+        tracer_vac.inverse_map(False)  # restore default even on failure
 
 
 # ── Boundary monitor ──────────────────────────────────────────────────────────
