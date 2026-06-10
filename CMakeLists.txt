@@ -45,38 +45,17 @@ if(BUILD_TESTS)
     find_package(GTest QUIET)
     
     if(NOT GTest_FOUND)
-        # Check if we already have googletest cloned
-        set(GTEST_ROOT ${CMAKE_SOURCE_DIR}/external/googletest)
-        
-        if(NOT EXISTS ${GTEST_ROOT})
-            message(STATUS "GoogleTest not found, cloning from GitHub...")
-            
-            # Create external directory
-            file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/external)
-            
-            # Clone googletest
-            execute_process(
-                COMMAND git clone https://github.com/google/googletest.git ${GTEST_ROOT}
-                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external
-                RESULT_VARIABLE GIT_RESULT
-            )
-            
-            if(NOT GIT_RESULT EQUAL "0")
-                message(FATAL_ERROR "Failed to clone GoogleTest from GitHub")
-            endif()
-            
-            message(STATUS "GoogleTest cloned successfully")
-        else()
-            message(STATUS "Using existing GoogleTest at ${GTEST_ROOT}")
-        endif()
-        
-        # Build googletest as part of our project
+        include(FetchContent)
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG        v1.15.2
+        )
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
         set(BUILD_GTEST ON CACHE BOOL "" FORCE)
-        add_subdirectory(${GTEST_ROOT} ${CMAKE_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
-        
-        # Set up variables for our tests
+        FetchContent_MakeAvailable(googletest)
+
         set(GTEST_LIBRARIES gtest)
         set(GTEST_MAIN_LIBRARIES gtest_main)
     else()
