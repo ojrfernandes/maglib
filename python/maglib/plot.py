@@ -222,6 +222,9 @@ def plot_manifold(source, cuts=None, labels=None, wall=None, linestyle="line",
             raise ValueError("cuts length must match source length.")
         segments = [_apply_cut(s, c) for s, c in zip(source, _cuts)]
         labels = labels or [f"Manifold {i+1}" for i in range(len(source))]
+    elif isinstance(source, list) and len(source) > 0 and hasattr(source[0], 'output_data'):
+        segments = [np.vstack(mf.output_data) for mf in source]
+        labels = labels or [f"Manifold {i+1}" for i in range(len(source))]
     elif from_manifold_object:
         segments = source.output_data
         labels = labels or ["Manifold"]
@@ -245,6 +248,8 @@ def plot_manifold(source, cuts=None, labels=None, wall=None, linestyle="line",
 
     if wall is not None:
         wall_data = np.loadtxt(wall, ndmin=2)
+        if not np.allclose(wall_data[0], wall_data[-1]):
+            wall_data = np.vstack([wall_data, wall_data[0]])
         ax.plot(wall_data[:, 0], wall_data[:, 1], color="black",
                 linewidth=linewidth, label="First wall")
 
@@ -265,7 +270,10 @@ def plot_manifold(source, cuts=None, labels=None, wall=None, linestyle="line",
 
 
 def _load_file(path, cut):
-    return _apply_cut(np.loadtxt(path, ndmin=2), cut)
+    arr = np.loadtxt(path, ndmin=2)
+    if arr.shape[1] == 3:   # 3-column format: seg, R, Z — drop the segment index
+        arr = arr[:, 1:]
+    return _apply_cut(arr, cut)
 
 
 def _apply_cut(arr, cut):
