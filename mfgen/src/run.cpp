@@ -5,10 +5,10 @@
 #include <m3dc1_source.h>
 #include <thread>
 
-int main() {
+int main(int argc, char *argv[]) {
 
     // read params from input file
-    std::string pathsFile = "mfgen_input.txt";
+    std::string pathsFile = (argc > 1) ? argv[1] : "mfgen_input.txt";
 
     std::cout << "\n-----------------------------------------------\n"
               << "MFGEN - Invariant Manifold Generator\n"

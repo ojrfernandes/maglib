@@ -3,9 +3,9 @@
 #include <m3dc1_source.h>
 #include <memory>
 
-int main() {
+int main(int argc, char *argv[]) {
     // read params from input file
-    std::string pathsFile = "fpgen_input.txt";
+    std::string pathsFile = (argc > 1) ? argv[1] : "fpgen_input.txt";
 
     std::cout << "\n-----------------------------------------------\n"
               << "FPGEN - Magnetic Footprint Generator\n"

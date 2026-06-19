@@ -46,3 +46,13 @@ target_compile_features(_maglib PRIVATE cxx_std_17)
 set_target_properties(_maglib PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/python/maglib
 )
+
+# Install: binaries go to ${prefix}/bin, Python package to ${prefix}/python/maglib/.
+# Add ${prefix}/python to PYTHONPATH to import maglib after installation.
+install(TARGETS _maglib DESTINATION python/maglib)
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/maglib/__init__.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/maglib/plot.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/maglib/manifold_tools.py
+    DESTINATION python/maglib
+)

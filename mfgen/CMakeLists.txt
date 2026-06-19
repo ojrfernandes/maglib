@@ -1,10 +1,11 @@
 # mfgen/CMakeLists.txt
 
-# Collect source files
-file(GLOB MFGEN_SOURCES "src/*.cpp")
-
 # Create executable
-add_executable(mfgen ${MFGEN_SOURCES})
+add_executable(mfgen
+    src/input_read.cpp
+    src/manifold.cpp
+    src/run.cpp
+)
 
 # Link libraries using modern CMake
 target_link_libraries(mfgen PRIVATE
@@ -18,6 +19,8 @@ target_include_directories(mfgen PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${HDF5_INCLUDE_DIRS}
 )
+
+install(TARGETS mfgen DESTINATION bin)
 
 # Copy input file to build directory
 configure_file(

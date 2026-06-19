@@ -1,10 +1,11 @@
 # fpgen/CMakeLists.txt
 
-# Collect source files
-file(GLOB FPGEN_SOURCES "src/*.cpp")
-
 # Create executable
-add_executable(fpgen ${FPGEN_SOURCES})
+add_executable(fpgen
+    src/input_read.cpp
+    src/footprint.cpp
+    src/run.cpp
+)
 
 # Link libraries using modern CMake
 target_link_libraries(fpgen PRIVATE
@@ -18,6 +19,8 @@ target_include_directories(fpgen PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${HDF5_INCLUDE_DIRS}
 )
+
+install(TARGETS fpgen DESTINATION bin)
 
 # Copy input file to build directory
 configure_file(
