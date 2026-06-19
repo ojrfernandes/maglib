@@ -73,7 +73,7 @@ bool manifold::find_xPoint(double R, double Z) {
         };
 
         double det = diff[0][0] * diff[1][1] - diff[0][1] * diff[1][0];
-        if (std::abs(det) < 1e-12) {
+        if (!std::isfinite(det) || std::abs(det) < 1e-12) {
             if (verbose) std::cout << "(I - J) is a singular matrix\n";
             return false;
         }
@@ -448,7 +448,7 @@ std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point>
         const point &p1 = segment[i + 1];
         const point &p2 = segment[i + 2];
 
-        if ((p1.R == 0 && p1.Z == 0) || (p2.R == 0 && p2.Z == 0)) {
+        if (std::isnan(p1.R) || std::isnan(p1.Z) || std::isnan(p2.R) || std::isnan(p2.Z)) {
             std::cerr << "Skipping arc between invalid points p1 or p2.\n";
             continue;
         }
@@ -458,8 +458,9 @@ std::vector<interpolantArc> manifold::buildInterpolants(const std::vector<point>
 
         double m   = std::tan(theta);
         double m_1 = std::tan(theta_1);
-        double a   = (std::sqrt(1 + m * m) - 1) / m;
-        double b   = -(std::sqrt(1 + m_1 * m_1) - 1) / m_1;
+        constexpr double m_eps = 1e-12;
+        double a   = (std::abs(m)   < m_eps) ? 0.0 : (std::sqrt(1 + m   * m)   - 1) / m;
+        double b   = (std::abs(m_1) < m_eps) ? 0.0 : -(std::sqrt(1 + m_1 * m_1) - 1) / m_1;
 
         arcs.push_back({segment[i], segment[i + 1], a, b,
                         static_cast<int>(i), static_cast<int>(i + 1)});

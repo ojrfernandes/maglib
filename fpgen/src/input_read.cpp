@@ -147,6 +147,10 @@ bool input_read::readInputFile() {
             }
         } else if (key == "h_max") {
             this->h_max = std::stod(value);
+            if (this->h_max <= 0) {
+                std::cerr << "Error: h_max must be a positive number." << std::endl;
+                return false;
+            }
         } else {
             std::cerr << "Error reading input: Unknown key: " << key << std::endl;
             return false;

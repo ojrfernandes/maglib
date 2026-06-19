@@ -69,6 +69,8 @@ bool collider::point_on_edge(double R, double Z, double tol) const {
         double dR = R2 - R1;
         double dZ = Z2 - Z1;
         double length_sq = dR * dR + dZ * dZ;
+        if (length_sq < 1e-20)
+            continue;
 
         // Project point (R,Z) onto the line segment
         double t = ((R - R1) * dR + (Z - Z1) * dZ) / length_sq;

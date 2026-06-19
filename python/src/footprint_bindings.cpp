@@ -40,7 +40,7 @@ Example::
         t.set_monitor("wall.txt")
 
     fp = maglib.Footprint(
-        manifold=1,
+        stability=1,
         grid_R1=0.435, grid_Z1=-0.239,
         grid_R2=0.435, grid_Z2=-0.232,
         nRZ=100, nPhi=20, max_turns=1000,
@@ -50,7 +50,7 @@ Example::
     fp.save("output.dat")
 )doc")
         .def(py::init<int, double, double, double, double, int, int, int>(),
-             "manifold"_a, "grid_R1"_a, "grid_Z1"_a,
+             "stability"_a, "grid_R1"_a, "grid_Z1"_a,
              "grid_R2"_a, "grid_Z2"_a,
              "nRZ"_a, "nPhi"_a, "max_turns"_a,
              R"doc(
@@ -58,7 +58,7 @@ Create a Footprint grid.
 
 Parameters
 ----------
-manifold : int
+stability : int
     0 = stable (backward map), 1 = unstable (forward map).
 grid_R1, grid_Z1 : float
     First endpoint of the target plate segment (metres).

@@ -19,6 +19,13 @@ sode::sode(sode_type type, int dim) {
     this->x1 = new double[dim];
     this->x2 = new double[dim];
 
+    this->b1 = nullptr;
+    this->b2 = nullptr;
+    this->c  = nullptr;
+    this->a  = nullptr;
+    this->k  = nullptr;
+    this->s  = 0;
+
     switch (type) {
     case SODE_RK56_FB: // Fehlberg
         alloc_56FB();

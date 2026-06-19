@@ -155,6 +155,10 @@ bool input_read::readInputFile() {
             }
         } else if (key == "h_max") {
             this->h_max = std::stod(value);
+            if (this->h_max <= 0) {
+                std::cerr << "Error: h_max must be a positive number." << std::endl;
+                return false;
+            }
         } else if (key == "h_deriv") {
             this->h_deriv = std::stod(value);
             // check if h_deriv is positive
@@ -231,35 +235,49 @@ bool input_read::readHDF5File() {
     const std::string znullPath = "scalars/znull";
 
     try {
-        // Open the HDF5 file
         hid_t file = H5Fopen(source_path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+        if (file < 0) {
+            std::cerr << "Error: could not open HDF5 file: " << source_path << std::endl;
+            return false;
+        }
 
-        // Open the datasets
         hid_t xnullDataset = H5Dopen(file, "scalars/xnull", H5P_DEFAULT);
         hid_t znullDataset = H5Dopen(file, "scalars/znull", H5P_DEFAULT);
+        if (xnullDataset < 0 || znullDataset < 0) {
+            std::cerr << "Error: could not open scalars/xnull or scalars/znull in HDF5 file." << std::endl;
+            H5Fclose(file);
+            return false;
+        }
 
-        // Get the dataspace of the datasets
         hid_t xnullSpace = H5Dget_space(xnullDataset);
         hid_t znullSpace = H5Dget_space(znullDataset);
 
-        // Get the number of elements in the datasets
         hsize_t xnullSize;
         hsize_t znullSize;
         H5Sget_simple_extent_dims(xnullSpace, &xnullSize, nullptr);
         H5Sget_simple_extent_dims(znullSpace, &znullSize, nullptr);
 
-        // Read the data into vectors
+        if (xnullSize == 0 || znullSize == 0) {
+            std::cerr << "Error: xnull or znull dataset is empty in HDF5 file." << std::endl;
+            H5Sclose(xnullSpace);
+            H5Sclose(znullSpace);
+            H5Dclose(xnullDataset);
+            H5Dclose(znullDataset);
+            H5Fclose(file);
+            return false;
+        }
+
         std::vector<double> xnullData(xnullSize);
         std::vector<double> znullData(znullSize);
 
         H5Dread(xnullDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, xnullData.data());
         H5Dread(znullDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, znullData.data());
 
-        // save the xnull and znull values to R_xpoint and Z_xpoint
         R_xPoint = xnullData[0];
         Z_xPoint = znullData[0];
 
-        // Close datasets and file
+        H5Sclose(xnullSpace);
+        H5Sclose(znullSpace);
         H5Dclose(xnullDataset);
         H5Dclose(znullDataset);
         H5Fclose(file);

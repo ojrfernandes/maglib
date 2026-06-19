@@ -292,7 +292,7 @@ def _draw_segment(ax, seg, label, linestyle, linewidth, scatter_size, color=None
         return line.get_color()
     elif linestyle == "scatter":
         sc = ax.scatter(R, Z, label=label, s=scatter_size, **kw)
-        return sc.get_facecolor()[0]
+        return mpl.colors.to_hex(sc.get_facecolor()[0])
     else:  # "both"
         line, = ax.plot(R, Z, label=label, linewidth=linewidth, **kw)
         used = line.get_color()

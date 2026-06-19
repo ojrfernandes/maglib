@@ -74,12 +74,10 @@ target_link_libraries(test_mfgen PRIVATE
     ${GTEST_MAIN_LIBRARIES}
     ${GTEST_LIBRARIES}
     ${HDF5_LIBRARIES}
-    ${ARMADILLO_LIBRARIES}
 )
 target_include_directories(test_mfgen PRIVATE
     ${CMAKE_SOURCE_DIR}/maglit
     ${HDF5_INCLUDE_DIRS}
-    ${ARMADILLO_INCLUDE_DIRS}
 )
 target_compile_definitions(test_mfgen PRIVATE
     TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
