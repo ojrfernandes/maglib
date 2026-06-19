@@ -7,13 +7,17 @@ endpoint preservation), LineString fidelity, and lobe_map correctness
 (area, perimeter, h_param, midpoint, angle, output shape).
 """
 
+import os
 import numpy as np
 import pytest
 
 pytest.importorskip("shapely", reason="shapely not installed")
 
 from maglib import simplify, to_linestrings, lobe_map
-from maglib.manifold_tools import _extract_segments
+from maglib.manifold_tools import _extract_segments, get_separatrix
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+C1_H5    = os.path.join(DATA_DIR, "C1.h5")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -214,13 +218,13 @@ def test_lobe_map_returns_ndarray(rectangular_lobe):
 def test_lobe_map_shape_one_lobe(rectangular_lobe):
     eq, ptb, mag_axis, x_point = rectangular_lobe
     result = lobe_map(eq, ptb, mag_axis, x_point)
-    assert result.shape == (1, 6)
+    assert result.shape == (1, 10)
 
 
 def test_lobe_map_shape_two_lobes(two_lobe_setup):
     eq, ptb, mag_axis, x_point = two_lobe_setup
     result = lobe_map(eq, ptb, mag_axis, x_point)
-    assert result.shape == (2, 6)
+    assert result.shape == (2, 10)
 
 
 def test_lobe_map_no_intersection_returns_empty():
@@ -228,7 +232,7 @@ def test_lobe_map_no_intersection_returns_empty():
     ptb = np.array([[0.0, -1.0], [4.0, -1.0]])  # horizontal line at Z=-1
     mag_axis = np.array([2.0, 0.0])
     result = lobe_map(eq, ptb, mag_axis)
-    assert result.shape == (0, 6)
+    assert result.shape == (0, 10)
 
 
 def test_lobe_map_single_intersection_returns_empty():
@@ -236,7 +240,7 @@ def test_lobe_map_single_intersection_returns_empty():
     ptb = np.array([[0.0, -1.0], [2.0, 0.0], [4.0, -1.0]])  # touches Z=0 once
     mag_axis = np.array([2.0, -2.0])
     result = lobe_map(eq, ptb, mag_axis)
-    assert result.shape == (0, 6)
+    assert result.shape == (0, 10)
 
 
 # ── lobe_map — geometric correctness ─────────────────────────────────────────
@@ -265,8 +269,8 @@ def test_lobe_map_h_param(rectangular_lobe):
 def test_lobe_map_midpoint(rectangular_lobe):
     eq, ptb, mag_axis, x_point = rectangular_lobe
     result = lobe_map(eq, ptb, mag_axis, x_point)
-    # eq sub-curve: (1,0),(2,0),(3,0); midpoint = mean of (1,0),(2,0) = (1.5, 0.0)
-    np.testing.assert_allclose(result[0, 0], 1.5, rtol=1e-10)
+    # Wall arc from p1=(1,0) to p2=(3,0): arc midpoint at t=2.0 → (2.0, 0.0)
+    np.testing.assert_allclose(result[0, 0], 2.0, rtol=1e-10)
     np.testing.assert_allclose(result[0, 1], 0.0, atol=1e-14)
 
 
@@ -287,6 +291,17 @@ def test_lobe_map_all_positive(rectangular_lobe):
     assert result[0, 5] > 0.0   # h_param
 
 
+# ── lobe_map — intersection points ───────────────────────────────────────────
+
+def test_lobe_map_intersection_points(rectangular_lobe):
+    """Columns 6-9 must be the two boundary intersection points [R1,Z1,R2,Z2]."""
+    eq, ptb, mag_axis, x_point = rectangular_lobe
+    result = lobe_map(eq, ptb, mag_axis, x_point)
+    # Intersections at (1, 0) and (3, 0) — ordered along ptb
+    np.testing.assert_allclose(result[0, 6:8], [1.0, 0.0], atol=1e-10)
+    np.testing.assert_allclose(result[0, 8:10], [3.0, 0.0], atol=1e-10)
+
+
 # ── lobe_map — x_point default ────────────────────────────────────────────────
 
 def test_lobe_map_x_point_default_uses_perturbed_first(rectangular_lobe):
@@ -294,3 +309,35 @@ def test_lobe_map_x_point_default_uses_perturbed_first(rectangular_lobe):
     result_explicit = lobe_map(eq, ptb, mag_axis, x_point)
     result_default = lobe_map(eq, ptb, mag_axis)  # x_point defaults to ptb[0]
     np.testing.assert_allclose(result_explicit, result_default)
+
+
+# ── get_separatrix ────────────────────────────────────────────────────────────
+
+pytest.importorskip("h5py", reason="h5py not installed")
+
+
+def test_get_separatrix_returns_ndarray():
+    result = get_separatrix(C1_H5)
+    assert isinstance(result, np.ndarray)
+    assert result.ndim == 2 and result.shape[1] == 2
+
+
+def test_get_separatrix_coordinates_in_range():
+    result = get_separatrix(C1_H5)
+    # TCABR mesh bounds: R ∈ [0.155, 1.054], Z ∈ [-0.65, 0.65]
+    assert np.all(result[:, 0] > 0.15) and np.all(result[:, 0] < 1.1)
+    assert np.all(result[:, 1] > -0.70) and np.all(result[:, 1] < 0.70)
+
+
+def test_get_separatrix_passes_near_xpoint():
+    result = get_separatrix(C1_H5)
+    x_point = np.array([0.498, -0.219])   # from scalars/xnull, znull
+    dists = np.linalg.norm(result - x_point, axis=1)
+    # psi_N=0.999 contour sits just inside the X-point; 3 cm tolerance
+    assert dists.min() < 0.03
+
+
+def test_get_separatrix_custom_psi_n_level():
+    result = get_separatrix(C1_H5, psi_n_level=0.95)
+    assert isinstance(result, np.ndarray)
+    assert result.ndim == 2 and result.shape[1] == 2

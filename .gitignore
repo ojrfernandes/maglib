@@ -11,6 +11,6 @@ python/maglib/_maglib*.so
 python/maglib/__pycache__
 tests/python/__pycache__
 **/*.pyc
-examples/**/*.txt
-examples/**/*.dat
-examples/**/*.npz
+examples/**/*.txt*
+examples/**/*.dat*
+examples/**/*.npz*
