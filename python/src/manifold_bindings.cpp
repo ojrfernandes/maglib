@@ -71,7 +71,7 @@ tracer : Maglit
 phi : float
     Toroidal angle of the Poincaré section (radians).
 stability : int
-    0 = stable manifold (forward map), 1 = unstable manifold (backward map).
+    0 = unstable manifold (forward map), 1 = stable manifold (backward map).
 )doc")
 
         .def("configure", &manifold::configure,

@@ -88,7 +88,7 @@ bool input_read::readInputFile() {
             this->manifold = std::stoi(value);
             // check if manifold is 0 or 1
             if (this->manifold != 0 && this->manifold != 1) {
-                std::cerr << "Error: Manifold must be 0 (stable) or 1 (unstable)." << std::endl;
+                std::cerr << "Error: Manifold must be 0 (unstable) or 1 (stable)." << std::endl;
                 return false;
             }
         } else if (key == "method") {
@@ -202,9 +202,17 @@ bool input_read::readInputFile() {
                 return false;
             }
         } else if (key == "R_xPoint") {
-            this->R_xPoint = std::stod(value);
+            this->R_xPoint  = std::stod(value);
+            this->xpoint_set = true;
         } else if (key == "Z_xPoint") {
-            this->Z_xPoint = std::stod(value);
+            this->Z_xPoint  = std::stod(value);
+            this->xpoint_set = true;
+        } else if (key == "xpoint_index") {
+            this->xpoint_index = std::stoi(value);
+            if (this->xpoint_index < -1) {
+                std::cerr << "Error: xpoint_index must be -1 (auto) or a non-negative integer." << std::endl;
+                return false;
+            }
         }
 
         else {
@@ -273,8 +281,47 @@ bool input_read::readHDF5File() {
         H5Dread(xnullDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, xnullData.data());
         H5Dread(znullDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, znullData.data());
 
-        R_xPoint = xnullData[0];
-        Z_xPoint = znullData[0];
+        // Deduplicate: collect indices of distinct X-points (exact equality).
+        std::vector<hsize_t> unique_idx;
+        for (hsize_t k = 0; k < xnullSize; ++k) {
+            bool found = false;
+            for (hsize_t u : unique_idx)
+                if (xnullData[k] == xnullData[u] && znullData[k] == znullData[u]) { found = true; break; }
+            if (!found) unique_idx.push_back(k);
+        }
+
+        if (unique_idx.size() == 1) {
+            // One distinct X-point (possibly stored multiple times) — use it directly.
+            R_xPoint = xnullData[unique_idx[0]];
+            Z_xPoint = znullData[unique_idx[0]];
+        } else if (xpoint_index == -1) {
+            // Multiple distinct X-points and no index specified — list them and abort.
+            std::cerr << "Error: HDF5 file contains " << unique_idx.size()
+                      << " distinct X-points. Set xpoint_index in the input file to select one:\n";
+            for (size_t k = 0; k < unique_idx.size(); ++k)
+                std::cerr << "  xpoint_index = " << k
+                          << "   R = " << xnullData[unique_idx[k]]
+                          << "   Z = " << znullData[unique_idx[k]] << "\n";
+            H5Sclose(xnullSpace);
+            H5Sclose(znullSpace);
+            H5Dclose(xnullDataset);
+            H5Dclose(znullDataset);
+            H5Fclose(file);
+            return false;
+        } else if (static_cast<size_t>(xpoint_index) >= unique_idx.size()) {
+            std::cerr << "Error: xpoint_index=" << xpoint_index
+                      << " is out of range (HDF5 file has " << unique_idx.size()
+                      << " distinct X-points)." << std::endl;
+            H5Sclose(xnullSpace);
+            H5Sclose(znullSpace);
+            H5Dclose(xnullDataset);
+            H5Dclose(znullDataset);
+            H5Fclose(file);
+            return false;
+        } else {
+            R_xPoint = xnullData[unique_idx[xpoint_index]];
+            Z_xPoint = znullData[unique_idx[xpoint_index]];
+        }
 
         H5Sclose(xnullSpace);
         H5Sclose(znullSpace);

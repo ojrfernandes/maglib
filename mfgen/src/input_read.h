@@ -48,9 +48,11 @@ class input_read {
     int    max_insertions = 0;   // maximum number of points per segment
     int    verbose       = 0;    // verbose output flag (0=off, 1=on)
 
-    // X-point coordinates (optional; 0 triggers HDF5 fallback in run.cpp)
-    double R_xPoint = 0.0;
-    double Z_xPoint = 0.0;
+    // X-point coordinates (optional; if neither is set, falls back to HDF5 auto-read)
+    double R_xPoint  = 0.0;
+    double Z_xPoint  = 0.0;
+    bool   xpoint_set   = false; // true when R_xPoint or Z_xPoint is specified in input
+    int    xpoint_index = -1;    // HDF5 X-point index (-1 = auto; required for double-null/snowflake)
 
   private:
     std::string reading_path; // File path

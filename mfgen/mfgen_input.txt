@@ -8,7 +8,8 @@
 #============== TRACING PARAMETERS
 #
         timeslice = 1                   # M3DC1 timeslice
-        manifold = 0                    # stable manifold = 0, unstable manifold = 1
+#       xpoint_index = 0                # index of X-point to use from HDF5 (required for double-null/snowflake configs)
+        manifold = 0                    # unstable manifold = 0, stable manifold = 1
         method = 1                      # exact manifold = 0, interpolant method = 1
         Phi = 0                         # poicaré section toroidal coordinate (deg)
         nSegments = 8                   # number of primary segments to be mapped
@@ -38,3 +39,5 @@
 #
 #       R_xPoint = 0.498               # initial R guess for X-point (overrides HDF5 auto-read)
 #       Z_xPoint = -0.219              # initial Z guess for X-point (overrides HDF5 auto-read)
+#
+

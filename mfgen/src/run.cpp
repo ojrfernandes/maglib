@@ -1,9 +1,5 @@
 #include "input_read.h"
-#include "manifold.h"
-#include <chrono>
-#include <iomanip>
 #include <m3dc1_source.h>
-#include <thread>
 
 int main(int argc, char *argv[]) {
 
@@ -49,7 +45,7 @@ int main(int argc, char *argv[]) {
               << "verbose: " << input.verbose << "\n"
               << "-----------------------------------------------" << std::endl;
 
-    if (input.R_xPoint == 0 && input.Z_xPoint == 0) {
+    if (!input.xpoint_set) {
         // read xnull and znull from the HDF5 file
         std::cout << "\nReading xnull and znull from the HDF5 file..."
                   << std::endl;
@@ -147,6 +143,11 @@ int main(int argc, char *argv[]) {
                   << std::endl;
         std::vector<point> first_primary_segment = manifold.primarySegment(10);
 
+        if (!manifold.save(section_file)) {
+            std::cerr << "Error saving output file: " << section_file << std::endl;
+            return 1;
+        }
+
         // loop to create new segments
         for (int i = 1; i < input.nSegments; ++i) {
             manifold.progressBar(i, input.nSegments);
@@ -162,11 +163,11 @@ int main(int argc, char *argv[]) {
                 std::cerr << "Invalid method selected. Please choose 0 or 1." << std::endl;
                 return 1;
             }
-        }
 
-        if (!manifold.save(section_file)) {
-            std::cerr << "Error saving output file: " << section_file << std::endl;
-            return 1;
+            if (!manifold.save(section_file)) {
+                std::cerr << "Error saving output file: " << section_file << std::endl;
+                return 1;
+            }
         }
 
         std::cout << "\nManifold successfully computed for Poincaré section phi = " << static_cast<int>(phi) << "\n"

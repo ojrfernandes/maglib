@@ -4,7 +4,7 @@ Invariant manifold computation — runs the integration and saves outputs.
 Usage
 -----
 
-Computes both the stable (stability=0) and unstable (stability=1) manifolds
+Computes both the unstable (stability=0) and stable (stability=1) manifolds
 of the X-point and saves them to .npz and .dat files for use with plot.py.
 
 Data paths default to tests/data/ relative to the repo root.
@@ -112,14 +112,16 @@ def main():
 
     # Each manifold needs its own Maglit instance: the Manifold constructor sets
     # inverse_map on the tracer, so stable and unstable cannot share one tracer.
-    stable   = grow_manifold(build_tracer(source), stability=0)
-    unstable = grow_manifold(build_tracer(source), stability=1)
+    # stability=0 → forward map → unstable manifold
+    # stability=1 → inverse map → stable manifold
+    unstable = grow_manifold(build_tracer(source), stability=0)
+    stable   = grow_manifold(build_tracer(source), stability=1)
 
-    stable.save("stable.npz")
-    stable.save("stable.dat")
     unstable.save("unstable.npz")
     unstable.save("unstable.dat")
-    print("\nSaved: stable.npz  stable.dat  unstable.npz  unstable.dat")
+    stable.save("stable.npz")
+    stable.save("stable.dat")
+    print("\nSaved: unstable.npz  unstable.dat  stable.npz  stable.dat")
 
 
 if __name__ == "__main__":

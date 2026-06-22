@@ -71,7 +71,7 @@ class MfgenTest : public ::testing::Test {
             << "#=============== TRACING PARAMETERS\n"
             << "#\n"
             << "        timeslice = 1           # M3DC1 timeslice \n"
-            << "        manifold  = 0           # stable manifold=0; unstable manifold=1\n"
+            << "        manifold  = 0           # unstable manifold=0; stable manifold=1\n"
             << "        method = 1                      # exact manifold = 0, interpolant method = 1\n"
             << "        Phi = 0                       # Poincare section toroidal coordinate (deg)\n"
             << "#\n"
@@ -471,34 +471,28 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrevious) {
     EXPECT_NO_THROW(new_seg_2 = mf.newSegment(new_seg_1, 0.005, 20));
     EXPECT_NO_THROW(new_seg_3 = mf.newSegment(new_seg_2, 0.005, 20));
 
-    // Check a few new_seg_3 points within reasonable bounds
-    // R: 0.5012464706502761 Z: -0.2174148574827388 0
-    // R: 0.5030591235329525 Z: -0.2168648161175224 4
-    // R: 0.5133430437264513 Z: -0.2130464750286543 9
-    // R: 0.5298324820702656 Z: -0.208634750788582  14
-    // R: 0.5429352654656256 Z: -0.199387939879125  19
-    // R: 0.5594125465315225 Z: -0.192432899160264  24
-    // R: 0.5746497663876523 Z: -0.1888496529292251 29
-    // R: 0.5901009484232285 Z: -0.1829887187256312 34
-    // R: 0.6093889559868346 Z: -0.1732392616766928 39
-    // R: 0.6289407305354183 Z: -0.1613738267302098 44
-    // R: 0.6461994779238116 Z: -0.1496757085334106 49
-    EXPECT_NEAR(new_seg_3[0].R, 0.5012464706502761, 1e-6);
-    EXPECT_NEAR(new_seg_3[0].Z, -0.2174148574827388, 1e-6);
-    EXPECT_NEAR(new_seg_3[4].R, 0.5030591235329525, 1e-6);
-    EXPECT_NEAR(new_seg_3[4].Z, -0.2168648161175224, 1e-6);
-    EXPECT_NEAR(new_seg_3[9].R, 0.5133430437264513, 1e-6);
-    EXPECT_NEAR(new_seg_3[9].Z, -0.2130464750286543, 1e-6);
-    EXPECT_NEAR(new_seg_3[14].R, 0.5298324820702656, 1e-6);
-    EXPECT_NEAR(new_seg_3[14].Z, -0.208634750788582, 1e-6);
-    EXPECT_NEAR(new_seg_3[19].R, 0.5429352654656256, 1e-6);
-    EXPECT_NEAR(new_seg_3[19].Z, -0.199387939879125, 1e-6);
-    EXPECT_NEAR(new_seg_3[24].R, 0.5594125465315225, 1e-6);
-    EXPECT_NEAR(new_seg_3[24].Z, -0.192432899160264, 1e-6);
-    EXPECT_NEAR(new_seg_3[29].R, 0.5746497663876523, 1e-6);
-    EXPECT_NEAR(new_seg_3[29].Z, -0.1888496529292251, 1e-6);
-    EXPECT_NEAR(new_seg_3[34].R, 0.5901009484232285, 1e-6);
-    EXPECT_NEAR(new_seg_3[34].Z, -0.1829887187256312, 1e-6);
+    // Reference values after Stage 3 fixes (Bugs 1, 2, 5):
+    //   - Bug 2: new_seg now starts empty; first 3 entries are actual map images,
+    //     not raw points from the previous segment generation.
+    //   - Bug 5: buildInterpolants now starts at i=0, covering the first interval.
+    //   Indices 4-34 are now shifted along the manifold relative to the pre-fix
+    //   values, with monotonically increasing R and decreasing Z — physically correct.
+    EXPECT_NEAR(new_seg_3[0].R,  0.50371942366068234, 1e-6);
+    EXPECT_NEAR(new_seg_3[0].Z,  -0.21671800599570651, 1e-6);
+    EXPECT_NEAR(new_seg_3[4].R,  0.51779070168116548, 1e-6);
+    EXPECT_NEAR(new_seg_3[4].Z,  -0.21256465989197604, 1e-6);
+    EXPECT_NEAR(new_seg_3[9].R,  0.53293756894629363, 1e-6);
+    EXPECT_NEAR(new_seg_3[9].Z,  -0.20684617881102837, 1e-6);
+    EXPECT_NEAR(new_seg_3[14].R, 0.54488594362131892, 1e-6);
+    EXPECT_NEAR(new_seg_3[14].Z, -0.19790052084563603, 1e-6);
+    EXPECT_NEAR(new_seg_3[19].R, 0.56232032861121017, 1e-6);
+    EXPECT_NEAR(new_seg_3[19].Z, -0.19188754657069129, 1e-6);
+    EXPECT_NEAR(new_seg_3[24].R, 0.57736840917403609, 1e-6);
+    EXPECT_NEAR(new_seg_3[24].Z, -0.18797281379317218, 1e-6);
+    EXPECT_NEAR(new_seg_3[29].R, 0.5936666484608587,  1e-6);
+    EXPECT_NEAR(new_seg_3[29].Z, -0.1813653812146642,  1e-6);
+    EXPECT_NEAR(new_seg_3[34].R, 0.61339157015089885, 1e-6);
+    EXPECT_NEAR(new_seg_3[34].Z, -0.17095132560862691, 1e-6);
 }
 
 // Test: New segment computation from primary segment

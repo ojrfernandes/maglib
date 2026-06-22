@@ -84,8 +84,8 @@ def plot_both_from_npz():
 #
 #   from run import build_source, build_tracer, grow_manifold
 #   source   = build_source()
-#   stable   = grow_manifold(build_tracer(source), stability=0)
-#   unstable = grow_manifold(build_tracer(source), stability=1)
+#   unstable = grow_manifold(build_tracer(source), stability=0)
+#   stable   = grow_manifold(build_tracer(source), stability=1)
 #   maglib.plot_manifold([stable, unstable],
 #                        wall=WALL_PATH, labels=["stable", "unstable"])
 #
