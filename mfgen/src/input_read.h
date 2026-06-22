@@ -24,7 +24,7 @@ class input_read {
 
     // Tracing parameters
     int    timeslice   = -1;  // timeslice to be read from the source file
-    int    manifold    = 0;   // stability of the manifold: stable=0, unstable=1
+    int    manifold    = 0;   // 0 = unstable (forward map);  1 = stable (inverse map)
     int    method      = 0;   // method: exact-map=0, interpolant=1
     double Phi         = 0.0; // toroidal angle of the Poincaré section (rad)
     int    nSegments   = 0;   // number of primary segments to be mapped

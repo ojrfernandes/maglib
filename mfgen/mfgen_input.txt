@@ -1,45 +1,45 @@
 ################################ MFGEN #################################
 #
 #=============== I/O PARAMETERS
-
+#
         source_path = C1.h5             # M3DC1 file
         output_path = mfgen_out.dat     # output file path and name
 #
-#============== TRACING PARAMETERS
+#=============== TRACING PARAMETERS
 #
         timeslice = 1                   # M3DC1 timeslice
-        manifold = 0                    # unstable manifold = 0, stable manifold = 1
-        method = 1                      # exact manifold = 0, interpolant arc method = 1
-        Phi = 0                         # toroidal coordinate (deg)
-        nSegments = 9                   # number of primary segments to be mapped
-#       branch_R = 1                    # ±1: sign on v_R component of pivot direction (default 1)
-#       branch_Z = 1                    # ±1: sign on v_Z component of pivot direction (default 1)
+        manifold = 0                    # 0 = unstable (forward map);  1 = stable (inverse map)
+        method = 1                      # 0 = exact-map;  1 = interpolant arc
+        nSegments = 9                   # number of segments to compute (including primary)
+        branch_R = 1                    # ±1: sign on v_R component of pivot direction
+        branch_Z = 1                    # ±1: sign on v_Z component of pivot direction
+        Phi = 0                         # Poincaré section toroidal angle (deg) — used when nSections = 1
+        nSections = 1                   # number of Poincaré sections; > 1 activates multi-section mode
+        phi_0 = 0                       # first section angle (deg)  — used only when nSections > 1
+        phi_1 = 0                       # last  section angle (deg)  — used only when nSections > 1
 #
 #=============== X-POINT PARAMETERS
 #
-        xpoint_null = 1                 # HDF5 null selector: 0=auto 1=xnull/znull, 2=xnull2/znull2
-    #    R_xPoint = 0.498                # manual initial R guess for X-point (overrides HDF5 auto-read)
-    #    Z_xPoint = -0.219               # manual initial Z guess for X-point (overrides HDF5 auto-read)
+        xpoint_null = 1                 # HDF5 null selector: 0 = auto,  1 = xnull/znull,  2 = xnull2/znull2
+#       R_xPoint = 0.498                # manual initial R guess for X-point (overrides HDF5 read)
+#       Z_xPoint = -0.219               # manual initial Z guess for X-point (overrides HDF5 read)
 #
-#============== FOR TRACING MULTIPLE SECTIONS
+#=============== INTEGRATOR PARAMETERS
 #
-        nSections = 1                   # number of poicaré sections to be computed
-        phi_0 = 0                       # initial toroidal angle coordinate
-        phi_1 = 0                       # final toroidal angle coordinate
+        h_init = 1e-2                   # initial step-size for field-line integration
+        h_min = 1e-6                    # minimum step-size for field-line integration
+        h_max = 1e-2                    # maximum step-size for field-line integration
+        h_deriv = 1e-8                  # step-size for numerical Jacobian (Newton's method)
 #
-#=============== ADDITIONAL PARAMETERS
+#=============== MANIFOLD PARAMETERS
 #
-        epsilon = 1e-8                  # first primary segment's distance from X-point
-        l_lim = 0.005                   # distance treshold for the refinement process
-        theta_lim = 20                  # anglular treshold for the refinement process (deg)
-        h_init = 1e-2                   # initial step-size for integration
-        h_min = 1e-6                    # minimum step-size for integration
-        h_max = 1e-2                    # maximum step-size for integration
-        h_deriv = 1e-8                  # step-size for numerical derivatives
-        n_tol = 1e-14                   # tolerance for Newton's method
-        max_iter = 50                   # maximum iterations for Newton's method
-        precision = 1e-14               # precision for floating point comparison
-        max_insertions = 50             # maximum new point insertions per segment
-        verbose = 0                     # basic info printed = 0; all info printed = 1
+        epsilon = 1e-8                  # distance from X-point to pivot point
+        l_lim = 0.005                   # arc-length threshold for segment refinement (m)
+        theta_lim = 20                  # turning-angle threshold for segment refinement (deg)
+        n_tol = 1e-14                   # convergence tolerance for Newton's method
+        max_iter = 50                   # maximum Newton iterations
+        precision = 1e-14               # minimum arc length below which point insertion is skipped
+        max_insertions = 50             # maximum point insertions per refinement pass
+        verbose = 0                     # 0 = summary output;  1 = full diagnostic output
 #
 ########################################################################
