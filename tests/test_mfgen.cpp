@@ -409,6 +409,45 @@ TEST_F(MfgenTest, Manifold_Configure) {
     EXPECT_NO_THROW(mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 50));
 }
 
+// Test: set_branch accepts valid ±1 values
+TEST_F(MfgenTest, Manifold_SetBranch_Valid) {
+    manifold mf(*tracer, 0, 0);
+    EXPECT_NO_THROW(mf.set_branch( 1,  1));
+    EXPECT_NO_THROW(mf.set_branch(-1,  1));
+    EXPECT_NO_THROW(mf.set_branch( 1, -1));
+    EXPECT_NO_THROW(mf.set_branch(-1, -1));
+}
+
+// Test: set_branch rejects values other than ±1
+TEST_F(MfgenTest, Manifold_SetBranch_InvalidValueRejected) {
+    manifold mf(*tracer, 0, 0);
+    EXPECT_THROW(mf.set_branch(0,  1), std::invalid_argument);
+    EXPECT_THROW(mf.set_branch(1,  2), std::invalid_argument);
+    EXPECT_THROW(mf.set_branch(2, -1), std::invalid_argument);
+}
+
+// Test: set_branch(-1, -1) produces a pivot point mirrored through xPoint
+TEST_F(MfgenTest, Manifold_SetBranch_FullFlipMirrorspivot) {
+    const double R_xp = 0.4979691771716279;
+    const double Z_xp = -0.2185980054447758;
+    const double eps  = 1e-6;
+
+    manifold mf_default(*tracer, 0, 0);
+    mf_default.configure(eps, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf_default.xPoint = {R_xp, Z_xp};
+    std::vector<point> seg_default = mf_default.primarySegment(2);
+
+    manifold mf_flipped(*tracer, 0, 0);
+    mf_flipped.configure(eps, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf_flipped.set_branch(-1, -1);
+    mf_flipped.xPoint = {R_xp, Z_xp};
+    std::vector<point> seg_flipped = mf_flipped.primarySegment(2);
+
+    // First point of default and flipped should be mirror images through xPoint.
+    EXPECT_NEAR(seg_flipped[0].R, 2*R_xp - seg_default[0].R, 1e-10);
+    EXPECT_NEAR(seg_flipped[0].Z, 2*Z_xp - seg_default[0].Z, 1e-10);
+}
+
 // Test: Find X-Point with valid guess
 TEST_F(MfgenTest, Manifold_FindXPoint_ValidGuess) {
     manifold mf(*tracer, 0, 0);

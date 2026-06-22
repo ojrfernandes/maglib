@@ -12,6 +12,8 @@
         method = 1                      # exact manifold = 0, interpolant arc method = 1
         Phi = 0                         # toroidal coordinate (deg)
         nSegments = 9                   # number of primary segments to be mapped
+#       branch_R = 1                    # ±1: sign on v_R component of pivot direction (default 1)
+#       branch_Z = 1                    # ±1: sign on v_Z component of pivot direction (default 1)
 #
 #=============== X-POINT PARAMETERS
 #

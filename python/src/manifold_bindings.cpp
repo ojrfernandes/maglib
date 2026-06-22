@@ -96,6 +96,29 @@ max_insertions : int
     Maximum insertions per refinement pass before giving up.
 )doc")
 
+        .def("set_branch", &manifold::set_branch,
+             "branch_R"_a, "branch_Z"_a,
+             R"doc(
+Set independent sign multipliers for the v_R and v_Z eigenvector components.
+
+Applied after normalisation and s_factor, so the effective pivot direction is:
+  v_R_eff = (v_R / norm) * s_factor * branch_R
+  v_Z_eff = (v_Z / norm) * s_factor * branch_Z
+
+This allows seeding the primary segment from any of the four quadrant directions
+relative to the X-point without changing the stability (forward/inverse map).
+
+Parameters
+----------
+branch_R, branch_Z : int
+    Must be 1 or -1. Default is (1, 1), which reproduces the standard branch.
+
+Raises
+------
+ValueError
+    If either argument is not 1 or -1.
+)doc")
+
         .def("set_verbose", &manifold::setVerbose,
              "Enable verbose diagnostic output to stdout.")
 

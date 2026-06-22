@@ -207,6 +207,18 @@ bool input_read::readInputFile() {
         } else if (key == "Z_xPoint") {
             this->Z_xPoint  = std::stod(value);
             this->xpoint_set = true;
+        } else if (key == "branch_R") {
+            this->branch_R = std::stoi(value);
+            if (this->branch_R != 1 && this->branch_R != -1) {
+                std::cerr << "Error: branch_R must be 1 or -1." << std::endl;
+                return false;
+            }
+        } else if (key == "branch_Z") {
+            this->branch_Z = std::stoi(value);
+            if (this->branch_Z != 1 && this->branch_Z != -1) {
+                std::cerr << "Error: branch_Z must be 1 or -1." << std::endl;
+                return false;
+            }
         } else if (key == "xpoint_null") {
             this->xpoint_null = std::stoi(value);
             if (this->xpoint_null < 0 || this->xpoint_null > 2) {

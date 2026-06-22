@@ -37,7 +37,9 @@ int main(int argc, char *argv[]) {
               << "manifold       = " << input.manifold    << "\n"
               << "method         = " << input.method      << "\n"
               << "Phi            = " << input.Phi         << "\n"
-              << "nSegments      = " << input.nSegments   << "\n\n"
+              << "nSegments      = " << input.nSegments   << "\n"
+              << "branch_R       = " << input.branch_R    << "\n"
+              << "branch_Z       = " << input.branch_Z    << "\n\n"
               << "--------------- X-POINT PARAMETERS ------------\n\n"
               << "source         = " << xpoint_source     << "\n"
               << "R_xPoint       = " << input.R_xPoint    << "\n"
@@ -115,6 +117,7 @@ int main(int argc, char *argv[]) {
                   << std::endl;
         manifold manifold(tracer, phi_rad, input.manifold);
         manifold.configure(input.epsilon, input.h_deriv, input.n_tol, input.max_iter, input.precision, input.max_insertions);
+        manifold.set_branch(input.branch_R, input.branch_Z);
         if (input.verbose == 1) {
             manifold.setVerbose();
         }

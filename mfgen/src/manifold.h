@@ -51,6 +51,9 @@ class manifold {
     // Configure numerical parameters
     void configure(double epsilon, double h, double tol, int max_iter,
                    double precision_limit, int max_insertions);
+    // Set independent sign multipliers for the v_R and v_Z eigenvector components.
+    // Both must be 1 or -1; default is (1, 1).
+    void set_branch(int branch_R, int branch_Z);
     // Save all accumulated segments to file. Format inferred from extension:
     //   .dat / .txt  — space-separated text with header (columns: seg, R, Z)
     //   .csv         — comma-separated text with header (columns: seg, R, Z)
@@ -76,6 +79,8 @@ class manifold {
     double epsilon         = 1e-6;
     bool   verbose         = false;
     int    s_factor        = 1;
+    int    branch_R        = 1;   // ±1: additional sign on v_R in pivot direction
+    int    branch_Z        = 1;   // ±1: additional sign on v_Z in pivot direction
     double h               = 1e-8;
     double tol             = 1e-14;
     int    max_iter        = 50;

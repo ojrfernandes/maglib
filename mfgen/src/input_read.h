@@ -48,6 +48,10 @@ class input_read {
     int    max_insertions = 0;   // maximum number of points per segment
     int    verbose       = 0;    // verbose output flag (0=off, 1=on)
 
+    // Pivot direction branch signs (±1 each; default 1 = no flip)
+    int    branch_R   = 1;
+    int    branch_Z   = 1;
+
     // X-point coordinates (optional; if neither is set, falls back to HDF5 auto-read)
     double R_xPoint   = 0.0;
     double Z_xPoint   = 0.0;

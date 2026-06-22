@@ -25,6 +25,15 @@ void manifold::setVerbose() {
   tracer.set_warnings();
 }
 
+void manifold::set_branch(int bR, int bZ) {
+  if (bR != 1 && bR != -1)
+    throw std::invalid_argument("branch_R must be 1 or -1");
+  if (bZ != 1 && bZ != -1)
+    throw std::invalid_argument("branch_Z must be 1 or -1");
+  branch_R = bR;
+  branch_Z = bZ;
+}
+
 void manifold::configure(double epsilon, double h, double tol, int max_iter,
                          double precision_limit, int max_insertions) {
   this->epsilon = epsilon;
@@ -149,8 +158,8 @@ point manifold::pivot() {
   }
 
   double norm = std::sqrt(v_R * v_R + v_Z * v_Z);
-  v_R = (v_R / norm) * s_factor;
-  v_Z = (v_Z / norm) * s_factor;
+  v_R = (v_R / norm) * s_factor * branch_R;
+  v_Z = (v_Z / norm) * s_factor * branch_Z;
   lambda_u = lam;
 
   if (verbose)

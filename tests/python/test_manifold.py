@@ -373,3 +373,44 @@ def test_read_xpoint_null1():
 def test_read_xpoint_null2_raises_for_single_null():
     with pytest.raises(ValueError, match="single-null"):
         read_xpoint_from_hdf5(C1_H5, null=2)
+
+
+# ── set_branch ────────────────────────────────────────────────────────────────
+
+def _manifold_at_xpoint(tracer_and_source):
+    _, t = tracer_and_source
+    mf = Manifold(t, phi=0.0, stability=0)
+    mf.configure(epsilon=1e-6, h=1e-8, tol=1e-14,
+                 max_iter=50, precision_limit=1e-14, max_insertions=100)
+    mf.x_point = np.array([0.4979691771716279, -0.2185980054447758])
+    return mf
+
+
+def test_set_branch_valid(tracer_and_source):
+    mf = _manifold_at_xpoint(tracer_and_source)
+    mf.set_branch(1, 1)
+    mf.set_branch(-1, 1)
+    mf.set_branch(1, -1)
+    mf.set_branch(-1, -1)
+
+
+def test_set_branch_invalid_raises(tracer_and_source):
+    mf = _manifold_at_xpoint(tracer_and_source)
+    with pytest.raises((ValueError, RuntimeError)):
+        mf.set_branch(0, 1)
+    with pytest.raises((ValueError, RuntimeError)):
+        mf.set_branch(1, 2)
+
+
+def test_set_branch_full_flip_mirrors_pivot(tracer_and_source):
+    xp = np.array([0.4979691771716279, -0.2185980054447758])
+
+    mf_def = _manifold_at_xpoint(tracer_and_source)
+    seg_def = mf_def.primary_segment(2)
+
+    mf_flip = _manifold_at_xpoint(tracer_and_source)
+    mf_flip.set_branch(-1, -1)
+    seg_flip = mf_flip.primary_segment(2)
+
+    # First points must be mirror images through xPoint.
+    np.testing.assert_allclose(seg_flip[0], 2 * xp - seg_def[0], atol=1e-10)
