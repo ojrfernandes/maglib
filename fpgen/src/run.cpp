@@ -19,9 +19,9 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "--------------- I/O PARAMETERS ----------------\n\n"
-              << "source_path  = " << input.source_path << "\n"
-              << "shape_path   = " << input.shape_path  << "\n"
-              << "output_path  = " << input.output_path << "\n\n"
+              << "source_path     = " << input.source_path     << "\n"
+              << "first_wall_path = " << input.first_wall_path << "\n"
+              << "output_path     = " << input.output_path     << "\n\n"
               << "--------------- MAPPING PARAMETERS ------------\n\n"
               << "timeslice    = " << input.timeslice   << "\n"
               << "manifold     = " << input.manifold    << "\n"
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         sources.push_back(std::make_unique<M3DC1Source>(
             input.source_path.c_str(), input.timeslice));
         tracers.push_back(std::make_unique<maglit>(*sources.back()));
-        tracers.back()->set_monitor(input.shape_path);
+        tracers.back()->set_monitor(input.first_wall_path);
         tracers.back()->configure(input.h_init, input.h_min, input.h_max);
     }
 

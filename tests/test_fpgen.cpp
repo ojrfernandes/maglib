@@ -12,12 +12,12 @@
 class FpgenTest : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
-        std::string src_path   = std::string(TEST_DATA_DIR) + "/C1.h5";
-        std::string shape_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+        std::string src_path        = std::string(TEST_DATA_DIR) + "/C1.h5";
+        std::string first_wall_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
         source = new M3DC1Source(src_path.c_str(), 1);
         tracer = new maglit(*source);
         tracer->configure(0.01, 1e-6, 0.1);
-        tracer->set_monitor(shape_path);
+        tracer->set_monitor(first_wall_path);
     }
 
     static void TearDownTestSuite() {
@@ -30,7 +30,7 @@ class FpgenTest : public ::testing::Test {
     static M3DC1Source *source;
     static maglit      *tracer;
     static std::string  source_path;
-    static std::string  shape_path;
+    static std::string  first_wall_path;
 
     void SetUp() override {
         // Create temporary directory for test files
@@ -65,7 +65,7 @@ class FpgenTest : public ::testing::Test {
             << "#\n"
             << "#=============== I/O FILES\n"
             << "        source_path = test_source.h5       # M3DC1 file\n"
-            << "        shape_path = test_shape.txt        # machine boundary shape file\n"
+            << "        first_wall_path = test_shape.txt   # machine first wall boundary file\n"
             << "        output_path = test_output.dat      # output file path and name\n"
             << "#\n"
             << "#=============== MAPPING PARAMETERS        \n"
@@ -97,13 +97,13 @@ class FpgenTest : public ::testing::Test {
         std::ofstream invalid_input(invalid_input_file);
         invalid_input << "# Missing required parameters\n"
                       << "source_path = test.h5\n"
-                      << "# Missing shape_path, output_path, and numeric parameters\n";
+                      << "# Missing first_wall_path, output_path, and numeric parameters\n";
         invalid_input.close();
 
         // File with malformed syntax
         std::ofstream malformed_input(malformed_input_file);
         malformed_input << "source_path test.h5  # Missing equals sign\n"
-                        << "shape_path =         # Missing value\n"
+                        << "first_wall_path =    # Missing value\n"
                         << "num_threads = abc    # Invalid numeric value\n"
                         << "gridMin = 1.2.3      # Invalid float\n";
         malformed_input.close();
@@ -118,7 +118,7 @@ class FpgenTest : public ::testing::Test {
         std::ofstream edge_case_input(edge_case_input_file);
         edge_case_input
             << "source_path = \n" // Empty string
-            << "shape_path = a\n" // Single character
+            << "first_wall_path = a\n" // Single character
             << "output_path = very_long_filename_with_many_characters_to_test_string_handling.dat\n"
             << "timeslice = 999\n" // Large value
             << "manifold = 0\n"    // Lower bound
@@ -143,7 +143,7 @@ class FpgenTest : public ::testing::Test {
             << "\n" // Empty line
             << "   # Indented comment\n"
             << "\t\tsource_path = test.h5\t\t# Trailing comment with tabs\n"
-            << "    shape_path    =    test.txt    # Lots of spaces\n"
+            << "    first_wall_path    =    test.txt    # Lots of spaces\n"
             << "output_path=test.dat# No spaces around equals\n"
             << "timeslice = 1 # Comment\n"
             << "\tmanifold\t=\t1\t\n" // Tabs instead of spaces
@@ -192,7 +192,7 @@ TEST_F(FpgenTest, InputRead_ValidFile) {
 
     // Check string parameters
     EXPECT_EQ(reader.source_path, "test_source.h5");
-    EXPECT_EQ(reader.shape_path, "test_shape.txt");
+    EXPECT_EQ(reader.first_wall_path, "test_shape.txt");
     EXPECT_EQ(reader.output_path, "test_output.dat");
 
     // Check numeric parameters
@@ -259,7 +259,7 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
 
     if (result) {
         EXPECT_EQ(reader.source_path, "test.h5");
-        EXPECT_EQ(reader.shape_path, "test.txt");
+        EXPECT_EQ(reader.first_wall_path, "test.txt");
         EXPECT_EQ(reader.output_path, "test.dat");
         EXPECT_EQ(reader.timeslice, 1);
         EXPECT_EQ(reader.manifold, 1);
@@ -507,12 +507,12 @@ TEST_F(FpgenTest, Footprint_Save_UnknownExtension) {
 // Returns source and tracer via output params; caller owns them.
 static void make_tracer(std::unique_ptr<M3DC1Source> &src_out,
                         std::unique_ptr<maglit>       &tracer_out) {
-    std::string src_path   = std::string(TEST_DATA_DIR) + "/C1.h5";
-    std::string shape_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+    std::string src_path        = std::string(TEST_DATA_DIR) + "/C1.h5";
+    std::string first_wall_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
     src_out    = std::make_unique<M3DC1Source>(src_path.c_str(), 1);
     tracer_out = std::make_unique<maglit>(*src_out);
     tracer_out->configure(0.01, 1e-6, 0.1);
-    tracer_out->set_monitor(shape_path);
+    tracer_out->set_monitor(first_wall_path);
 }
 
 // Test: 2-thread parallel run matches serial run for the wall grid (stable manifold).

@@ -3,7 +3,7 @@
 #=============== I/O PARAMETERS
 #
         source_path = C1.h5                     # M3DC1 file
-        shape_path = tcabr_first_wall.txt       # machine boundary shape file
+        first_wall_path = tcabr_first_wall.txt  # machine first wall boundary file
         output_path = fp_out.dat                # output file path and name
 #
 #=============== MAPPING PARAMETERS

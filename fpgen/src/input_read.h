@@ -12,12 +12,12 @@ class input_read {
   public:
     // Constructor to initialize reading_path
     input_read(const std::string &readingPath);
-    // read paths to the source, shape and output from a text file along with the initial grid parameters
+    // read paths to the source, first wall and output from a text file along with the initial grid parameters
     bool readInputFile();
 
     // I/O files
-    std::string source_path; // path to the source file
-    std::string shape_path;  // path to the first wall shape file
+    std::string source_path;     // path to the source file
+    std::string first_wall_path; // path to the first wall boundary file
     std::string output_path; // path to the output file
 
     // Mapping parameters

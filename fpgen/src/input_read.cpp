@@ -68,8 +68,8 @@ bool input_read::readInputFile() {
         // Assign values to corresponding variables
         if (key == "source_path") {
             this->source_path = value;
-        } else if (key == "shape_path") {
-            this->shape_path = value;
+        } else if (key == "first_wall_path") {
+            this->first_wall_path = value;
         } else if (key == "output_path") {
             this->output_path = value;
             // check if there is a saved file with the same name
@@ -158,7 +158,7 @@ bool input_read::readInputFile() {
     }
 
     // Check that required string parameters are not empty
-    if (source_path.empty() || shape_path.empty() || output_path.empty()) {
+    if (source_path.empty() || first_wall_path.empty() || output_path.empty()) {
         std::cerr << "Error on input: One or more required file paths are missing." << std::endl;
         return false;
     }
