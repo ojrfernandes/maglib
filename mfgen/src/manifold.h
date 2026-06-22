@@ -27,6 +27,8 @@ struct interpolantArc {
 
 class manifold {
   public:
+    // stability=0: forward map, unstable manifold
+    // stability=1: inverse map, stable manifold
     manifold(maglit &tracer, double phi, int stability);
 
     // Iteratively find the closest 1-period fixed point from the initial guess
@@ -79,6 +81,7 @@ class manifold {
     int    max_iter        = 50;
     double precision_limit = 1e-14;
     int    max_insertions  = 100;
+    double lambda_u        = 0.0; // expanding eigenvalue (set by pivot())
 
     maglit &tracer;
 
