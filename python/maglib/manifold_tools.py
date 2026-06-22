@@ -229,6 +229,67 @@ def get_separatrix(hdf5_path, component=0, psi_n_level=0.99):
     return np.asarray(longest)   # shape (N, 2): columns [R, Z]
 
 
+def read_xpoint_from_hdf5(hdf5_path, null=None):
+    """
+    Read X-point initial guess from an M3DC1 C1.h5 file.
+
+    M3DC1 stores X-point coordinates in /scalars/ as float32 datasets with
+    shape (N,) where all elements repeat the same value (multiple time steps).
+    Single-null configurations zero out xnull2/znull2 as a sentinel.
+
+    Parameters
+    ----------
+    hdf5_path : str or Path
+        Path to the M3DC1 HDF5 file (typically C1.h5).
+    null : int or None
+        1 — primary null (scalars/xnull, scalars/znull)
+        2 — secondary null (scalars/xnull2, scalars/znull2)
+        None — auto: selects the primary null for single-null configurations;
+               raises ValueError for double-null configurations.
+
+    Returns
+    -------
+    R, Z : float
+        X-point coordinates in metres.
+
+    Raises
+    ------
+    ValueError
+        If null=2 is requested but no secondary X-point exists, or if
+        null=None is used with a double-null configuration.
+    """
+    import h5py
+    with h5py.File(hdf5_path, 'r') as f:
+        R1 = float(f['scalars/xnull'][0])
+        Z1 = float(f['scalars/znull'][0])
+        has_secondary = (
+            'scalars/xnull2' in f and
+            'scalars/znull2' in f and
+            float(f['scalars/xnull2'][0]) != 0.0
+        )
+        if has_secondary:
+            R2 = float(f['scalars/xnull2'][0])
+            Z2 = float(f['scalars/znull2'][0])
+
+    if null == 1:
+        return R1, Z1
+    if null == 2:
+        if not has_secondary:
+            raise ValueError(
+                "xpoint null=2 requested but no secondary X-point found "
+                "(single-null configuration or xnull2/znull2 absent)."
+            )
+        return R2, Z2
+    # auto
+    if has_secondary:
+        raise ValueError(
+            f"Double-null configuration: two X-points found. "
+            f"Specify null=1 (R={R1:.6f}, Z={Z1:.6f}) or "
+            f"null=2 (R={R2:.6f}, Z={Z2:.6f})."
+        )
+    return R1, Z1
+
+
 def trace_separatrix(tracer, phi, r_xpoint, z_xpoint, stability=0,
                      n_intervals=9, n_segments=30,
                      l_lim=0.005, theta_lim=20.0,

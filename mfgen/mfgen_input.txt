@@ -1,6 +1,6 @@
 ################################ MFGEN #################################
 #
-#=============== I/O FILES
+#=============== I/O PARAMETERS
 
         source_path = C1.h5             # M3DC1 file
         output_path = mfgen_out.dat     # output file path and name
@@ -8,23 +8,28 @@
 #============== TRACING PARAMETERS
 #
         timeslice = 1                   # M3DC1 timeslice
-#       xpoint_index = 0                # index of X-point to use from HDF5 (required for double-null/snowflake configs)
         manifold = 0                    # unstable manifold = 0, stable manifold = 1
-        method = 1                      # exact manifold = 0, interpolant method = 1
-        Phi = 0                         # poicaré section toroidal coordinate (deg)
-        nSegments = 8                   # number of primary segments to be mapped
+        method = 1                      # exact manifold = 0, interpolant arc method = 1
+        Phi = 0                         # toroidal coordinate (deg)
+        nSegments = 9                   # number of primary segments to be mapped
 #
-#============== MULTIPLE POINCARE SECTIONS
+#=============== X-POINT PARAMETERS
 #
-        nSections = 1                   # number of poicaré sections to be traced
+        xpoint_null = 1                 # HDF5 null selector: 0=auto 1=xnull/znull, 2=xnull2/znull2
+    #    R_xPoint = 0.498                # manual initial R guess for X-point (overrides HDF5 auto-read)
+    #    Z_xPoint = -0.219               # manual initial Z guess for X-point (overrides HDF5 auto-read)
+#
+#============== FOR TRACING MULTIPLE SECTIONS
+#
+        nSections = 1                   # number of poicaré sections to be computed
         phi_0 = 0                       # initial toroidal angle coordinate
         phi_1 = 0                       # final toroidal angle coordinate
 #
 #=============== ADDITIONAL PARAMETERS
 #
-        epsilon = 1e-6                  # primary segment's distance from X-point
+        epsilon = 1e-8                  # first primary segment's distance from X-point
         l_lim = 0.005                   # distance treshold for the refinement process
-        theta_lim = 20                  # angle treshold for the refinement process (deg)
+        theta_lim = 20                  # anglular treshold for the refinement process (deg)
         h_init = 1e-2                   # initial step-size for integration
         h_min = 1e-6                    # minimum step-size for integration
         h_max = 1e-2                    # maximum step-size for integration
@@ -32,12 +37,7 @@
         n_tol = 1e-14                   # tolerance for Newton's method
         max_iter = 50                   # maximum iterations for Newton's method
         precision = 1e-14               # precision for floating point comparison
-        max_insertions = 100            # maximum new point insertions per segment
+        max_insertions = 50             # maximum new point insertions per segment
         verbose = 0                     # basic info printed = 0; all info printed = 1
 #
-#=============== OPTIONAL X-POINT INITIAL GUESS
-#
-#       R_xPoint = 0.498               # initial R guess for X-point (overrides HDF5 auto-read)
-#       Z_xPoint = -0.219              # initial Z guess for X-point (overrides HDF5 auto-read)
-#
-
+########################################################################

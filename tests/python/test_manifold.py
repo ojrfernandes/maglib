@@ -347,3 +347,29 @@ def test_run_exact_map_matches_manual():
 
     for i in range(3):
         np.testing.assert_array_equal(mf_run.output_data[i], mf_manual.output_data[i])
+
+
+# ── read_xpoint_from_hdf5 ─────────────────────────────────────────────────────
+
+from maglib import read_xpoint_from_hdf5
+
+# Reference values: xnull[0] and znull[0] as stored in the test C1.h5 (float32)
+_XN1 = 0.49799895
+_ZN1 = -0.21860312
+
+
+def test_read_xpoint_auto_single_null():
+    R, Z = read_xpoint_from_hdf5(C1_H5)
+    assert abs(R - _XN1) < 1e-5
+    assert abs(Z - _ZN1) < 1e-5
+
+
+def test_read_xpoint_null1():
+    R, Z = read_xpoint_from_hdf5(C1_H5, null=1)
+    assert abs(R - _XN1) < 1e-5
+    assert abs(Z - _ZN1) < 1e-5
+
+
+def test_read_xpoint_null2_raises_for_single_null():
+    with pytest.raises(ValueError, match="single-null"):
+        read_xpoint_from_hdf5(C1_H5, null=2)

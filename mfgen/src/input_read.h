@@ -49,10 +49,10 @@ class input_read {
     int    verbose       = 0;    // verbose output flag (0=off, 1=on)
 
     // X-point coordinates (optional; if neither is set, falls back to HDF5 auto-read)
-    double R_xPoint  = 0.0;
-    double Z_xPoint  = 0.0;
-    bool   xpoint_set   = false; // true when R_xPoint or Z_xPoint is specified in input
-    int    xpoint_index = -1;    // HDF5 X-point index (-1 = auto; required for double-null/snowflake)
+    double R_xPoint   = 0.0;
+    double Z_xPoint   = 0.0;
+    bool   xpoint_set = false; // true when R_xPoint or Z_xPoint is specified in input
+    int    xpoint_null = 0;    // HDF5 null selector: 0=auto, 1=xnull/znull, 2=xnull2/znull2
 
   private:
     std::string reading_path; // File path

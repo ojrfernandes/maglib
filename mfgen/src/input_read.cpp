@@ -207,10 +207,10 @@ bool input_read::readInputFile() {
         } else if (key == "Z_xPoint") {
             this->Z_xPoint  = std::stod(value);
             this->xpoint_set = true;
-        } else if (key == "xpoint_index") {
-            this->xpoint_index = std::stoi(value);
-            if (this->xpoint_index < -1) {
-                std::cerr << "Error: xpoint_index must be -1 (auto) or a non-negative integer." << std::endl;
+        } else if (key == "xpoint_null") {
+            this->xpoint_null = std::stoi(value);
+            if (this->xpoint_null < 0 || this->xpoint_null > 2) {
+                std::cerr << "Error: xpoint_null must be 0 (auto), 1 (xnull/znull), or 2 (xnull2/znull2)." << std::endl;
                 return false;
             }
         }
@@ -236,102 +236,67 @@ bool input_read::readInputFile() {
     return true;
 }
 
-// read xnull and znull from the HDF5 file
+// Helper: read first element of a 1-D float32 HDF5 dataset as double.
+// Returns false if the dataset cannot be opened.
+static bool readFirstElement(hid_t file, const char *path, double &out) {
+    hid_t ds = H5Dopen(file, path, H5P_DEFAULT);
+    if (ds < 0) return false;
+    float val;
+    H5Dread(ds, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &val);
+    H5Dclose(ds);
+    out = static_cast<double>(val);
+    return true;
+}
+
+// Read X-point initial guess from the M3DC1 C1.h5 file.
+// M3DC1 stores coordinates in separate datasets (float32, shape (N,) with repeated values):
+//   scalars/xnull  + scalars/znull  — primary null
+//   scalars/xnull2 + scalars/znull2 — secondary null (zero-sentinel in single-null cases)
+// Selection is controlled by xpoint_null: 0=auto, 1=primary, 2=secondary.
 bool input_read::readHDF5File() {
-    // paths to the xnull and znull datasets in the HDF5 file
-    const std::string xnullPath = "scalars/xnull";
-    const std::string znullPath = "scalars/znull";
-
-    try {
-        hid_t file = H5Fopen(source_path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-        if (file < 0) {
-            std::cerr << "Error: could not open HDF5 file: " << source_path << std::endl;
-            return false;
-        }
-
-        hid_t xnullDataset = H5Dopen(file, "scalars/xnull", H5P_DEFAULT);
-        hid_t znullDataset = H5Dopen(file, "scalars/znull", H5P_DEFAULT);
-        if (xnullDataset < 0 || znullDataset < 0) {
-            std::cerr << "Error: could not open scalars/xnull or scalars/znull in HDF5 file." << std::endl;
-            H5Fclose(file);
-            return false;
-        }
-
-        hid_t xnullSpace = H5Dget_space(xnullDataset);
-        hid_t znullSpace = H5Dget_space(znullDataset);
-
-        hsize_t xnullSize;
-        hsize_t znullSize;
-        H5Sget_simple_extent_dims(xnullSpace, &xnullSize, nullptr);
-        H5Sget_simple_extent_dims(znullSpace, &znullSize, nullptr);
-
-        if (xnullSize == 0 || znullSize == 0) {
-            std::cerr << "Error: xnull or znull dataset is empty in HDF5 file." << std::endl;
-            H5Sclose(xnullSpace);
-            H5Sclose(znullSpace);
-            H5Dclose(xnullDataset);
-            H5Dclose(znullDataset);
-            H5Fclose(file);
-            return false;
-        }
-
-        std::vector<double> xnullData(xnullSize);
-        std::vector<double> znullData(znullSize);
-
-        H5Dread(xnullDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, xnullData.data());
-        H5Dread(znullDataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, znullData.data());
-
-        // Deduplicate: collect indices of distinct X-points (exact equality).
-        std::vector<hsize_t> unique_idx;
-        for (hsize_t k = 0; k < xnullSize; ++k) {
-            bool found = false;
-            for (hsize_t u : unique_idx)
-                if (xnullData[k] == xnullData[u] && znullData[k] == znullData[u]) { found = true; break; }
-            if (!found) unique_idx.push_back(k);
-        }
-
-        if (unique_idx.size() == 1) {
-            // One distinct X-point (possibly stored multiple times) — use it directly.
-            R_xPoint = xnullData[unique_idx[0]];
-            Z_xPoint = znullData[unique_idx[0]];
-        } else if (xpoint_index == -1) {
-            // Multiple distinct X-points and no index specified — list them and abort.
-            std::cerr << "Error: HDF5 file contains " << unique_idx.size()
-                      << " distinct X-points. Set xpoint_index in the input file to select one:\n";
-            for (size_t k = 0; k < unique_idx.size(); ++k)
-                std::cerr << "  xpoint_index = " << k
-                          << "   R = " << xnullData[unique_idx[k]]
-                          << "   Z = " << znullData[unique_idx[k]] << "\n";
-            H5Sclose(xnullSpace);
-            H5Sclose(znullSpace);
-            H5Dclose(xnullDataset);
-            H5Dclose(znullDataset);
-            H5Fclose(file);
-            return false;
-        } else if (static_cast<size_t>(xpoint_index) >= unique_idx.size()) {
-            std::cerr << "Error: xpoint_index=" << xpoint_index
-                      << " is out of range (HDF5 file has " << unique_idx.size()
-                      << " distinct X-points)." << std::endl;
-            H5Sclose(xnullSpace);
-            H5Sclose(znullSpace);
-            H5Dclose(xnullDataset);
-            H5Dclose(znullDataset);
-            H5Fclose(file);
-            return false;
-        } else {
-            R_xPoint = xnullData[unique_idx[xpoint_index]];
-            Z_xPoint = znullData[unique_idx[xpoint_index]];
-        }
-
-        H5Sclose(xnullSpace);
-        H5Sclose(znullSpace);
-        H5Dclose(xnullDataset);
-        H5Dclose(znullDataset);
-        H5Fclose(file);
-
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+    hid_t file = H5Fopen(source_path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    if (file < 0) {
+        std::cerr << "Error: could not open HDF5 file: " << source_path << std::endl;
         return false;
+    }
+
+    double R1 = 0.0, Z1 = 0.0;
+    if (!readFirstElement(file, "scalars/xnull", R1) ||
+        !readFirstElement(file, "scalars/znull", Z1)) {
+        std::cerr << "Error: could not read scalars/xnull or scalars/znull from HDF5 file." << std::endl;
+        H5Fclose(file);
+        return false;
+    }
+
+    double R2 = 0.0, Z2 = 0.0;
+    bool has_secondary = readFirstElement(file, "scalars/xnull2", R2) &&
+                         readFirstElement(file, "scalars/znull2", Z2) &&
+                         !(R2 == 0.0 && Z2 == 0.0);
+
+    H5Fclose(file);
+
+    if (xpoint_null == 1) {
+        R_xPoint = R1;
+        Z_xPoint = Z1;
+    } else if (xpoint_null == 2) {
+        if (!has_secondary) {
+            std::cerr << "Error: xpoint_null=2 requested but no secondary X-point found "
+                      << "(single-null configuration or xnull2/znull2 absent)." << std::endl;
+            return false;
+        }
+        R_xPoint = R2;
+        Z_xPoint = Z2;
+    } else {
+        // auto: valid only for single-null
+        if (has_secondary) {
+            std::cerr << "Error: double-null configuration detected. "
+                      << "Set xpoint_null in the input file to select one:\n"
+                      << "  xpoint_null = 1   R = " << R1 << "   Z = " << Z1 << "\n"
+                      << "  xpoint_null = 2   R = " << R2 << "   Z = " << Z2 << "\n";
+            return false;
+        }
+        R_xPoint = R1;
+        Z_xPoint = Z1;
     }
 
     return true;

@@ -17,53 +17,49 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    std::cout << "--------------- I/O FILES ---------------------\n\n"
-              << "source_path: " << input.source_path << "\n"
-              << "output_path: " << input.output_path << "\n\n"
-              << "--------------- TRACING PARAMETERS ------------\n\n"
-              << "timeslice: " << input.timeslice << "\n"
-              << "manifold: " << input.manifold << "\n"
-              << "method: " << input.method << "\n"
-              << "Phi: " << input.Phi << "\n\n"
-              << "--------------- MULTIPLE POINCARE SECTIONS ----\n\n"
-              << "nSections: " << input.nSections << "\n"
-              << "phi_0: " << input.phi_0 << "\n"
-              << "phi_1: " << input.phi_1 << "\n\n"
-              << "--------------- ADDITIONAL PARAMETERS ---------\n\n"
-              << "epsilon: " << input.epsilon << "\n"
-              << "nSegments: " << input.nSegments << "\n"
-              << "l_lim: " << input.l_lim << "\n"
-              << "theta_lim: " << input.theta_lim << "\n"
-              << "h_init: " << input.h_init << "\n"
-              << "h_min: " << input.h_min << "\n"
-              << "h_max: " << input.h_max << "\n"
-              << "h_deriv: " << input.h_deriv << "\n"
-              << "n_tol: " << input.n_tol << "\n"
-              << "max_iter: " << input.max_iter << "\n"
-              << "precision: " << input.precision << "\n"
-              << "max_insertions: " << input.max_insertions << "\n\n"
-              << "verbose: " << input.verbose << "\n"
-              << "-----------------------------------------------" << std::endl;
-
+    // Resolve X-point before printing so the summary is complete.
     if (!input.xpoint_set) {
-        // read xnull and znull from the HDF5 file
-        std::cout << "\nReading xnull and znull from the HDF5 file..."
-                  << std::endl;
-        bool readHDF5 = input.readHDF5File();
-        if (!readHDF5) {
-            std::cerr << "Error reading HDF5 file." << std::endl;
+        if (!input.readHDF5File()) {
+            std::cerr << "Error reading X-point from HDF5 file." << std::endl;
             return 1;
         }
-
-        // print xnull and znull
-        std::cout << "\nXnull and Znull read from HDF5 file:" << std::endl;
-        std::cout << "xnull: " << input.R_xPoint << std::endl;
-        std::cout << "znull: " << input.Z_xPoint << std::endl;
-    } else {
-        std::cout << "\nUsing xnull and znull from input file:" << std::endl;
-        std::cout << "xnull: " << input.R_xPoint << std::endl;
-        std::cout << "znull: " << input.Z_xPoint << std::endl;
     }
+
+    std::string xpoint_source = input.xpoint_set ? "manual"
+                              : (input.xpoint_null == 0 ? "hdf5 (auto)"
+                                                        : "hdf5 (null " + std::to_string(input.xpoint_null) + ")");
+
+    std::cout << "--------------- I/O PARAMETERS ----------------\n\n"
+              << "source_path    = " << input.source_path << "\n"
+              << "output_path    = " << input.output_path << "\n\n"
+              << "--------------- TRACING PARAMETERS ------------\n\n"
+              << "timeslice      = " << input.timeslice   << "\n"
+              << "manifold       = " << input.manifold    << "\n"
+              << "method         = " << input.method      << "\n"
+              << "Phi            = " << input.Phi         << "\n"
+              << "nSegments      = " << input.nSegments   << "\n\n"
+              << "--------------- X-POINT PARAMETERS ------------\n\n"
+              << "source         = " << xpoint_source     << "\n"
+              << "R_xPoint       = " << input.R_xPoint    << "\n"
+              << "Z_xPoint       = " << input.Z_xPoint    << "\n\n"
+              << "--------------- MULTIPLE SECTIONS -------------\n\n"
+              << "nSections      = " << input.nSections   << "\n"
+              << "phi_0          = " << input.phi_0       << "\n"
+              << "phi_1          = " << input.phi_1       << "\n\n"
+              << "--------------- ADDITIONAL PARAMETERS ---------\n\n"
+              << "epsilon        = " << input.epsilon      << "\n"
+              << "l_lim          = " << input.l_lim        << "\n"
+              << "theta_lim      = " << input.theta_lim    << "\n"
+              << "h_init         = " << input.h_init       << "\n"
+              << "h_min          = " << input.h_min        << "\n"
+              << "h_max          = " << input.h_max        << "\n"
+              << "h_deriv        = " << input.h_deriv      << "\n"
+              << "n_tol          = " << input.n_tol        << "\n"
+              << "max_iter       = " << input.max_iter     << "\n"
+              << "precision      = " << input.precision    << "\n"
+              << "max_insertions = " << input.max_insertions << "\n"
+              << "verbose        = " << input.verbose      << "\n"
+              << "-----------------------------------------------" << std::endl;
 
     // create vector of input.nSections angular coordinates from input.phi_0 to input.phi_1 (deg)
     std::vector<double> poincare_sections;
