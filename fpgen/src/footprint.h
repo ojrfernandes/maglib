@@ -44,7 +44,7 @@ private:
   // display a progress bar
   void progressBar(float progress);
 
-  int manifold;   // stable=0; unstable=1
+  int manifold;   // 0 = unstable footprint (against-B from target);  1 = stable footprint (following-B from target)
   double grid_R1; // first point R delimiting the target plate mapped surface
   double grid_Z1; // first point Z delimiting the target plate mapped surface
   double grid_R2; // second point R delimiting the target plate mapped surface

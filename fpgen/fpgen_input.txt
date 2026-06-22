@@ -1,29 +1,34 @@
 ################################ FPGEN #################################
 #
-#=============== I/O FILES
-
+#=============== I/O PARAMETERS
+#
         source_path = C1.h5                     # M3DC1 file
         shape_path = tcabr_first_wall.txt       # machine boundary shape file
         output_path = fp_out.dat                # output file path and name
 #
-#=============== MAPPING PARAMETERS        
-#       
-        timeslice = 1           # M3DC1 timeslice
-        manifold  = 0           # stable manifold = 0; unstable manifold = 1
-
-        grid_R1 = 0.435         # first point (R,Z) delimiting the mapped surface
-        grid_Z1 = -0.239
-
-        grid_R2 = 0.435         # second point (R,Z) delimiting the mapped surface
-        grid_Z2 = -0.232
-
-        nRZ = 10                # grid dimension along the (R,Z) direction
-        nPhi = 20               # grid dimention along toroidal direction (Phi)
+#=============== MAPPING PARAMETERS
 #
-#=============== ADDITIONAL PARAMETERS
+        timeslice = 1                           # M3DC1 timeslice
+        manifold = 0                            # 0 = unstable footprint (against-B integration from target plate)
+                                                #     field lines traced back to X-point origin -> W^u(X) on target
+                                                # 1 = stable  footprint (following-B integration from target plate)
+                                                #     field lines converging forward to X-point -> W^s(X) on target
+                                                # NOTE: both tools use 0=unstable / 1=stable;
+                                                #       integration direction differs because fpgen seeds at the
+                                                #       field-line endpoint (target plate) rather than near the X-point
+        grid_R1 = 0.435                         # R coordinate of first  endpoint of target surface (m)
+        grid_Z1 = -0.239                        # Z coordinate of first  endpoint of target surface (m)
+        grid_R2 = 0.435                         # R coordinate of second endpoint of target surface (m)
+        grid_Z2 = -0.232                        # Z coordinate of second endpoint of target surface (m)
+        nRZ = 10                                # number of grid points along the target surface
+        nPhi = 20                               # number of toroidal planes sampled
 #
-        num_threads = 1         # number of threads for OpenMP execution
-        max_turns = 1000        # maximum toroidal turns for field line integration
-        h_init = 1e-2           # initial step-size for integration
-        h_min = 1e-6            # minimum step-size for integration
-        h_max = 1e-2            # maximum step-size for integration
+#=============== INTEGRATOR PARAMETERS
+#
+        num_threads = 1                         # number of OpenMP threads
+        max_turns = 1000                        # maximum toroidal turns per field line
+        h_init = 1e-2                           # initial step-size for field-line integration
+        h_min = 1e-6                            # minimum step-size for field-line integration
+        h_max = 1e-2                            # maximum step-size for field-line integration
+#
+########################################################################

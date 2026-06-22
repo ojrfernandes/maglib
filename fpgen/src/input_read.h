@@ -22,7 +22,7 @@ class input_read {
 
     // Mapping parameters
     int    timeslice   = -1;  // M3DC1 timeslice
-    int    manifold    = 0;   // stable manifold=0; unstable manifold=1
+    int    manifold    = 0;   // 0 = unstable (against-B from target);  1 = stable (following-B from target)
     double grid_R1     = 0.0; // first point (R,Z) delimiting the target plate mapped surface
     double grid_Z1     = 0.0; // first point (R,Z) delimiting the target plate mapped surface
     double grid_R2     = 0.0; // second point (R,Z) delimiting the target plate mapped surface
