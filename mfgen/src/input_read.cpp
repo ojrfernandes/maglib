@@ -1,4 +1,5 @@
 #include "input_read.h"
+#include <cstdio>
 
 // Constructor
 input_read::input_read(const std::string &readingPath) : reading_path(readingPath) {}
@@ -30,12 +31,21 @@ bool input_read::readInputFile() {
         }
     };
 
+    std::string current_section = "";
+
     while (std::getline(file, line)) {
         // Trim the line first
         trim(line);
 
         // Ignore empty lines and lines that start with '#'
         if (line.empty() || line[0] == '#') {
+            continue;
+        }
+
+        // Section header: [SECTION NAME]
+        if (line.front() == '[' && line.back() == ']') {
+            current_section = line.substr(1, line.size() - 2);
+            trim(current_section);
             continue;
         }
 
@@ -66,24 +76,8 @@ bool input_read::readInputFile() {
         }
 
         // Assign values to corresponding variables
-        if (key == "source_path") {
-            this->source_path = value;
-        } else if (key == "output_path") {
+        if (key == "output_path") {
             this->output_path = value;
-            // check if there is a saved file with the same name
-            std::ifstream f0(this->output_path);
-            if (f0.is_open()) {
-                std::cerr << "Warning: File " << this->output_path << " already exists. Please, change your output file name to avoid overwriting your data." << std::endl;
-                return false;
-            }
-            f0.close();
-        } else if (key == "timeslice") {
-            this->timeslice = std::stoi(value);
-            // check if timeslice is -1 or a non-negative integer
-            if (this->timeslice < -1) {
-                std::cerr << "Error: Timeslice must be -1 (equilibrium) or a non-negative integer." << std::endl;
-                return false;
-            }
         } else if (key == "manifold") {
             this->manifold = std::stoi(value);
             // check if manifold is 0 or 1
@@ -225,18 +219,63 @@ bool input_read::readInputFile() {
                 std::cerr << "Error: xpoint_null must be 0 (auto), 1 (xnull/znull), or 2 (xnull2/znull2)." << std::endl;
                 return false;
             }
-        }
-
-        else {
-            std::cerr << "Error: Invalid key: " << key << std::endl;
-            return false;
+        } else if (key == "nsources") {
+            this->nsources = std::stoi(value);
+            if (this->nsources < 1) {
+                std::cerr << "Error: nsources must be a positive integer." << std::endl;
+                return false;
+            }
+        } else {
+            // Pattern-match indexed superposition keys: source_N, timeslice_N, phase_N, amplitude_N
+            int idx = -1;
+            char prefix[32];
+            if (sscanf(key.c_str(), "%31[a-z]_%d", prefix, &idx) == 2 && idx >= 0) {
+                std::string pfx(prefix);
+                if ((int)this->components.size() <= idx)
+                    this->components.resize(idx + 1);
+                if (pfx == "source") {
+                    this->components[idx].path = value;
+                } else if (pfx == "timeslice") {
+                    this->components[idx].timeslice = std::stoi(value);
+                    if (this->components[idx].timeslice < -1) {
+                        std::cerr << "Error: timeslice_" << idx << " must be -1 or a non-negative integer." << std::endl;
+                        return false;
+                    }
+                } else if (pfx == "phase") {
+                    this->components[idx].phase = std::stod(value);
+                } else if (pfx == "amplitude") {
+                    this->components[idx].amplitude = std::stod(value);
+                } else {
+                    std::cerr << "Error: Invalid key: " << key << std::endl;
+                    return false;
+                }
+            } else {
+                std::cerr << "Error: Invalid key: " << key << std::endl;
+                return false;
+            }
         }
     }
 
     // Check that required parameters are set
-    if (source_path.empty() || output_path.empty()) {
-        std::cerr << "Error reading input: Missing required parameters." << std::endl;
+    if (output_path.empty()) {
+        std::cerr << "Error reading input: output_path is required." << std::endl;
         return false;
+    }
+    if (this->nsources < 1) {
+        std::cerr << "Error: nsources must be set to a positive integer in [M3DC1 SOURCE]." << std::endl;
+        return false;
+    }
+    if ((int)this->components.size() != this->nsources) {
+        std::cerr << "Error: nsources = " << this->nsources
+                  << " but " << this->components.size()
+                  << " component(s) were defined." << std::endl;
+        return false;
+    }
+    for (int i = 0; i < this->nsources; ++i) {
+        if (this->components[i].path.empty()) {
+            std::cerr << "Error: source_" << i << " path is missing." << std::endl;
+            return false;
+        }
     }
 
     // Validate step-size relationships after all keys are parsed
@@ -266,9 +305,10 @@ static bool readFirstElement(hid_t file, const char *path, double &out) {
 //   scalars/xnull2 + scalars/znull2 — secondary null (zero-sentinel in single-null cases)
 // Selection is controlled by xpoint_null: 0=auto, 1=primary, 2=secondary.
 bool input_read::readHDF5File() {
-    hid_t file = H5Fopen(source_path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    const std::string &hdf5_path = components[0].path;
+    hid_t file = H5Fopen(hdf5_path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     if (file < 0) {
-        std::cerr << "Error: could not open HDF5 file: " << source_path << std::endl;
+        std::cerr << "Error: could not open HDF5 file: " << hdf5_path << std::endl;
         return false;
     }
 

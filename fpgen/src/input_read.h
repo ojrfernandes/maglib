@@ -1,11 +1,12 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-// Last modified: 26.06.10
+// Last modified: 26.06.26
 
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <sstream>
+#include <string>
 #include <vector>
 
 class input_read {
@@ -16,12 +17,20 @@ class input_read {
     bool readInputFile();
 
     // I/O files
-    std::string source_path;     // path to the source file
     std::string first_wall_path; // path to the first wall boundary file
-    std::string output_path; // path to the output file
+    std::string output_path;     // path to the output file
+
+    // [M3DC1 SOURCE] section — always populated, even for nsources=1.
+    struct SourceComponent {
+        std::string path;
+        int    timeslice  = 1;
+        double phase      = 0.0; // degrees
+        double amplitude  = 1.0;
+    };
+    int                       nsources  = 0;  // must be set explicitly in [M3DC1 SOURCE]
+    std::vector<SourceComponent> components;  // indexed 0..nsources-1
 
     // Mapping parameters
-    int    timeslice   = -1;  // M3DC1 timeslice
     int    manifold    = 0;   // 0 = unstable (against-B from target);  1 = stable (following-B from target)
     double grid_R1     = 0.0; // first point (R,Z) delimiting the target plate mapped surface
     double grid_Z1     = 0.0; // first point (R,Z) delimiting the target plate mapped surface

@@ -3,6 +3,8 @@ add_library(maglit STATIC
     field_source.h
     m3dc1_source.cpp
     m3dc1_source.h
+    superposition_source.cpp
+    superposition_source.h
     maglit.cpp
     maglit.h
     collider.cpp

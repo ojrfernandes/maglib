@@ -2,8 +2,11 @@
 #include "input_read.h"
 #include "manifold.h"
 #include <chrono>
+#include <cmath>
 #include <iomanip>
 #include <m3dc1_source.h>
+#include <memory>
+#include <superposition_source.h>
 #include <thread>
 
 int main(int argc, char *argv[]) {
@@ -37,11 +40,18 @@ int main(int argc, char *argv[]) {
                  ? "hdf5 (auto)"
                  : "hdf5 (null " + std::to_string(input.xpoint_null) + ")");
 
-  std::cout << "--------------- I/O PARAMETERS ----------------\n\n"
-            << "source_path    = " << input.source_path << "\n"
-            << "output_path    = " << input.output_path << "\n\n"
+  std::cout << "--------------- I/O PARAMETERS ----------------\n\n";
+  std::cout << "nsources       = " << input.nsources << "\n";
+  for (int i = 0; i < input.nsources; ++i)
+    std::cout << "  source_" << i << "     = " << input.components[i].path
+              << "  ts=" << input.components[i].timeslice
+              << "  phase=" << input.components[i].phase << " deg"
+              << "  amp=" << input.components[i].amplitude << "\n";
+  std::cout << "output_path    = " << input.output_path << "\n\n"
             << "--------------- TRACING PARAMETERS ------------\n\n"
-            << "timeslice      = " << input.timeslice << "\n"
+            << "timeslice      = " << (input.nsources == 1
+                                        ? std::to_string(input.components[0].timeslice)
+                                        : "per-component") << "\n"
             << "manifold       = " << input.manifold << "\n"
             << "method         = " << input.method << "\n"
             << "Phi            = " << input.Phi << "\n"
@@ -90,8 +100,18 @@ int main(int argc, char *argv[]) {
   }
 
   // Create source once — reused across all Poincaré sections.
-  std::cout << "\nOpening M3DC1 source...\n" << std::endl;
-  M3DC1Source source(input.source_path.c_str(), input.timeslice);
+  std::cout << "\nOpening field source...\n" << std::endl;
+  std::unique_ptr<FieldSource> source;
+  if (input.nsources == 1) {
+    source = std::make_unique<M3DC1Source>(
+        input.components[0].path.c_str(), input.components[0].timeslice);
+  } else {
+    auto ss = std::make_unique<SuperpositionSource>();
+    for (const auto &comp : input.components)
+      ss->add_component(comp.path, comp.timeslice,
+                        comp.phase * M_PI / 180.0, comp.amplitude);
+    source = std::move(ss);
+  }
 
   // loop over Poincaré sections
   for (const auto &phi : poincare_sections) {
@@ -103,7 +123,7 @@ int main(int argc, char *argv[]) {
 
     // create maglit object
     std::cout << "\nCreating maglit object...\n" << std::endl;
-    maglit tracer(source);
+    maglit tracer(*source);
     tracer.configure(input.h_init, input.h_min, input.h_max);
 
     // determine output file path for this section

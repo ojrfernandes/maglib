@@ -2,12 +2,33 @@
 #
 #=============== I/O PARAMETERS
 #
-        source_path = C1.h5             # M3DC1 file
         output_path = mfgen_out.dat     # output file path and name
+#
+[M3DC1 SOURCE]
+#
+        nsources    = 1
+        source_0    = C1.h5     # M3DC1 HDF5 file
+        timeslice_0 = 1         # -1=equilibrium, 0=vacuum, 1=full response
+        phase_0     = 0.0       # toroidal phase shift δ in degrees
+        amplitude_0 = 1.0       # linear scale factor A
+#
+#  --- Three-coil superposition example ---
+#       nsources    = 3
+#       source_0    = /path/to/IM_C1.h5
+#       timeslice_0 = 1
+#       phase_0     = 0.0
+#       amplitude_0 = 1.0
+#       source_1    = /path/to/IL_C1.h5
+#       timeslice_1 = 1
+#       phase_1     = -100.0
+#       amplitude_1 = 1.0
+#       source_2    = /path/to/IU_C1.h5
+#       timeslice_2 = 1
+#       phase_2     = 80.0
+#       amplitude_2 = 1.0
 #
 #=============== TRACING PARAMETERS
 #
-        timeslice = 1                   # M3DC1 timeslice
         manifold = 0                    # 0 = unstable (forward map);  1 = stable (inverse map)
         method = 1                      # 0 = exact-map;  1 = interpolant arc
         nSegments = 9                   # number of segments to compute (including primary)

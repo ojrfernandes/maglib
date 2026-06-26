@@ -1,12 +1,13 @@
 #ifndef INPUT_READ_H
 #define INPUT_READ_H
-// Last modified: 26.06.10
+// Last modified: 26.06.26
 
 #include <fstream>
 #include <hdf5.h>
 #include <iostream>
 #include <map>
 #include <sstream>
+#include <string>
 #include <vector>
 
 class input_read {
@@ -19,11 +20,19 @@ class input_read {
     bool readHDF5File();
 
     // I/O files
-    std::string source_path; // path to the source file
     std::string output_path; // path to the output file
 
+    // [M3DC1 SOURCE] section — always populated, even for nsources=1.
+    struct SourceComponent {
+        std::string path;
+        int    timeslice  = 1;
+        double phase      = 0.0; // degrees
+        double amplitude  = 1.0;
+    };
+    int                       nsources   = 0;  // must be set explicitly in [M3DC1 SOURCE]
+    std::vector<SourceComponent> components;   // indexed 0..nsources-1
+
     // Tracing parameters
-    int    timeslice   = -1;  // timeslice to be read from the source file
     int    manifold    = 0;   // 0 = unstable (forward map);  1 = stable (inverse map)
     int    method      = 0;   // method: exact-map=0, interpolant=1
     double Phi         = 0.0; // toroidal angle of the Poincaré section (rad)
