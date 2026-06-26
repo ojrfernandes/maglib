@@ -64,13 +64,18 @@ class FpgenTest : public ::testing::Test {
             << "################################ FPGEN #################################\n"
             << "#\n"
             << "#=============== I/O FILES\n"
-            << "        source_path = test_source.h5       # M3DC1 file\n"
             << "        first_wall_path = test_shape.txt   # machine first wall boundary file\n"
             << "        output_path = test_output.dat      # output file path and name\n"
             << "#\n"
+            << "[M3DC1 SOURCE]\n"
+            << "        nsources    = 1\n"
+            << "        source_0    = test_source.h5\n"
+            << "        timeslice_0 = 1\n"
+            << "        phase_0     = 0.0\n"
+            << "        amplitude_0 = 1.0\n"
+            << "#\n"
             << "#=============== MAPPING PARAMETERS        \n"
             << "#       \n"
-            << "        timeslice = 1           # M3DC1 timeslice \n"
             << "        manifold  = 1           # stable manifold=0; unstable manifold=1\n"
             << "\n"
             << "        grid_R1 = 0.435         # first point (R,Z) delimiting the target plate mapped surface\n"
@@ -96,14 +101,16 @@ class FpgenTest : public ::testing::Test {
         // File with missing parameters
         std::ofstream invalid_input(invalid_input_file);
         invalid_input << "# Missing required parameters\n"
-                      << "source_path = test.h5\n"
-                      << "# Missing first_wall_path, output_path, and numeric parameters\n";
+                      << "[M3DC1 SOURCE]\n"
+                      << "nsources = 1\n"
+                      << "source_0 = test.h5\n"
+                      << "# Missing first_wall_path and output_path\n";
         invalid_input.close();
 
         // File with malformed syntax
         std::ofstream malformed_input(malformed_input_file);
-        malformed_input << "source_path test.h5  # Missing equals sign\n"
-                        << "first_wall_path =    # Missing value\n"
+        malformed_input << "first_wall_path test.txt  # Missing equals sign\n"
+                        << "output_path =    # Missing value\n"
                         << "num_threads = abc    # Invalid numeric value\n"
                         << "gridMin = 1.2.3      # Invalid float\n";
         malformed_input.close();
@@ -114,51 +121,57 @@ class FpgenTest : public ::testing::Test {
     }
 
     void createEdgeCaseInputFile() {
-        // Edge case values
+        // Edge case values — num_threads=0 and h_min=0 are invalid; parsing must fail
         std::ofstream edge_case_input(edge_case_input_file);
         edge_case_input
-            << "source_path = \n" // Empty string
-            << "first_wall_path = a\n" // Single character
+            << "first_wall_path = a\n"   // Single character
             << "output_path = very_long_filename_with_many_characters_to_test_string_handling.dat\n"
-            << "timeslice = 999\n" // Large value
-            << "manifold = 0\n"    // Lower bound
-            << "grid_R1 = -1.0\n"  // Negative float
-            << "grid_Z1 = 1e6\n"   // Very large float
-            << "grid_R2 = 0.0\n"   // Zero value
-            << "grid_Z2 = -1e6\n"  // Very large negative float
-            << "nRZ = 1\n"         // Minimum grid size
-            << "nPhi = 1000000\n"  // Very large grid size
-            << "num_threads = 0\n" // Edge case for threads
-            << "max_turns = 1\n"   // Minimum turns
-            << "h_init = 1e-10\n"  // Very small step size
-            << "h_min = 0.0\n"     // Zero step size
-            << "h_max = 1e10\n";   // Very large step size
-
+            << "[M3DC1 SOURCE]\n"
+            << "nsources    = 1\n"
+            << "source_0    = test_source.h5\n"
+            << "timeslice_0 = 999\n"     // Large value — accepted
+            << "phase_0     = 0.0\n"
+            << "amplitude_0 = 1.0\n"
+            << "manifold = 0\n"
+            << "grid_R1 = -1.0\n"        // Negative float — accepted
+            << "grid_Z1 = 1e6\n"
+            << "grid_R2 = 0.0\n"
+            << "grid_Z2 = -1e6\n"
+            << "nRZ = 1\n"
+            << "nPhi = 1000000\n"
+            << "num_threads = 0\n"       // Must fail: must be > 0
+            << "max_turns = 1\n"
+            << "h_init = 1e-10\n"
+            << "h_min = 0.0\n"           // Must fail: must be > 0
+            << "h_max = 1e10\n";
         edge_case_input.close();
 
-        // Comments and whitespace variations
+        // Comments and whitespace variations — must parse successfully
         std::ofstream comment_whitespace_input(comment_whitespace_input_file);
         comment_whitespace_input
             << "# This is a comment line\n"
-            << "\n" // Empty line
+            << "\n"
             << "   # Indented comment\n"
-            << "\t\tsource_path = test.h5\t\t# Trailing comment with tabs\n"
             << "    first_wall_path    =    test.txt    # Lots of spaces\n"
             << "output_path=test.dat# No spaces around equals\n"
-            << "timeslice = 1 # Comment\n"
-            << "\tmanifold\t=\t1\t\n" // Tabs instead of spaces
+            << "[M3DC1 SOURCE]\n"
+            << "\t\tnsources    = 1\n"
+            << "\t\tsource_0    = test.h5\t\t# Trailing comment with tabs\n"
+            << "\t\ttimeslice_0 = 1 # Comment\n"
+            << "\t\tphase_0     = 0.0\n"
+            << "\t\tamplitude_0 = 1.0\n"
+            << "\tmanifold\t=\t1\t\n"    // Tabs instead of spaces
             << "grid_R1 = 0.435\n"
             << "grid_Z1 = -0.239\n"
             << "grid_R2 = 0.435\n"
             << "grid_Z2 = -0.232\n"
             << "nRZ = 10\n"
             << "nPhi = 20\n"
-            << "num_threads = 8\n" // Trailing spaces
+            << "num_threads = 8\n"
             << "max_turns = 10000\n"
             << "h_init = 1e-2\n"
             << "h_min = 1e-6\n"
             << "h_max = 1e-2\n";
-
         comment_whitespace_input.close();
     }
 
@@ -191,12 +204,12 @@ TEST_F(FpgenTest, InputRead_ValidFile) {
     EXPECT_TRUE(result) << "Should successfully read valid input file";
 
     // Check string parameters
-    EXPECT_EQ(reader.source_path, "test_source.h5");
+    EXPECT_EQ(reader.components[0].path, "test_source.h5");
     EXPECT_EQ(reader.first_wall_path, "test_shape.txt");
     EXPECT_EQ(reader.output_path, "test_output.dat");
 
     // Check numeric parameters
-    EXPECT_EQ(reader.timeslice, 1);
+    EXPECT_EQ(reader.components[0].timeslice, 1);
     EXPECT_EQ(reader.manifold, 1);
     EXPECT_DOUBLE_EQ(reader.grid_R1, 0.435);
     EXPECT_DOUBLE_EQ(reader.grid_Z1, -0.239);
@@ -258,10 +271,10 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
     EXPECT_TRUE(result) << "Should handle comments and whitespace correctly";
 
     if (result) {
-        EXPECT_EQ(reader.source_path, "test.h5");
+        EXPECT_EQ(reader.components[0].path, "test.h5");
         EXPECT_EQ(reader.first_wall_path, "test.txt");
         EXPECT_EQ(reader.output_path, "test.dat");
-        EXPECT_EQ(reader.timeslice, 1);
+        EXPECT_EQ(reader.components[0].timeslice, 1);
         EXPECT_EQ(reader.manifold, 1);
         EXPECT_EQ(reader.num_threads, 8);
     }
@@ -276,13 +289,13 @@ TEST_F(FpgenTest, InputRead_MultipleReads) {
     EXPECT_TRUE(result1);
 
     // Store values from first read
-    std::string first_source = reader.source_path;
+    std::string first_source = reader.components[0].path;
     int         first_threads = reader.num_threads;
 
     // Second read should give same results
     bool result2 = reader.readInputFile();
     EXPECT_TRUE(result2);
-    EXPECT_EQ(reader.source_path, first_source);
+    EXPECT_EQ(reader.components[0].path, first_source);
     EXPECT_EQ(reader.num_threads, first_threads);
 }
 

@@ -65,12 +65,17 @@ class MfgenTest : public ::testing::Test {
             << "################################ MFGEN #################################\n"
             << "#\n"
             << "#=============== I/O FILES\n"
-            << "        source_path = test_source.h5       # M3DC1 file\n"
             << "        output_path = test_output.dat      # output file path and name\n"
+            << "#\n"
+            << "[M3DC1 SOURCE]\n"
+            << "        nsources    = 1\n"
+            << "        source_0    = test_source.h5\n"
+            << "        timeslice_0 = 1\n"
+            << "        phase_0     = 0.0\n"
+            << "        amplitude_0 = 1.0\n"
             << "#\n"
             << "#=============== TRACING PARAMETERS\n"
             << "#\n"
-            << "        timeslice = 1           # M3DC1 timeslice \n"
             << "        manifold  = 0           # unstable manifold=0; stable manifold=1\n"
             << "        method = 1                      # exact manifold = 0, interpolant method = 1\n"
             << "        Phi = 0                       # Poincare section toroidal coordinate (deg)\n"
@@ -101,9 +106,13 @@ class MfgenTest : public ::testing::Test {
 
     void createXPointInputFile() {
         std::ofstream f(xpoint_input_file);
-        f   << "source_path = test_source.h5\n"
-            << "output_path = test_output.dat\n"
-            << "timeslice = 1\n"
+        f   << "output_path = test_output.dat\n"
+            << "[M3DC1 SOURCE]\n"
+            << "nsources    = 1\n"
+            << "source_0    = test_source.h5\n"
+            << "timeslice_0 = 1\n"
+            << "phase_0     = 0.0\n"
+            << "amplitude_0 = 1.0\n"
             << "manifold  = 0\n"
             << "method = 1\n"
             << "Phi = 0\n"
@@ -132,16 +141,18 @@ class MfgenTest : public ::testing::Test {
         // File with missing parameters
         std::ofstream invalid_file(invalid_input_file);
         invalid_file << "# Missing required parameters\n"
-                     << "source_path = test.h5\n"
+                     << "[M3DC1 SOURCE]\n"
+                     << "nsources = 1\n"
+                     << "source_0 = test.h5\n"
                      << "# Missing output_path and numeric parameters\n";
         invalid_file.close();
 
         // File with malformed syntax
         std::ofstream malformed_file(malformed_input_file);
-        malformed_file << "source_path test.h5  # Missing equals sign\n"
-                       << "output_path =         # Missing value\n"
-                       << "num_threads = abc    # Invalid numeric value\n"
-                       << "gridMin = 1.2.3      # Invalid float\n";
+        malformed_file << "output_path test.dat  # Missing equals sign\n"
+                       << "source_0 =            # Missing value\n"
+                       << "num_threads = abc      # Invalid numeric value\n"
+                       << "gridMin = 1.2.3        # Invalid float\n";
         malformed_file.close();
 
         // Empty file
@@ -150,12 +161,16 @@ class MfgenTest : public ::testing::Test {
     }
 
     void createEdgeCaseInputFile() {
-        // Edge case values
+        // Edge case values — manifold=-1 and other invalid entries cause parsing to fail
         std::ofstream edge_case_input(edge_case_input_file);
         edge_case_input
-            << "source_path = \n"      // Empty string
             << "output_path = a\n"     // Single character
-            << "timeslice = 0\n"       // zero value
+            << "[M3DC1 SOURCE]\n"
+            << "nsources    = 1\n"
+            << "source_0    = \n"      // Empty string — will fail validation
+            << "timeslice_0 = 0\n"
+            << "phase_0     = 0.0\n"
+            << "amplitude_0 = 1.0\n"
             << "manifold  = -1\n"      // negative value
             << "method = 9999\n"       // very large value
             << "Phi = -360\n"          // negative angle
@@ -182,12 +197,16 @@ class MfgenTest : public ::testing::Test {
         std::ofstream comment_whitespace_input(comment_whitespace_input_file);
         comment_whitespace_input
             << "# This is a comment line\n"
-            << "\n" // Empty line
+            << "\n"
             << "   # Indented comment\n"
-            << "\t\tsource_path = test.h5\t\t# Trailing comment with tabs\n"
             << "output_path=test.dat# No spaces around equals\n"
-            << "timeslice = 1 # Comment\n"
-            << "\tmanifold\t=\t1\t\n" // Tabs instead of spaces
+            << "[M3DC1 SOURCE]\n"
+            << "\t\tnsources    = 1\n"
+            << "\t\tsource_0    = test.h5\t\t# Trailing comment with tabs\n"
+            << "\t\ttimeslice_0 = 1 # Comment\n"
+            << "\t\tphase_0     = 0.0\n"
+            << "\t\tamplitude_0 = 1.0\n"
+            << "\tmanifold\t=\t1\t\n"  // Tabs instead of spaces
             << "method = 1\n"
             << "Phi = 0 ## comment #\n"
             << "nSections = 1\n"
@@ -237,11 +256,11 @@ TEST_F(MfgenTest, InputRead_ValidFile) {
     EXPECT_TRUE(result) << "Should successfully read valid input file";
 
     // Check string parameters
-    EXPECT_EQ(reader.source_path, "test_source.h5");
+    EXPECT_EQ(reader.components[0].path, "test_source.h5");
     EXPECT_EQ(reader.output_path, "test_output.dat");
 
     // Check numeric parameters
-    EXPECT_EQ(reader.timeslice, 1);
+    EXPECT_EQ(reader.components[0].timeslice, 1);
     EXPECT_EQ(reader.manifold, 0);
     EXPECT_EQ(reader.method, 1);
     EXPECT_DOUBLE_EQ(reader.Phi, 0.0);
@@ -313,9 +332,9 @@ TEST_F(MfgenTest, InputRead_CommentsAndWhitespace) {
     EXPECT_TRUE(result) << "Should handle comments and whitespace correctly";
 
     if (result) {
-        EXPECT_EQ(reader.source_path, "test.h5");
+        EXPECT_EQ(reader.components[0].path, "test.h5");
         EXPECT_EQ(reader.output_path, "test.dat");
-        EXPECT_EQ(reader.timeslice, 1);
+        EXPECT_EQ(reader.components[0].timeslice, 1);
         EXPECT_EQ(reader.manifold, 1);
         EXPECT_EQ(reader.method, 1);
         EXPECT_DOUBLE_EQ(reader.Phi, 0.0);
@@ -346,20 +365,22 @@ TEST_F(MfgenTest, InputRead_MultipleReads) {
     EXPECT_TRUE(result1);
 
     // Store values from first read
-    std::string first_source = reader.source_path;
+    std::string first_source = reader.components[0].path;
     int         first_segments = reader.nSegments;
 
     // Second read should give same results
     bool result2 = reader.readInputFile();
     EXPECT_TRUE(result2);
-    EXPECT_EQ(reader.source_path, first_source);
+    EXPECT_EQ(reader.components[0].path, first_source);
     EXPECT_EQ(reader.nSegments, first_segments);
 }
 
 // Test: HDF5 file reading (assuming test HDF5 file exists)
 TEST_F(MfgenTest, InputRead_HDF5File) {
     input_read reader(valid_input_file);
-    reader.source_path = std::string(TEST_DATA_DIR) + "/C1.h5"; // Set to valid HDF5 file
+    reader.nsources = 1;
+    reader.components.resize(1);
+    reader.components[0].path = std::string(TEST_DATA_DIR) + "/C1.h5";
     bool result = reader.readHDF5File();
     EXPECT_TRUE(result) << "Should successfully read HDF5 file";
 

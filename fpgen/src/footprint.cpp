@@ -12,7 +12,8 @@ const std::vector<std::vector<double>> &footprint::get_output_data() const {
     return outputData;
 }
 
-void footprint::run(std::vector<maglit*> &tracers) {
+void footprint::run(std::vector<maglit*> &tracers,
+                    std::vector<ThreadProgress> *progress) {
     int nthreads = static_cast<int>(tracers.size());
 
     // set manifold direction on all tracers
@@ -44,6 +45,9 @@ void footprint::run(std::vector<maglit*> &tracers) {
                 this->evolve_line(tracer, R_init, Z_init, phi_init,
                                   R_final, Z_final, phi_final, scalars);
 
+                if (progress)
+                    (*progress)[tid].value.fetch_add(1, std::memory_order_relaxed);
+
                 int index          = i * nRZ + j;
                 outputData[index][0] = R_init;
                 outputData[index][1] = Z_init;
@@ -52,9 +56,9 @@ void footprint::run(std::vector<maglit*> &tracers) {
                 outputData[index][4] = scalars.psimin;
                 outputData[index][5] = scalars.turn;
 
-                if (tid == 0) {
-                    float progress = (float)(i * nRZ + j) / (nRZ * nPhi);
-                    this->progressBar(progress);
+                if (!progress && tid == 0) {
+                    float p = (float)(i * nRZ + j) / (nRZ * nPhi);
+                    this->progressBar(p);
                 }
             }
         }

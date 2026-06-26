@@ -1,7 +1,8 @@
 #ifndef FOOTPRINT_H
 #define FOOTPRINT_H
-// Last modified: 26.06.10
+// Last modified: 26.06.26
 
+#include <atomic>
 #include <iomanip>
 #include <limits>
 #include <maglit.h>
@@ -10,6 +11,11 @@
 
 class footprint {
 public:
+  // Cache-line-aligned per-thread progress counter (prevents false sharing).
+  struct alignas(64) ThreadProgress {
+      std::atomic<int> value{0};
+  };
+
   // class constructor
   footprint(const int manifold, const double grid_R1, const double grid_Z1,
             const double grid_R2, const double grid_Z2, const int nRZ,
@@ -17,7 +23,11 @@ public:
 
   // Run the grid. Pass one tracer per thread for parallel execution,
   // or a single-element vector for serial execution.
-  void run(std::vector<maglit *> &tracers);
+  // When progress is non-null each thread increments its counter after
+  // every field line; the display thread in run.cpp renders the bars.
+  // When null the built-in single-bar progressBar() is used instead.
+  void run(std::vector<maglit *> &tracers,
+           std::vector<ThreadProgress> *progress = nullptr);
 
   // Save outputData to file. Format is inferred from the extension:
   //   .dat / .txt  — space-separated with header
