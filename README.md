@@ -93,6 +93,32 @@ tracer.configure(dphi_init=1e-2, dphi_min=1e-6, dphi_max=1e-2)
 tracer.set_monitor("first_wall.txt")   # optional wall-collision monitor
 ```
 
+### Linear MHD superposition
+
+For linear MHD simulations, coil configurations can be superposed without running a new simulation. Given N independent single-coil runs, the total field is:
+
+```
+B = B_eq + Σ_i A_i · [B_i(R, φ−δ_i, Z) − B_eq(R, φ, Z)]
+```
+
+The toroidal phase shift `φ → φ−δ_i` is exact in cylindrical coordinates. `B_eq` (timeslice=-1) is shared across components and evaluated only once per integration step.
+
+```python
+source = maglib.SuperpositionSource()
+source.add_component("/path/to/IM_C1.h5", timeslice=1, phase_shift=  0.0, amplitude=1.0)
+source.add_component("/path/to/IL_C1.h5", timeslice=1, phase_shift=-100.0, amplitude=1.0)
+source.add_component("/path/to/IU_C1.h5", timeslice=1, phase_shift= +80.0, amplitude=1.0)
+
+if not source.is_valid():
+    raise RuntimeError("failed to open one or more field sources")
+
+tracer = maglib.Maglit(source)
+tracer.configure(1e-2, 1e-6, 1e-2)
+tracer.set_monitor("first_wall.txt")
+```
+
+`phase_shift` is in **degrees**. `amplitude` may be negative. The equilibrium (timeslice=-1) is opened automatically from the first component's file — no separate `M3DC1Source` is needed. `SuperpositionSource` satisfies the same `FieldSource` interface as `M3DC1Source` and can be passed anywhere a tracer is expected.
+
 ### Magnetic footprint
 
 ```python
@@ -217,7 +243,24 @@ fpgen   # reads fpgen_input.txt
 mfgen   # reads mfgen_input.txt
 ```
 
-See `fpgen/fpgen_input.txt` and `mfgen/mfgen_input.txt` for documented input formats.
+Input files use a section-based format. The `[M3DC1 SOURCE]` section is required and controls the field source:
+
+```ini
+# I/O parameters (top level)
+first_wall_path = tcabr_first_wall.txt   # fpgen only
+output_path     = fp_out.dat
+
+[M3DC1 SOURCE]
+nsources    = 1
+source_0    = C1.h5
+timeslice_0 = 1        # -1=equilibrium  0=vacuum  1=full response
+phase_0     = 0.0      # toroidal phase shift δ in degrees
+amplitude_0 = 1.0      # linear scale factor A
+```
+
+For superposition of N single-coil runs, set `nsources = N` and provide `source_0`…`source_{N-1}` with their respective `timeslice_N`, `phase_N`, and `amplitude_N` entries. The equilibrium is loaded automatically (timeslice=-1) from the first component's file.
+
+See `fpgen/fpgen_input.txt` and `mfgen/mfgen_input.txt` for fully documented input templates.
 
 ---
 
@@ -277,7 +320,7 @@ GoogleTest is fetched automatically by CMake. pytest must be installed: `pip ins
 
 ```
 maglib/
-├── maglit/          Core integrator (sode, collider, maglit, M3DC1Source, FieldSource)
+├── maglit/          Core integrator (sode, collider, maglit, FieldSource, M3DC1Source, SuperpositionSource)
 ├── fpgen/           Footprint generator CLI (footprint.h/cpp, input_read, run.cpp)
 ├── mfgen/           Manifold generator CLI (manifold.h/cpp, input_read, run.cpp)
 ├── python/
