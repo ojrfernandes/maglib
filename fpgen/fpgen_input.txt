@@ -40,6 +40,7 @@
         grid_Z2 = -0.232                        # Z coordinate of second endpoint of target surface (m)
         nRZ  = 10                               # number of grid points along the target surface
         nPhi = 20                               # number of toroidal planes sampled
+        ntor = 1                                # toroidal mode number; restricts sampled phi range to [0, 2*pi/ntor)
 #
 #=============== INTEGRATOR PARAMETERS
 #

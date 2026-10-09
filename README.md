@@ -123,7 +123,7 @@ tracer.set_monitor("first_wall.txt")
 
 ```python
 fp = maglib.Footprint(source, R1_min, Z1_min, R1_max, Z1_max,
-                      nRZ=100, nPhi=8, max_turns=200)
+                      nRZ=100, nPhi=8, max_turns=200, ntor=1)
 
 # Serial run
 fp.run([tracer])
@@ -139,6 +139,11 @@ data = fp.output_data   # numpy (N, 6): R0, Z0, phi0, length, psiMin, turn
 fp.save("footprint.npz")
 maglib.plot_footprint(fp)
 ```
+
+`ntor` (default 1) restricts the traced toroidal grid to `[0, 2π/ntor)` instead of the
+full `[0, 2π)`, useful when the field has an imposed toroidal periodicity. Pass a
+matching `ntor` to `plot_footprint` to tile the restricted output back into a full
+360° view; omit it to plot exactly the range that was traced.
 
 ### Invariant manifolds
 
@@ -259,6 +264,8 @@ amplitude_0 = 1.0      # linear scale factor A
 ```
 
 For superposition of N single-coil runs, set `nsources = N` and provide `source_0`…`source_{N-1}` with their respective `timeslice_N`, `phase_N`, and `amplitude_N` entries. The equilibrium is loaded automatically (timeslice=-1) from the first component's file.
+
+`fpgen`'s mapping parameters accept an optional `ntor` (default 1), restricting the traced toroidal grid to `[0, 2π/ntor)` instead of the full `[0, 2π)`.
 
 See `fpgen/fpgen_input.txt` and `mfgen/mfgen_input.txt` for fully documented input templates.
 

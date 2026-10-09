@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) {
               << "grid_R2      = " << input.grid_R2     << "\n"
               << "grid_Z2      = " << input.grid_Z2     << "\n"
               << "nRZ          = " << input.nRZ         << "\n"
-              << "nPhi         = " << input.nPhi        << "\n\n"
+              << "nPhi         = " << input.nPhi        << "\n"
+              << "ntor         = " << input.ntor        << "\n\n"
               << "--------------- INTEGRATOR PARAMETERS ---------\n\n"
               << "num_threads  = " << input.num_threads << "\n"
               << "max_turns    = " << input.max_turns   << "\n"
@@ -56,7 +57,7 @@ int main(int argc, char *argv[]) {
     // create footprint object
     std::cout << "\nCreating footprint object...\n"
               << std::endl;
-    footprint footprint(input.manifold, input.grid_R1, input.grid_Z1, input.grid_R2, input.grid_Z2, input.nRZ, input.nPhi, input.max_turns);
+    footprint footprint(input.manifold, input.grid_R1, input.grid_Z1, input.grid_R2, input.grid_Z2, input.nRZ, input.nPhi, input.max_turns, input.ntor);
 
     // set omp parameters
     omp_set_num_threads(input.num_threads);

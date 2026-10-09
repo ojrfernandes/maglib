@@ -24,9 +24,13 @@ pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _make_fp_data(n_phi=4, n_y=3):
-    """Synthetic (n_phi*n_y, 6) footprint array on a horizontal plate."""
-    phi   = np.tile(np.linspace(0.0, 270.0, n_phi), n_y)
+def _make_fp_data(n_phi=4, n_y=3, ntor=1):
+    """Synthetic (n_phi*n_y, 6) footprint array on a horizontal plate.
+
+    phi0 is generated in radians over [0, 2*pi/ntor), matching real fpgen
+    output (see footprint.cpp: phi_init = (2*pi/ntor) * i / nPhi).
+    """
+    phi   = np.tile(np.linspace(0.0, 2 * np.pi / ntor, n_phi, endpoint=False), n_y)
     R     = np.repeat(np.linspace(1.4, 1.6, n_y), n_phi)
     Z     = np.zeros(n_phi * n_y)
     CL    = np.linspace(1.0, 20.0, n_phi * n_y)
@@ -156,6 +160,16 @@ def test_plot_footprint_vmin_ge_vmax(fp_data):
         plot_footprint(fp_data, which_plot="au", v_min=0.8, v_max=0.2)
 
 
+def test_plot_footprint_invalid_ntor(fp_data):
+    with pytest.raises(ValueError):
+        plot_footprint(fp_data, which_plot="cl", ntor=0)
+
+
+def test_plot_footprint_invalid_ntor_type(fp_data):
+    with pytest.raises(ValueError):
+        plot_footprint(fp_data, which_plot="cl", ntor=1.5)
+
+
 def test_plot_footprint_au_raises_when_all_values_identical():
     # CL=2, psi=0.5 for all → 1/(CL*psi)=1 everywhere → lo==hi → ValueError
     n = 4 * 3
@@ -183,6 +197,35 @@ def test_plot_footprint_psi_cap(fp_data):
 
 def test_plot_footprint_turn_cap(fp_data):
     plot_footprint(fp_data, which_plot="turns", turn_cap=(2, 10))
+
+
+def test_plot_footprint_default_extent_full_circle():
+    """ntor=None with full-circle data (ntor=1 at generation time) → extent spans 360deg."""
+    data = _make_fp_data(n_phi=4, n_y=3, ntor=1)
+    plot_footprint(data, which_plot="cl")
+    extent = plt.gca().get_images()[0].get_extent()
+    assert extent[0] == pytest.approx(0.0)
+    assert extent[1] == pytest.approx(360.0, abs=1e-6)
+
+
+def test_plot_footprint_default_extent_restricted():
+    """ntor=None with ntor=4-restricted data → extent spans only 90deg (360/4)."""
+    data = _make_fp_data(n_phi=4, n_y=3, ntor=4)
+    plot_footprint(data, which_plot="cl")
+    extent = plt.gca().get_images()[0].get_extent()
+    assert extent[0] == pytest.approx(0.0)
+    assert extent[1] == pytest.approx(90.0, abs=1e-6)
+
+
+def test_plot_footprint_ntor_tiles_to_full_circle():
+    """ntor=4 on ntor=4-restricted data tiles the image back to 360deg."""
+    data = _make_fp_data(n_phi=4, n_y=3, ntor=4)
+    plot_footprint(data, which_plot="cl", ntor=4)
+    im = plt.gca().get_images()[0]
+    extent = im.get_extent()
+    assert extent[1] == pytest.approx(360.0, abs=1e-6)
+    # phi axis (columns) should have grown 4x relative to the untiled n_phi
+    assert im.get_array().shape[1] == 4 * 4
 
 
 def test_plot_footprint_vertical_plate():

@@ -217,6 +217,7 @@ TEST_F(FpgenTest, InputRead_ValidFile) {
     EXPECT_DOUBLE_EQ(reader.grid_Z2, -0.232);
     EXPECT_EQ(reader.nRZ, 10);
     EXPECT_EQ(reader.nPhi, 20);
+    EXPECT_EQ(reader.ntor, 1);  // not set in valid_input_file -> default
     EXPECT_EQ(reader.num_threads, 1);
     EXPECT_EQ(reader.max_turns, 10000);
     EXPECT_DOUBLE_EQ(reader.h_init, 1e-2);
@@ -280,6 +281,69 @@ TEST_F(FpgenTest, InputRead_CommentsAndWhitespace) {
     }
 }
 
+// Test: ntor key is parsed when present
+TEST_F(FpgenTest, InputRead_NtorKeyParsed) {
+    std::string ntor_input_file = test_dir + "/ntor_input.txt";
+    std::ofstream f(ntor_input_file);
+    f << "first_wall_path = test_shape.txt\n"
+      << "output_path = test_output.dat\n"
+      << "[M3DC1 SOURCE]\n"
+      << "nsources    = 1\n"
+      << "source_0    = test_source.h5\n"
+      << "timeslice_0 = 1\n"
+      << "phase_0     = 0.0\n"
+      << "amplitude_0 = 1.0\n"
+      << "manifold = 0\n"
+      << "grid_R1 = 0.435\n"
+      << "grid_Z1 = -0.239\n"
+      << "grid_R2 = 0.435\n"
+      << "grid_Z2 = -0.232\n"
+      << "nRZ = 10\n"
+      << "nPhi = 20\n"
+      << "ntor = 3\n"
+      << "num_threads = 1\n"
+      << "max_turns = 1000\n"
+      << "h_init = 1e-2\n"
+      << "h_min = 1e-6\n"
+      << "h_max = 1e-2\n";
+    f.close();
+
+    input_read reader(ntor_input_file);
+    EXPECT_TRUE(reader.readInputFile());
+    EXPECT_EQ(reader.ntor, 3);
+}
+
+// Test: ntor must be a positive integer
+TEST_F(FpgenTest, InputRead_NtorRejectsNonPositive) {
+    std::string bad_ntor_file = test_dir + "/bad_ntor_input.txt";
+    std::ofstream f(bad_ntor_file);
+    f << "first_wall_path = test_shape.txt\n"
+      << "output_path = test_output.dat\n"
+      << "[M3DC1 SOURCE]\n"
+      << "nsources    = 1\n"
+      << "source_0    = test_source.h5\n"
+      << "timeslice_0 = 1\n"
+      << "phase_0     = 0.0\n"
+      << "amplitude_0 = 1.0\n"
+      << "manifold = 0\n"
+      << "grid_R1 = 0.435\n"
+      << "grid_Z1 = -0.239\n"
+      << "grid_R2 = 0.435\n"
+      << "grid_Z2 = -0.232\n"
+      << "nRZ = 10\n"
+      << "nPhi = 20\n"
+      << "ntor = 0\n"
+      << "num_threads = 1\n"
+      << "max_turns = 1000\n"
+      << "h_init = 1e-2\n"
+      << "h_min = 1e-6\n"
+      << "h_max = 1e-2\n";
+    f.close();
+
+    input_read reader(bad_ntor_file);
+    EXPECT_FALSE(reader.readInputFile());
+}
+
 // Test: Multiple reads from same object
 TEST_F(FpgenTest, InputRead_MultipleReads) {
     input_read reader(valid_input_file);
@@ -312,6 +376,35 @@ TEST_F(FpgenTest, Footprint_Constructor) {
 
     // Test wall plate
     EXPECT_NO_THROW(footprint fp(1, 0.435, -0.239, 0.435, -0.232, 15, 30, 1000));
+}
+
+// Test: Constructor rejects a non-positive ntor
+TEST_F(FpgenTest, Footprint_ConstructorRejectsInvalidNtor) {
+    EXPECT_THROW(footprint fp(0, 0.435, -0.239, 0.435, -0.232, 10, 20, 1000, 0),
+                 std::invalid_argument);
+}
+
+// Test: ntor restricts the toroidal starting grid to [0, 2*pi/ntor)
+TEST_F(FpgenTest, Footprint_NtorRestrictsPhiGrid) {
+    int       manifold = 0;
+    double    grid_R1 = 0.435;
+    double    grid_Z1 = -0.239;
+    double    grid_R2 = 0.435;
+    double    grid_Z2 = -0.232;
+    int       nR = 2;
+    int       nPhi = 2;
+    int       max_turns = 50;
+    int       ntor = 2;
+    footprint fp(manifold, grid_R1, grid_Z1, grid_R2, grid_Z2, nR, nPhi, max_turns, ntor);
+
+    std::vector<maglit*> tracers = {tracer};
+    EXPECT_NO_THROW(fp.run(tracers));
+
+    // i=0 -> phi=0 ; i=1 -> phi=(2*pi/ntor)/nPhi = pi/2 for nPhi=2, ntor=2
+    EXPECT_NEAR(fp.get_output_data()[0][2], 0.0, 1e-6);
+    EXPECT_NEAR(fp.get_output_data()[1][2], 0.0, 1e-6);
+    EXPECT_NEAR(fp.get_output_data()[2][2], M_PI / 2.0, 1e-6);
+    EXPECT_NEAR(fp.get_output_data()[3][2], M_PI / 2.0, 1e-6);
 }
 
 // Test: Output data structure initialization

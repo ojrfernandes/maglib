@@ -38,6 +38,7 @@ class input_read {
     double grid_Z2     = 0.0; // second point (R,Z) delimiting the target plate mapped surface
     int    nRZ         = 0;   // grid dimension along the (R,Z) plane
     int    nPhi        = 0;   // grid dimension along toroidal direction (Phi)
+    int    ntor        = 1;   // toroidal mode number; restricts phi grid to [0, 2*pi/ntor)
 
     // Additional parameters
     int    num_threads = 1;    // number of threads for OpenMP parallelization

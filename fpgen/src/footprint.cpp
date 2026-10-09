@@ -2,9 +2,11 @@
 #include <fstream>
 #include <stdexcept>
 
-footprint::footprint(const int manifold, const double grid_R1, const double grid_Z1, const double grid_R2, const double grid_Z2, const int nRZ, const int nPhi, const int max_turns) : manifold(manifold), grid_R1(grid_R1), grid_Z1(grid_Z1), grid_R2(grid_R2), grid_Z2(grid_Z2), nRZ(nRZ), nPhi(nPhi), max_turns(max_turns) {
+footprint::footprint(const int manifold, const double grid_R1, const double grid_Z1, const double grid_R2, const double grid_Z2, const int nRZ, const int nPhi, const int max_turns, const int ntor) : manifold(manifold), grid_R1(grid_R1), grid_Z1(grid_Z1), grid_R2(grid_R2), grid_Z2(grid_Z2), nRZ(nRZ), nPhi(nPhi), ntor(ntor), max_turns(max_turns) {
     if (nRZ < 1 || nPhi < 1)
         throw std::invalid_argument("nRZ and nPhi must each be at least 1");
+    if (ntor < 1)
+        throw std::invalid_argument("ntor must be at least 1");
     this->outputData.resize(nRZ * nPhi, std::vector<double>(6));
 }
 
@@ -37,7 +39,7 @@ void footprint::run(std::vector<maglit*> &tracers,
                 double t        = (nRZ > 1) ? static_cast<double>(j) / (nRZ - 1) : 0.0;
                 double R_init   = grid_R1 + (grid_R2 - grid_R1) * t;
                 double Z_init   = grid_Z1 + (grid_Z2 - grid_Z1) * t;
-                double phi_init = 2 * M_PI * i / nPhi;
+                double phi_init = (2 * M_PI / ntor) * i / nPhi;
 
                 double      R_final, Z_final, phi_final;
                 map_scalars scalars; // local to each iteration — thread-safe

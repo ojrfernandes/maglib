@@ -109,6 +109,13 @@ bool input_read::readInputFile() {
                 std::cerr << "Error: nPhi must be a positive integer." << std::endl;
                 return false;
             }
+        } else if (key == "ntor") {
+            this->ntor = std::stoi(value);
+            // check if ntor is a positive integer
+            if (this->ntor <= 0) {
+                std::cerr << "Error: ntor must be a positive integer." << std::endl;
+                return false;
+            }
         } else if (key == "num_threads") {
             this->num_threads = std::stoi(value);
             // check if num_threads is a positive integer

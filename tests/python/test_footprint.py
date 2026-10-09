@@ -77,6 +77,18 @@ def test_serial_run_initial_positions(wall_fp):
     assert abs(data[2, 2] - math.pi) < TOL
 
 
+def test_ntor_restricts_phi_grid(tracer_and_source):
+    """With ntor=2, a 2-point phi grid should span [0, pi) instead of [0, 2*pi)."""
+    _, t = tracer_and_source
+    fp = Footprint(0, 0.435, -0.239, 0.435, -0.232, 2, 2, 50, ntor=2)
+    fp.run([t])
+    data = fp.output_data
+    # row 0: i=0, j=0 -> phi=0
+    assert abs(data[0, 2] - 0.0) < TOL
+    # row 2: i=1, j=0 -> phi=pi/2 (restricted range [0, pi) split into 2)
+    assert abs(data[2, 2] - math.pi / 2) < TOL
+
+
 def test_serial_run_reference_values(wall_fp):
     """Mirror the C++ Footprint_RunGrid_Simple2x2_Wall reference values."""
     data = wall_fp.output_data

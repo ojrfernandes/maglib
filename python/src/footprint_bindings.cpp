@@ -23,8 +23,8 @@ void bind_footprint(py::module_ &m) {
 Magnetic footprint generator.
 
 Traces a 2-D grid of field lines from a target plate segment through nPhi
-toroidal angles and records connection length, minimum psi_N, and turn count
-per point.
+toroidal angles spanning [0, 2*pi/ntor) and records connection length,
+minimum psi_N, and turn count per point.
 
 Pass one Maglit tracer per thread to run() for parallel execution; a
 single-element list gives serial execution.
@@ -43,16 +43,16 @@ Example::
         stability=1,
         grid_R1=0.435, grid_Z1=-0.239,
         grid_R2=0.435, grid_Z2=-0.232,
-        nRZ=100, nPhi=20, max_turns=1000,
+        nRZ=100, nPhi=20, max_turns=1000, ntor=1,
     )
     fp.run(tracers)
     data = fp.output_data   # numpy array (nRZ*nPhi, 6)
     fp.save("output.dat")
 )doc")
-        .def(py::init<int, double, double, double, double, int, int, int>(),
+        .def(py::init<int, double, double, double, double, int, int, int, int>(),
              "stability"_a, "grid_R1"_a, "grid_Z1"_a,
              "grid_R2"_a, "grid_Z2"_a,
-             "nRZ"_a, "nPhi"_a, "max_turns"_a,
+             "nRZ"_a, "nPhi"_a, "max_turns"_a, "ntor"_a = 1,
              R"doc(
 Create a Footprint grid.
 
@@ -67,9 +67,12 @@ grid_R2, grid_Z2 : float
 nRZ : int
     Number of grid points along the plate segment.
 nPhi : int
-    Number of toroidal starting angles.
+    Number of toroidal starting angles, uniformly spaced over [0, 2*pi/ntor).
 max_turns : int
     Maximum toroidal turns before a field line is considered lost.
+ntor : int, optional
+    Toroidal mode number. Restricts the starting-angle grid to
+    [0, 2*pi/ntor) instead of the full [0, 2*pi). Default 1 (full torus).
 )doc")
 
         .def("run", [](footprint &self, py::list tracers) {

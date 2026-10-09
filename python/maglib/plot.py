@@ -5,7 +5,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.ticker import FuncFormatter
 
 
-def plot_footprint(source, which_plot="all", xaxis="rad", cmap="jet", cmap_key=10,
+def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet", cmap_key=10,
                    figsize=(10, 5), sizef=1, dpi=80, v_min=None, v_max=None,
                    turn_cap=None, psi_cap=False, savefig=None):
     """
@@ -20,6 +20,12 @@ def plot_footprint(source, which_plot="all", xaxis="rad", cmap="jet", cmap_key=1
         Subset to plot: "cl", "psi", "turns", "au", or "all". Default "all".
     xaxis : str
         X-axis units: "rad" or "deg". Default "rad".
+    ntor : int, optional
+        Toroidal mode number used to generate `source` (e.g. via fpgen's
+        `ntor` parameter, which restricts the traced phi range to
+        [0, 2*pi/ntor)). Default None plots exactly the phi range present in
+        `source`. When given, the data is tiled `ntor` times along the
+        toroidal axis to reconstruct the full 360-degree pattern.
     cmap : str
         Matplotlib colormap name. Default "jet".
     cmap_key : int
@@ -55,6 +61,8 @@ def plot_footprint(source, which_plot="all", xaxis="rad", cmap="jet", cmap_key=1
         raise ValueError("which_plot must be 'cl', 'psi', 'turns', 'au', or 'all'.")
     if xaxis not in ("rad", "deg"):
         raise ValueError("xaxis must be 'rad' or 'deg'.")
+    if ntor is not None and (not isinstance(ntor, (int, np.integer)) or ntor < 1):
+        raise ValueError("ntor must be a positive integer or None.")
 
     # Detect plate orientation from uniqueness of R column
     if np.unique(data[:, 0]).size == 1:
@@ -81,6 +89,21 @@ def plot_footprint(source, which_plot="all", xaxis="rad", cmap="jet", cmap_key=1
     z_psi = np.reshape(z_psi, (n_phi, n_y)).T
     z_turns = np.reshape(z_turns, (n_phi, n_y)).T
 
+    # Span (degrees) of the toroidal range actually present in `source`,
+    # inferred from the phi0 sample spacing (stored in radians, see
+    # footprint.cpp) rather than assumed to be 360.
+    x_unique = np.unique(x)
+    if len(x_unique) > 1:
+        span_deg = np.degrees(x_unique[1] - x_unique[0]) * n_phi
+    else:
+        span_deg = 360.0
+
+    if ntor is not None:
+        z_cl = np.tile(z_cl, (1, ntor))
+        z_psi = np.tile(z_psi, (1, ntor))
+        z_turns = np.tile(z_turns, (1, ntor))
+        span_deg *= ntor
+
     if psi_cap:
         mask = (z_psi >= 1) | (z_turns <= 1)
         z_cl = np.ma.masked_where(mask, z_cl)
@@ -95,7 +118,7 @@ def plot_footprint(source, which_plot="all", xaxis="rad", cmap="jet", cmap_key=1
             cm.set_bad("white")
 
     fsize = (figsize[0] * sizef, figsize[1] * sizef)
-    extent = [0, 360, float(np.min(y)), float(np.max(y))]
+    extent = [0, span_deg, float(np.min(y)), float(np.max(y))]
     imshow_kw = dict(origin='lower', aspect='auto', extent=extent)
 
     def _xaxis(ax):
@@ -115,16 +138,20 @@ def plot_footprint(source, which_plot="all", xaxis="rad", cmap="jet", cmap_key=1
 
     if which_plot in ("all", "cl"):
         fig, ax = plt.subplots(figsize=fsize, dpi=dpi)
-        im = ax.imshow(z_cl, cmap=cmap_cont, norm=LogNorm(), **imshow_kw)
-        fig.colorbar(im, ax=ax).set_label("connection length ( m )")
+        im = ax.imshow(z_cl, cmap=cmap_disc,
+                        vmin=v_min, vmax=v_max,
+                        #norm=LogNorm(),
+                         **imshow_kw)
+        fig.colorbar(im, ax=ax).set_label("$L_c$ - connection length ( m )")
         _xaxis(ax)
         _save("cl")
         plt.show(block=False)
 
     if which_plot in ("all", "psi"):
         fig, ax = plt.subplots(figsize=fsize, dpi=dpi)
-        im = ax.imshow(z_psi, cmap=cmap_cont, **imshow_kw)
-        fig.colorbar(im, ax=ax).set_label(r"$\psi_{N\,\,\mathrm{min}}$")
+        im = ax.imshow(z_psi, cmap=cmap_disc, vmin=0.5, vmax=1, **imshow_kw)
+        #fig.colorbar(im, ax=ax).set_label(r"$\psi_{N\,\,\mathrm{min}}$")
+        fig.colorbar(im, ax=ax).set_label("$\psi_{N\,\,\mathrm{min}}$ - Minimum normalized poloidal flux")
         _xaxis(ax)
         _save("psi")
         plt.show(block=False)
@@ -149,12 +176,20 @@ def plot_footprint(source, which_plot="all", xaxis="rad", cmap="jet", cmap_key=1
             z_raw = 1.0 / (z_cl * z_psi)
             lo, hi = float(np.nanmin(z_raw)), float(np.nanmax(z_raw))
             if lo == hi:
-                raise ValueError("All 1/(psiN_min * CL) values are identical; cannot normalize.")
-            z_norm = (z_raw - lo) / (hi - lo)
+               raise ValueError("All 1/(psiN_min * CL) values are identical; cannot normalize.")
+            z_norm = 1- (z_raw - lo) / (hi - lo)
+
+            # z_raw = (1 - z_psi) / z_cl
+            # lo, hi = float(np.nanmin(z_raw)), float(np.nanmax(z_raw))
+            # if lo == hi:
+            #     raise ValueError("All 1/(psiN_min * CL) values are identical; cannot normalize.")
+            # z_norm = (z_raw - lo) / (hi - lo)
+
+            # z_norm = (1 - z_psi) * np.exp(z_cl/np.median(z_cl))
         fig, ax = plt.subplots(figsize=fsize, dpi=dpi)
-        im = ax.imshow(z_norm, cmap=cmap_disc, **imshow_kw)
+        im = ax.imshow(z_norm, cmap=cmap_disc, vmin=v_min, vmax=v_max, **imshow_kw)
         fig.colorbar(im, ax=ax).set_label(
-            r"$(\psi_{N\,\,\mathrm{min}} \cdot \mathrm{CL})^{-1}_\mathrm{norm}$")
+            r"$1 - (\psi_{N\,\,\mathrm{min}} \cdot L_c\,)^{-1}_\mathrm{norm}$")
         _xaxis(ax)
         _save("au")
         plt.show(block=False)

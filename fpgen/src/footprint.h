@@ -19,7 +19,7 @@ public:
   // class constructor
   footprint(const int manifold, const double grid_R1, const double grid_Z1,
             const double grid_R2, const double grid_Z2, const int nRZ,
-            const int nPhi, const int max_turns);
+            const int nPhi, const int max_turns, const int ntor = 1);
 
   // Run the grid. Pass one tracer per thread for parallel execution,
   // or a single-element vector for serial execution.
@@ -61,6 +61,7 @@ private:
   double grid_Z2; // second point Z delimiting the target plate mapped surface
   int nRZ;        // grid dimension along the (R,Z) plane
   int nPhi;       // grid dimension along the phi direction
+  int ntor = 1;   // toroidal mode number; phi grid restricted to [0, 2*pi/ntor)
   int max_turns = 1000; // maximum toroidal turns for field line integration
 
   std::vector<std::vector<double>> outputData;
