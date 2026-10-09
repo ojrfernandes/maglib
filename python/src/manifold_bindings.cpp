@@ -42,6 +42,7 @@ The Maglit tracer must outlive this object.
 
 Example::
 
+    import math
     import numpy as np
     import maglib
 
@@ -55,7 +56,7 @@ Example::
 
     mf.find_x_point(0.498, -0.219)
     seg0 = mf.primary_segment(10)
-    prev, seg1 = mf.new_segment(seg0, phi=0.0, l_lim=0.005, theta_lim=20.0)
+    prev, seg1 = mf.new_segment(seg0, l_lim=0.005, theta_lim=math.radians(20.0))
 )doc")
 
         .def(py::init<maglit &, double, int>(),
@@ -209,7 +210,7 @@ prev_seg : np.ndarray, shape (N, 2)
 l_lim : float
     Arc-length threshold for segment refinement (metres).
 theta_lim : float
-    Turning-angle threshold in degrees.
+    Turning-angle threshold (radians).
 
 Returns
 -------
@@ -245,7 +246,7 @@ n_seg : int
 l_lim : float
     Arc-length threshold (metres).
 theta_lim : float
-    Turning-angle threshold in degrees.
+    Turning-angle threshold (radians).
 
 Returns
 -------
@@ -277,7 +278,7 @@ method : int
 l_lim : float
     Arc-length threshold for refinement (metres).
 theta_lim : float
-    Turning-angle threshold in degrees.
+    Turning-angle threshold (radians).
 )doc")
 
         .def("progress_bar", &manifold::progressBar, "j"_a, "n_seg"_a,

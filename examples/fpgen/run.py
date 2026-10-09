@@ -12,22 +12,44 @@ Grid here mirrors the fpgen_input.txt reference case: a horizontal segment
 at Z = -0.24 m spanning R = 0.50 – 0.55 m (TCABR lower divertor target).
 """
 
+import math
 import os
 from pathlib import Path
 
-from maglib import M3DC1Source, Maglit, Footprint
+from maglib import M3DC1Source, SuperpositionSource, Maglit, Footprint
 
 # ── Data paths ────────────────────────────────────────────────────────────────
 
 _REPO    = Path(__file__).resolve().parents[2]
 DATA_DIR = _REPO / "tests" / "data"
 
-HDF5_PATH = str(DATA_DIR / "C1.h5")
 WALL_PATH = str(DATA_DIR / "tcabr_first_wall.txt")
+
+# ── Field sources (mirror the [M3DC1 SOURCE] section of the input file) ──────
+#
+# Single source (nsources = 1): M3DC1Source; phase/amplitude are not applied.
+# Multiple sources (nsources > 1): SuperpositionSource,
+#     B(R,φ,Z) = B_eq(R,φ,Z) + Σ_i A_i · [B_i(R, φ−δ_i, Z) − B_eq(R,φ,Z)]
+# The equilibrium B_eq is loaded automatically (timeslice = -1) from the first
+# component's file. Use timeslice 0 (vacuum) or 1 (plasma response) per component.
+#   path      : M3DC1 HDF5 file
+#   timeslice : 0 = vacuum, 1 = full single-fluid response
+#   phase     : toroidal phase shift δ_i (radians)
+#   amplitude : linear scale factor A_i (dimensionless, may be negative)
+
+SOURCES = [
+    dict(path=str(DATA_DIR / "C1.h5"), timeslice=1, phase=0.0, amplitude=1.0),
+]
+
+# --- Three-coil superposition example (replace paths, then uncomment) ---
+# SOURCES = [
+#     dict(path="/path/to/IM_C1.h5", timeslice=1, phase=0.0, amplitude=1.0),
+#     dict(path="/path/to/IL_C1.h5", timeslice=1, phase=math.radians(-100.0), amplitude=1.0),
+#     dict(path="/path/to/IU_C1.h5", timeslice=1, phase=math.radians(80.0), amplitude=1.0),
+# ]
 
 # ── Parameters (mirror fpgen_input.txt defaults) ──────────────────────────────
 
-TIMESLICE  = 1        # 0 = vacuum, 1 = plasma response
 MANIFOLD   = 1        # 0 = stable (backward map), 1 = unstable (forward map)
 
 GRID_R1    = 0.50     # divertor target first endpoint (m)
@@ -36,7 +58,8 @@ GRID_R2    = 0.55     # divertor target second endpoint (m)
 GRID_Z2    = -0.24
 
 NRZ        = 20       # grid points along the target segment
-NPHI       = 20       # toroidal starting angles (uniformly spaced over 2π)
+NPHI       = 20       # toroidal starting angles (uniformly spaced over 2π; no ntor restriction here —
+                              # keep the full range for multi-coil superpositions)
 MAX_TURNS  = 50       # field line lost after this many toroidal turns
 
 DPHI_INIT  = 1e-2    # initial step size
@@ -48,11 +71,25 @@ N_THREADS  = min(4, os.cpu_count() or 1)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def build_tracer() -> tuple:
-    """Create one (M3DC1Source, Maglit) pair. Both must be kept alive together."""
-    src = M3DC1Source(HDF5_PATH, TIMESLICE)
+def build_source():
+    """Create a FieldSource from SOURCES. Call once per thread (Fusion-IO is not thread-safe)."""
+    for s in SOURCES:
+        if not Path(s["path"]).is_file():
+            raise FileNotFoundError(s["path"])
+    if len(SOURCES) == 1:
+        src = M3DC1Source(SOURCES[0]["path"], SOURCES[0]["timeslice"])
+    else:
+        src = SuperpositionSource()
+        for s in SOURCES:
+            src.add_component(s["path"], s["timeslice"], s["phase"], s["amplitude"])
     if not src.is_valid():
-        raise RuntimeError(f"Failed to load M3DC1Source from {HDF5_PATH}")
+        raise RuntimeError("Failed to load field source(s): " + ", ".join(s["path"] for s in SOURCES))
+    return src
+
+
+def build_tracer() -> tuple:
+    """Create one (FieldSource, Maglit) pair. Both must be kept alive together."""
+    src = build_source()
     t = Maglit(src)
     t.configure(DPHI_INIT, DPHI_MIN, DPHI_MAX)
     t.set_monitor(WALL_PATH)
@@ -62,7 +99,9 @@ def build_tracer() -> tuple:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    print(f"Loading {N_THREADS} M3DC1Source(s): {HDF5_PATH}  (timeslice {TIMESLICE})")
+    print(f"Loading {N_THREADS} field source(s) with {len(SOURCES)} component(s) each:")
+    for s in SOURCES:
+        print(f"  {s['path']}  ts={s['timeslice']}  phase={s['phase']} rad  amp={s['amplitude']}")
 
     # Each thread needs its own source + tracer pair. The source must remain
     # alive as long as the tracer is in use, so we keep all pairs in a list.

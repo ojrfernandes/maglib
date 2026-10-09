@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 try:
@@ -291,8 +293,8 @@ def read_xpoint_from_hdf5(hdf5_path, null=None):
 
 
 def trace_separatrix(tracer, phi, r_xpoint, z_xpoint, stability=0,
-                     n_intervals=9, n_segments=30,
-                     l_lim=0.005, theta_lim=20.0,
+                     n_intervals=9, n_segments=10,
+                     l_lim=0.005, theta_lim=math.radians(20.0),
                      epsilon=1e-8, h=1e-8, tol=1e-14, max_iter=50,
                      precision_limit=1e-14, max_insertions=50,
                      verbose=False):
@@ -322,11 +324,11 @@ def trace_separatrix(tracer, phi, r_xpoint, z_xpoint, stability=0,
         Intervals for the primary segment; produces n_intervals+1 points.
     n_segments : int
         Total number of segments including the primary. Adjust until the
-        curve visually closes in a plot. Typical range: 20–80.
+        curve visually closes in a plot.
     l_lim : float
         Arc-length refinement threshold (metres).
     theta_lim : float
-        Turning-angle refinement threshold (degrees).
+        Turning-angle refinement threshold (radians).
     epsilon : float
         Distance from the X-point to the pivot point.
     h : float

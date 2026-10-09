@@ -104,10 +104,12 @@ B = B_eq + Σ_i A_i · [B_i(R, φ−δ_i, Z) − B_eq(R, φ, Z)]
 The toroidal phase shift `φ → φ−δ_i` is exact in cylindrical coordinates. `B_eq` (timeslice=-1) is shared across components and evaluated only once per integration step.
 
 ```python
+import math
+
 source = maglib.SuperpositionSource()
-source.add_component("/path/to/IM_C1.h5", timeslice=1, phase_shift=  0.0, amplitude=1.0)
-source.add_component("/path/to/IL_C1.h5", timeslice=1, phase_shift=-100.0, amplitude=1.0)
-source.add_component("/path/to/IU_C1.h5", timeslice=1, phase_shift= +80.0, amplitude=1.0)
+source.add_component("/path/to/IM_C1.h5", timeslice=1, phase_shift=0.0, amplitude=1.0)
+source.add_component("/path/to/IL_C1.h5", timeslice=1, phase_shift=math.radians(-100.0), amplitude=1.0)
+source.add_component("/path/to/IU_C1.h5", timeslice=1, phase_shift=math.radians(80.0), amplitude=1.0)
 
 if not source.is_valid():
     raise RuntimeError("failed to open one or more field sources")
@@ -117,7 +119,11 @@ tracer.configure(1e-2, 1e-6, 1e-2)
 tracer.set_monitor("first_wall.txt")
 ```
 
-`phase_shift` is in **degrees**. `amplitude` may be negative. The equilibrium (timeslice=-1) is opened automatically from the first component's file — no separate `M3DC1Source` is needed. `SuperpositionSource` satisfies the same `FieldSource` interface as `M3DC1Source` and can be passed anywhere a tracer is expected.
+`phase_shift` is in **radians**. `amplitude` may be negative. The equilibrium (timeslice=-1) is opened automatically from the first component's file — no separate `M3DC1Source` is needed. `SuperpositionSource` satisfies the same `FieldSource` interface as `M3DC1Source` and can be passed anywhere a tracer is expected.
+
+### Angle conventions
+
+Degrees are used **only** in the CLI text input files (`phase_N`, `Phi`, `phi_0`, `phi_1`, `theta_lim`); `mfgen`/`fpgen` convert them to radians in `run.cpp`. Everything else — the C++ classes, the Python API (`phase_shift`, `phi`, `phi_max`, `theta_lim`, ...) and all output columns — uses **radians**. Use `math.radians` / `np.radians` in Python scripts.
 
 ### Magnetic footprint
 
@@ -149,18 +155,18 @@ matching `ntor` to `plot_footprint` to tile the restricted output back into a fu
 
 ```python
 # stability: 0 = stable manifold (forward map), 1 = unstable manifold (backward map)
-mf = maglib.Manifold(tracer, phi=0.0, stability=0)
+mf = maglib.Manifold(tracer, phi=0.0, stability=0)   # phi: section angle (rad)
 mf.configure(epsilon=1e-8, h=1e-8, tol=1e-14,
              max_iter=50, precision_limit=1e-14, max_insertions=50)
 mf.find_x_point(r_guess=0.498, z_guess=-0.219)
 
 # One-shot
-mf.run(n_intervals=9, n_segments=10, method=1, l_lim=0.005, theta_lim=20.0)
+mf.run(n_intervals=9, n_segments=10, method=1, l_lim=0.005, theta_lim=math.radians(20.0))
 
 # Step-by-step (interpolant method)
 seg = mf.primary_segment(n_intervals=9)
 for _ in range(9):
-    _, seg = mf.new_segment(seg, l_lim=0.005, theta_lim=20.0)
+    _, seg = mf.new_segment(seg, l_lim=0.005, theta_lim=math.radians(20.0))
 
 data = mf.output_data   # list of (N_i, 2) arrays, columns [R, Z]
 mf.save("manifold.npz")
@@ -186,7 +192,7 @@ eq_tracer.configure(1e-2, 1e-6, 1e-2)
 eq_tracer.set_monitor("first_wall.txt")
 
 sep, x_point = maglib.trace_separatrix(
-    eq_tracer, phi=0.0,
+    eq_tracer, phi=0.0,   # section angle (rad)
     r_xpoint=0.498, z_xpoint=-0.219,
     n_segments=6,   # increase until the curve visually closes
     verbose=True,

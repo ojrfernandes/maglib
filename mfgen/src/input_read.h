@@ -26,7 +26,7 @@ class input_read {
     struct SourceComponent {
         std::string path;
         int    timeslice  = 1;
-        double phase      = 0.0; // degrees
+        double phase      = 0.0; // degrees (converted to rad in run.cpp)
         double amplitude  = 1.0;
     };
     int                       nsources   = 0;  // must be set explicitly in [M3DC1 SOURCE]
@@ -35,18 +35,18 @@ class input_read {
     // Tracing parameters
     int    manifold    = 0;   // 0 = unstable (forward map);  1 = stable (inverse map)
     int    method      = 0;   // method: exact-map=0, interpolant=1
-    double Phi         = 0.0; // toroidal angle of the Poincaré section (rad)
+    double Phi         = 0.0; // toroidal angle of the Poincaré section (deg, converted to rad in run.cpp)
     int    nSegments   = 0;   // number of primary segments to be mapped
 
     // Multiple Poincare sections
     int    nSections   = 0;   // number of Poincaré sections to generate
-    double phi_0       = 0.0; // initial toroidal angle coordinate
-    double phi_1       = 0.0; // final toroidal angle coordinate
+    double phi_0       = 0.0; // first section angle (deg, converted to rad in run.cpp)
+    double phi_1       = 0.0; // last section angle (deg, converted to rad in run.cpp)
 
     // Additional parameters
     double epsilon       = 0.0;  // first primary segment distance to the x-point
     double l_lim         = 0.0;  // distance threshold for the refinement process
-    double theta_lim     = 0.0;  // angle threshold for the refinement process
+    double theta_lim     = 0.0;  // turning-angle threshold for the refinement process (deg, converted to rad in run.cpp)
     double h_init        = 1e-2; // initial step-size for integration
     double h_min         = 1e-6; // minimum step-size for integration
     double h_max         = 1e-1; // maximum step-size for integration

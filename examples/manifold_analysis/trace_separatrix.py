@@ -14,6 +14,7 @@ Outputs (written to the current working directory)
     separatrix.dat  — space-separated text, 3 columns: seg R Z
 """
 
+import math
 from pathlib import Path
 import numpy as np
 import maglib
@@ -36,7 +37,7 @@ N_SEGMENTS  = 30  # total segments including the primary; adjust until curve clo
 N_INTERVALS = 9
 
 L_LIM     = 0.005
-THETA_LIM = 20.0
+THETA_LIM = math.radians(20.0)   # turning-angle refinement threshold (rad)
 
 DPHI_INIT = 1e-2
 DPHI_MIN  = 1e-6

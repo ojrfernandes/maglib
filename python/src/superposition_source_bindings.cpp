@@ -20,12 +20,13 @@ from the first component's file.
 
 Example::
 
+    import math
     import maglib
 
     source = maglib.SuperpositionSource()
-    source.add_component("/path/IM_C1.h5", timeslice=1, phase_shift=  0.0, amplitude=1.0)
-    source.add_component("/path/IL_C1.h5", timeslice=1, phase_shift=-100.0, amplitude=1.0)
-    source.add_component("/path/IU_C1.h5", timeslice=1, phase_shift= +80.0, amplitude=1.0)
+    source.add_component("/path/IM_C1.h5", timeslice=1, phase_shift=0.0, amplitude=1.0)
+    source.add_component("/path/IL_C1.h5", timeslice=1, phase_shift=math.radians(-100.0), amplitude=1.0)
+    source.add_component("/path/IU_C1.h5", timeslice=1, phase_shift=math.radians(80.0), amplitude=1.0)
 
     if not source.is_valid():
         raise RuntimeError("failed to open one or more field sources")
@@ -36,8 +37,8 @@ Example::
 
         .def("add_component",
              [](SuperpositionSource &self, const std::string &path, int timeslice,
-                double phase_shift_deg, double amplitude) {
-                 self.add_component(path, timeslice, phase_shift_deg * M_PI / 180.0, amplitude);
+                double phase_shift, double amplitude) {
+                 self.add_component(path, timeslice, phase_shift, amplitude);
              },
              "path"_a, "timeslice"_a, "phase_shift"_a, "amplitude"_a,
              R"doc(Add a perturbation component.
@@ -50,7 +51,7 @@ timeslice : int
     0 = vacuum, 1 = full single-fluid response. The equilibrium (timeslice = -1)
     is opened automatically from the first component's file.
 phase_shift : float
-    Toroidal phase shift δ_i in **degrees**. Applied as φ → φ − δ_i.
+    Toroidal phase shift δ_i in **radians**. Applied as φ → φ − δ_i.
 amplitude : float
     Linear scale factor A_i. May be negative for anti-phase contributions.
 )doc")

@@ -281,7 +281,6 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
 
   std::vector<point> new_seg;
 
-  theta_lim *= M_PI / 180.0;
   double theta_lim_aux = theta_lim;
   int insertion_count = 0;
   bool refining_angle = false;
@@ -392,7 +391,6 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
                                         double l_lim, double theta_lim) {
   std::vector<point> new_seg;
   size_t j = 1;
-  theta_lim *= M_PI / 180.0;
   double theta_lim_aux = theta_lim;
   int insertion_count = 0;
   bool refining_angle = false;

@@ -35,6 +35,7 @@ class manifold {
     bool find_xPoint(double rGuess, double zGuess);
     // Compute the primary segment (n_intervals+1 points)
     std::vector<point> primarySegment(size_t n_intervals);
+    // theta_lim: turning-angle refinement threshold (radians)
     // Compute a refined new segment from a previous segment (interpolant method)
     std::vector<point> newSegment(std::vector<point> &prev_seg,
                                   double l_lim, double theta_lim);

@@ -17,6 +17,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 C1_H5    = os.path.join(DATA_DIR, "C1.h5")
 
 TOL = 1e-6   # matches C++ reference-value tolerance
+THETA_LIM = math.radians(20.0)   # turning-angle refinement threshold, rad
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -57,6 +58,19 @@ def test_configure(tracer_and_source):
     _, t = tracer_and_source
     mf = Manifold(t, phi=0.0, stability=0)
     mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100)
+
+
+def test_phi_is_in_radians(tracer_and_source):
+    """Manifold(phi=) is in radians: phi=2*pi is the same section as phi=0."""
+    _, t = tracer_and_source
+    xp = []
+    for phi in (0.0, 2 * math.pi):
+        mf = Manifold(t, phi=phi, stability=0)
+        mf.configure(epsilon=1e-6, h=1e-8, tol=1e-14,
+                     max_iter=50, precision_limit=1e-14, max_insertions=100)
+        assert mf.find_x_point(0.497999, -0.218603)
+        xp.append(np.array(mf.x_point))   # shape=(2,), [R, Z], units=m
+    assert np.allclose(xp[0], xp[1], atol=1e-8)
 
 
 # ── find_x_point ─────────────────────────────────────────────────────────────
@@ -123,7 +137,7 @@ def test_primary_segment_last_point(primary_seg):
 # ── new_segment (interpolant method) ─────────────────────────────────────────
 
 def test_new_segment_returns_tuple_of_arrays(manifold_at_xpoint, primary_seg):
-    result = manifold_at_xpoint.new_segment(primary_seg, l_lim=0.005, theta_lim=20.0)
+    result = manifold_at_xpoint.new_segment(primary_seg, l_lim=0.005, theta_lim=THETA_LIM)
     assert isinstance(result, tuple) and len(result) == 2
     prev_out, new_seg = result
     assert isinstance(prev_out, np.ndarray) and prev_out.ndim == 2 and prev_out.shape[1] == 2
@@ -133,9 +147,9 @@ def test_new_segment_returns_tuple_of_arrays(manifold_at_xpoint, primary_seg):
 def test_new_segment_reference_values(manifold_at_xpoint, primary_seg):
     """Three iterations of the interpolant method; spot-check new_seg_3."""
     seg = primary_seg.copy()
-    _, seg1 = manifold_at_xpoint.new_segment(seg,  l_lim=0.005, theta_lim=20.0)
-    _, seg2 = manifold_at_xpoint.new_segment(seg1, l_lim=0.005, theta_lim=20.0)
-    _, seg3 = manifold_at_xpoint.new_segment(seg2, l_lim=0.005, theta_lim=20.0)
+    _, seg1 = manifold_at_xpoint.new_segment(seg,  l_lim=0.005, theta_lim=THETA_LIM)
+    _, seg2 = manifold_at_xpoint.new_segment(seg1, l_lim=0.005, theta_lim=THETA_LIM)
+    _, seg3 = manifold_at_xpoint.new_segment(seg2, l_lim=0.005, theta_lim=THETA_LIM)
 
     assert abs(seg3[0,  0] - 0.5012464706502761) < TOL
     assert abs(seg3[0,  1] - (-0.2174148574827388)) < TOL
@@ -156,7 +170,7 @@ def test_new_segment_reference_values(manifold_at_xpoint, primary_seg):
 def test_new_segment_from_primary_reference_values(manifold_at_xpoint, primary_seg):
     """Exact-map method with n_seg=3; spot-check the output."""
     _, seg3 = manifold_at_xpoint.new_segment(primary_seg.copy(),
-                                              n_seg=3, l_lim=0.005, theta_lim=20.0)
+                                              n_seg=3, l_lim=0.005, theta_lim=THETA_LIM)
 
     assert abs(seg3[0,  0] - 0.5037194321479069) < TOL
     assert abs(seg3[0,  1] - (-0.2167180039510279)) < TOL
@@ -173,7 +187,7 @@ def test_new_segment_from_primary_reference_values(manifold_at_xpoint, primary_s
 def test_new_segment_wrong_shape_raises(manifold_at_xpoint):
     bad = np.zeros((5, 3))
     with pytest.raises((ValueError, RuntimeError)):
-        manifold_at_xpoint.new_segment(bad, l_lim=0.005, theta_lim=20.0)
+        manifold_at_xpoint.new_segment(bad, l_lim=0.005, theta_lim=THETA_LIM)
 
 
 # ── output_data ───────────────────────────────────────────────────────────────
@@ -202,10 +216,10 @@ def test_output_data_accumulates(manifold_at_xpoint, primary_seg):
     assert len(mf.output_data) == 1
     assert mf.output_data[0].shape == (11, 2)
 
-    mf.new_segment(seg0, l_lim=0.005, theta_lim=20.0)
+    mf.new_segment(seg0, l_lim=0.005, theta_lim=THETA_LIM)
     assert len(mf.output_data) == 2
 
-    mf.new_segment(seg0, n_seg=2, l_lim=0.005, theta_lim=20.0)
+    mf.new_segment(seg0, n_seg=2, l_lim=0.005, theta_lim=THETA_LIM)
     assert len(mf.output_data) == 3
 
 
@@ -218,7 +232,7 @@ def test_output_data_types(manifold_at_xpoint, primary_seg):
                  max_iter=50, precision_limit=1e-14, max_insertions=100)
     mf.find_x_point(0.497999, -0.218603)
     seg0 = mf.primary_segment(10)
-    mf.new_segment(seg0, l_lim=0.005, theta_lim=20.0)
+    mf.new_segment(seg0, l_lim=0.005, theta_lim=THETA_LIM)
 
     for arr in mf.output_data:
         assert isinstance(arr, np.ndarray)
@@ -240,7 +254,7 @@ def manifold_with_output():
                  max_iter=50, precision_limit=1e-14, max_insertions=100)
     mf.find_x_point(0.497999, -0.218603)
     seg0 = mf.primary_segment(10)
-    mf.new_segment(seg0, l_lim=0.005, theta_lim=20.0)
+    mf.new_segment(seg0, l_lim=0.005, theta_lim=THETA_LIM)
     return mf
 
 
@@ -310,26 +324,26 @@ def _fresh_manifold():
 
 def test_run_output_data_size_interpolant():
     mf = _fresh_manifold()
-    mf.run(n_intervals=10, n_segments=4, method=1, l_lim=0.005, theta_lim=20.0)
+    mf.run(n_intervals=10, n_segments=4, method=1, l_lim=0.005, theta_lim=THETA_LIM)
     assert len(mf.output_data) == 4
     assert mf.output_data[0].shape == (11, 2)  # primary: n_intervals+1 points
 
 
 def test_run_output_data_size_exact_map():
     mf = _fresh_manifold()
-    mf.run(n_intervals=10, n_segments=3, method=0, l_lim=0.005, theta_lim=20.0)
+    mf.run(n_intervals=10, n_segments=3, method=0, l_lim=0.005, theta_lim=THETA_LIM)
     assert len(mf.output_data) == 3
 
 
 def test_run_interpolant_matches_manual_loop():
     """run(method=1) should give the same segments as calling new_segment() manually."""
     mf_run = _fresh_manifold()
-    mf_run.run(n_intervals=10, n_segments=3, method=1, l_lim=0.005, theta_lim=20.0)
+    mf_run.run(n_intervals=10, n_segments=3, method=1, l_lim=0.005, theta_lim=THETA_LIM)
 
     mf_manual = _fresh_manifold()
     seg = mf_manual.primary_segment(10)
-    _, seg = mf_manual.new_segment(seg, l_lim=0.005, theta_lim=20.0)
-    mf_manual.new_segment(seg, l_lim=0.005, theta_lim=20.0)
+    _, seg = mf_manual.new_segment(seg, l_lim=0.005, theta_lim=THETA_LIM)
+    mf_manual.new_segment(seg, l_lim=0.005, theta_lim=THETA_LIM)
 
     for i in range(3):
         np.testing.assert_array_equal(mf_run.output_data[i], mf_manual.output_data[i])
@@ -338,12 +352,12 @@ def test_run_interpolant_matches_manual_loop():
 def test_run_exact_map_matches_manual():
     """run(method=0) should give the same segments as calling new_segment(n_seg=i) manually."""
     mf_run = _fresh_manifold()
-    mf_run.run(n_intervals=10, n_segments=3, method=0, l_lim=0.005, theta_lim=20.0)
+    mf_run.run(n_intervals=10, n_segments=3, method=0, l_lim=0.005, theta_lim=THETA_LIM)
 
     mf_manual = _fresh_manifold()
     primary = mf_manual.primary_segment(10)
-    mf_manual.new_segment(primary, n_seg=1, l_lim=0.005, theta_lim=20.0)
-    mf_manual.new_segment(primary, n_seg=2, l_lim=0.005, theta_lim=20.0)
+    mf_manual.new_segment(primary, n_seg=1, l_lim=0.005, theta_lim=THETA_LIM)
+    mf_manual.new_segment(primary, n_seg=2, l_lim=0.005, theta_lim=THETA_LIM)
 
     for i in range(3):
         np.testing.assert_array_equal(mf_run.output_data[i], mf_manual.output_data[i])

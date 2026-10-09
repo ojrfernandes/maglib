@@ -24,7 +24,7 @@ class input_read {
     struct SourceComponent {
         std::string path;
         int    timeslice  = 1;
-        double phase      = 0.0; // degrees
+        double phase      = 0.0; // degrees (converted to rad in run.cpp)
         double amplitude  = 1.0;
     };
     int                       nsources  = 0;  // must be set explicitly in [M3DC1 SOURCE]

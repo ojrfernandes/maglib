@@ -179,6 +179,8 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
+    const double theta_lim_rad = input.theta_lim * M_PI / 180.0; // deg -> rad
+
     // loop to create new segments
     for (int i = 1; i < input.nSegments; ++i) {
       manifold.progressBar(i, input.nSegments);
@@ -187,10 +189,10 @@ int main(int argc, char *argv[]) {
       std::vector<point> new_segment;
       if (input.method == 0) {
         new_segment = manifold.newSegment(first_primary_segment, i, input.l_lim,
-                                          input.theta_lim);
+                                          theta_lim_rad);
       } else if (input.method == 1) {
         new_segment = manifold.newSegment(first_primary_segment, input.l_lim,
-                                          input.theta_lim);
+                                          theta_lim_rad);
         first_primary_segment = new_segment;
       } else {
         std::cerr << "Invalid method selected. Please choose 0 or 1."

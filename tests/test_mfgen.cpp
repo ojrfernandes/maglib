@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <cmath>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <string>
@@ -7,6 +8,9 @@
 #include "../maglit/m3dc1_source.h"
 #include "../mfgen/src/input_read.h"
 #include "../mfgen/src/manifold.h"
+
+// Turning-angle refinement threshold passed to manifold (radians); 20 deg
+static constexpr double THETA_LIM = 20.0 * M_PI / 180.0;
 
 // Test fixture for mfgen tests
 class MfgenTest : public ::testing::Test {
@@ -527,9 +531,9 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrevious) {
         {0.4979855389268979, -0.2185929033960707}};
 
     std::vector<point> new_seg_1, new_seg_2, new_seg_3;
-    EXPECT_NO_THROW(new_seg_1 = mf.newSegment(primary_seg, 0.005, 20));
-    EXPECT_NO_THROW(new_seg_2 = mf.newSegment(new_seg_1, 0.005, 20));
-    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(new_seg_2, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_1 = mf.newSegment(primary_seg, 0.005, THETA_LIM));
+    EXPECT_NO_THROW(new_seg_2 = mf.newSegment(new_seg_1, 0.005, THETA_LIM));
+    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(new_seg_2, 0.005, THETA_LIM));
 
     // Reference values after Stage 3 fixes (Bugs 1, 2, 5):
     //   - Bug 2: new_seg now starts empty; first 3 entries are actual map images,
@@ -576,7 +580,7 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrimary) {
         {0.4979855389268979, -0.2185929033960707}};
 
     std::vector<point> new_seg_3;
-    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(primary_seg, 3, 0.005, 20));
+    EXPECT_NO_THROW(new_seg_3 = mf.newSegment(primary_seg, 3, 0.005, THETA_LIM));
 
     // Check a few new_seg_3 points within reasonable bounds
     // R: 0.5037194321479069 Z: -0.2167180039510279 0
@@ -622,10 +626,10 @@ TEST_F(MfgenTest, Manifold_OutputData_Accumulates) {
     EXPECT_EQ(mf.get_output_data().size(), 1u);
     EXPECT_EQ(mf.get_output_data()[0].size(), 11u);
 
-    mf.newSegment(primary, 0.005, 20); // interpolant method
+    mf.newSegment(primary, 0.005, THETA_LIM); // interpolant method
     EXPECT_EQ(mf.get_output_data().size(), 2u);
 
-    mf.newSegment(primary, 2, 0.005, 20); // exact-map method
+    mf.newSegment(primary, 2, 0.005, THETA_LIM); // exact-map method
     EXPECT_EQ(mf.get_output_data().size(), 3u);
 }
 
@@ -662,7 +666,7 @@ TEST_F(MfgenTest, Manifold_Save_Csv) {
     mf.xPoint.Z = -0.2185980054447758;
 
     std::vector<point> primary = mf.primarySegment(10);
-    mf.newSegment(primary, 0.005, 20);
+    mf.newSegment(primary, 0.005, THETA_LIM);
 
     std::string path = test_dir + "/manifold_test.csv";
     EXPECT_TRUE(mf.save(path));
@@ -705,7 +709,7 @@ TEST_F(MfgenTest, Manifold_Run_OutputDataSize) {
     mf.xPoint.R = 0.4979691771716279;
     mf.xPoint.Z = -0.2185980054447758;
 
-    mf.run(10, 4, 1, 0.005, 20); // 4 total: 1 primary + 3 new (interpolant)
+    mf.run(10, 4, 1, 0.005, THETA_LIM); // 4 total: 1 primary + 3 new (interpolant)
     EXPECT_EQ(mf.get_output_data().size(), 4u);
     EXPECT_EQ(mf.get_output_data()[0].size(), 11u); // primary: n_intervals=10 → 11 pts
 }
@@ -717,7 +721,7 @@ TEST_F(MfgenTest, Manifold_Run_ExactMap_MatchesDirect) {
     mf1.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
     mf1.xPoint.R = 0.4979691771716279;
     mf1.xPoint.Z = -0.2185980054447758;
-    mf1.run(10, 2, 0, 0.005, 20); // 1 primary + 1 exact-map new
+    mf1.run(10, 2, 0, 0.005, THETA_LIM); // 1 primary + 1 exact-map new
 
     // Direct: compute seg 1 via primarySegment + newSegment
     manifold mf2(*tracer, 0, 0);
@@ -725,7 +729,7 @@ TEST_F(MfgenTest, Manifold_Run_ExactMap_MatchesDirect) {
     mf2.xPoint.R = 0.4979691771716279;
     mf2.xPoint.Z = -0.2185980054447758;
     std::vector<point> primary = mf2.primarySegment(10);
-    std::vector<point> seg1    = mf2.newSegment(primary, 1, 0.005, 20);
+    std::vector<point> seg1    = mf2.newSegment(primary, 1, 0.005, THETA_LIM);
 
     ASSERT_EQ(mf1.get_output_data()[1].size(), seg1.size());
     for (size_t i = 0; i < seg1.size(); ++i) {

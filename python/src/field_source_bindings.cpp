@@ -11,7 +11,8 @@ void bind_field_source(py::module_ &m) {
 Abstract base class for magnetic field data sources.
 
 Concrete implementations (e.g. M3DC1Source) provide eval_B, eval_psin,
-and eval_psi. One instance per thread is required for multi-threaded use.
+and eval_psi. All toroidal angles (phi) are in radians. One instance per thread is
+required for multi-threaded use.
 )doc")
         .def("eval_B", [](FieldSource &self, double R, double phi, double Z) {
             double B[3];

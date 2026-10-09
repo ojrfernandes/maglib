@@ -62,7 +62,7 @@ R, Z : float
 phi : float
     Current toroidal angle (radians).
 phi_max : float
-    Integration will not advance past this angle.
+    Integration will not advance past this angle (radians).
 dir : int
     Boundary monitor direction: 0 = ignore, 1 = stop on inside→outside,
     -1 = stop on outside→inside.
@@ -81,7 +81,7 @@ Returns
             return py::make_tuple(ok, arr);
         },
         "R"_a, "phi"_a, "Z"_a,
-        "Evaluate the magnetic field at (R, phi, Z). "
+        "Evaluate the magnetic field at (R, phi, Z); phi in radians. "
         "Returns (success, B) where B is a (3,) array [B_R, B_phi, B_Z].")
 
         .def("psin_eval", [](maglit &self, double R, double phi, double Z) {
