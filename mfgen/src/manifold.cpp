@@ -323,7 +323,13 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
       theta_lim_aux = theta_lim;
 
     bool inserted = false;
-    if (l_theta > theta_lim_aux) {
+    // Budget spent: accept the triple as is rather than truncating the segment.
+    const bool capped = insertion_count >= max_insertions;
+    if (capped)
+      std::cerr << "Warning: Maximum number of insertions reached. "
+                   "Accepting current points without further refinement.\n";
+
+    if (!capped && l_theta > theta_lim_aux) {
       if (l_i > l_ii) {
         insertPoint(prev_seg, arcs[j - 1], overlap);
         if (j != 1)
@@ -334,14 +340,14 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
       ++insertion_count;
       inserted = true;
       refining_angle = true;
-    } else if (l_i > l_lim) {
+    } else if (!capped && l_i > l_lim) {
       insertPoint(prev_seg, arcs[j - 1], overlap);
       ++insertion_count;
       if (j != 1)
         --j;
       inserted = true;
       refining_angle = false;
-    } else if (l_ii > l_lim) {
+    } else if (!capped && l_ii > l_lim) {
       insertPoint(prev_seg, arcs[j], overlap);
       ++insertion_count;
       inserted = true;
@@ -364,23 +370,10 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
       overlap = false;
     }
 
-    if (insertion_count >= max_insertions) {
-      std::cerr << "Warning: Maximum number of insertions reached. "
-                   "Stopping refinement at this segment.\n";
-      break;
-    }
-
     if (inserted) {
       arcs = buildInterpolants(prev_seg);
       cache_valid = false;
     }
-  }
-
-  if (j == arcs.size() && !new_seg.empty()) {
-    point last = apply_map(prev_seg.back().R, prev_seg.back().Z, phi, 1);
-    if (!std::isnan(last.R) && !std::isnan(last.Z) &&
-        computeDistance(new_seg.back(), last) <= l_lim)
-      new_seg.push_back(last);
   }
 
   outputData.push_back(new_seg);
@@ -428,7 +421,13 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
     if (!refining_angle)
       theta_lim_aux = theta_lim;
 
-    if (l_theta > theta_lim_aux) {
+    // Budget spent: accept the triple as is rather than truncating the segment.
+    const bool capped = insertion_count >= max_insertions;
+    if (capped)
+      std::cerr << "Warning: Maximum number of insertions reached. "
+                   "Accepting current points without further refinement.\n";
+
+    if (!capped && l_theta > theta_lim_aux) {
       if (l_i > l_ii) {
         insertPoint(prev_seg, j, overlap);
         if (j != 1)
@@ -439,14 +438,14 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
       ++insertion_count;
       cache_valid = false;
       refining_angle = true;
-    } else if (l_i > l_lim) {
+    } else if (!capped && l_i > l_lim) {
       insertPoint(prev_seg, j, overlap);
       ++insertion_count;
       if (j != 1)
         --j;
       cache_valid = false;
       refining_angle = false;
-    } else if (l_ii > l_lim) {
+    } else if (!capped && l_ii > l_lim) {
       insertPoint(prev_seg, j + 1, overlap);
       ++insertion_count;
       cache_valid = false;
@@ -559,13 +558,16 @@ manifold::buildInterpolants(const std::vector<point> &segment) {
   if (segment.size() < 3)
     return arcs;
 
-  for (size_t i = 0; i < segment.size() - 2; ++i) {
+  // One arc per interval, including the last one (no following point: straight
+  // end tangent, theta_1 = 0), so that the final interval is also refined.
+  for (size_t i = 0; i + 1 < segment.size(); ++i) {
+    const bool last = (i + 2 == segment.size());
     const point &p0 = segment[i];
     const point &p1 = segment[i + 1];
-    const point &p2 = segment[i + 2];
 
     if (std::isnan(p0.R) || std::isnan(p0.Z) || std::isnan(p1.R) ||
-        std::isnan(p1.Z) || std::isnan(p2.R) || std::isnan(p2.Z)) {
+        std::isnan(p1.Z) ||
+        (!last && (std::isnan(segment[i + 2].R) || std::isnan(segment[i + 2].Z)))) {
       std::cerr << "Skipping arc between invalid points at index " << i
                 << ".\n";
       continue;
@@ -574,7 +576,8 @@ manifold::buildInterpolants(const std::vector<point> &segment) {
     double theta =
         (i == 0) ? 0.0
                  : computeAngle(segment[i - 1], segment[i], segment[i + 1]);
-    double theta_1 = computeAngle(segment[i], segment[i + 1], segment[i + 2]);
+    double theta_1 =
+        last ? 0.0 : computeAngle(segment[i], segment[i + 1], segment[i + 2]);
 
     double m = std::tan(theta);
     double m_1 = std::tan(theta_1);

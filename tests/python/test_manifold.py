@@ -19,6 +19,34 @@ C1_H5    = os.path.join(DATA_DIR, "C1.h5")
 TOL = 1e-6   # matches C++ reference-value tolerance
 THETA_LIM = math.radians(20.0)   # turning-angle refinement threshold, rad
 
+# Fixed inputs for the new_segment reference-value tests; identical to the
+# hard-coded inputs in tests/test_mfgen.cpp. Using them (instead of the output
+# of primary_segment()) keeps the references independent of how primarySegment
+# parametrizes its interior points: a 1e-8 change there is amplified to ~1e-5
+# by three map iterations.
+HARD_XPOINT = np.array([0.4979691771716279, -0.2185980054447758])   # shape=(2,), [R, Z], units=m
+HARD_PRIMARY = np.array([                                           # shape=(11,2), [R, Z], units=m
+    [0.4979701320801332, -0.218597708544546],
+    [0.4979716727648097, -0.2185972280296985],
+    [0.4979732134494862, -0.2185967475148509],
+    [0.4979747541341626, -0.2185962670000034],
+    [0.4979762948188391, -0.2185957864851559],
+    [0.4979778355035156, -0.2185953059703084],
+    [0.497979376188192,  -0.2185948254554608],
+    [0.4979809168728685, -0.2185943449406133],
+    [0.497982457557545,  -0.2185938644257657],
+    [0.4979839982422214, -0.2185933839109182],
+    [0.4979855389268979, -0.2185929033960707],
+])
+
+
+def _fixed_input_manifold(t):
+    mf = Manifold(t, phi=0.0, stability=0)
+    mf.configure(epsilon=1e-6, h=1e-8, tol=1e-14,
+                 max_iter=50, precision_limit=1e-14, max_insertions=100)
+    mf.x_point = HARD_XPOINT
+    return mf
+
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -144,33 +172,41 @@ def test_new_segment_returns_tuple_of_arrays(manifold_at_xpoint, primary_seg):
     assert isinstance(new_seg,  np.ndarray) and new_seg.ndim  == 2 and new_seg.shape[1]  == 2
 
 
-def test_new_segment_reference_values(manifold_at_xpoint, primary_seg):
+def test_new_segment_reference_values(tracer_and_source):
     """Three iterations of the interpolant method; spot-check new_seg_3."""
-    seg = primary_seg.copy()
-    _, seg1 = manifold_at_xpoint.new_segment(seg,  l_lim=0.005, theta_lim=THETA_LIM)
-    _, seg2 = manifold_at_xpoint.new_segment(seg1, l_lim=0.005, theta_lim=THETA_LIM)
-    _, seg3 = manifold_at_xpoint.new_segment(seg2, l_lim=0.005, theta_lim=THETA_LIM)
+    _, t = tracer_and_source
+    mf = _fixed_input_manifold(t)
+    _, seg1 = mf.new_segment(HARD_PRIMARY.copy(), l_lim=0.005, theta_lim=THETA_LIM)
+    _, seg2 = mf.new_segment(seg1, l_lim=0.005, theta_lim=THETA_LIM)
+    _, seg3 = mf.new_segment(seg2, l_lim=0.005, theta_lim=THETA_LIM)
 
-    assert abs(seg3[0,  0] - 0.5012464706502761) < TOL
-    assert abs(seg3[0,  1] - (-0.2174148574827388)) < TOL
-    assert abs(seg3[4,  0] - 0.5030591235329525) < TOL
-    assert abs(seg3[4,  1] - (-0.2168648161175224)) < TOL
-    assert abs(seg3[9,  0] - 0.5133430437264513) < TOL
-    assert abs(seg3[9,  1] - (-0.2130464750286543)) < TOL
-    assert abs(seg3[14, 0] - 0.5298324820702656) < TOL
-    assert abs(seg3[14, 1] - (-0.208634750788582)) < TOL
-    assert abs(seg3[19, 0] - 0.5429352654656256) < TOL
-    assert abs(seg3[19, 1] - (-0.199387939879125)) < TOL
-    assert abs(seg3[24, 0] - 0.5594125465315225) < TOL
-    assert abs(seg3[24, 1] - (-0.192432899160264)) < TOL
+    # Reference values mirror Manifold_NewSegment_FromPrevious in tests/test_mfgen.cpp
+    assert abs(seg3[0 , 0] - 0.5037194236606823) < TOL
+    assert abs(seg3[0 , 1] - (-0.2167180059957065)) < TOL
+    assert abs(seg3[4 , 0] - 0.5177907016811655) < TOL
+    assert abs(seg3[4 , 1] - (-0.21256465989197604)) < TOL
+    assert abs(seg3[9 , 0] - 0.5329375689462936) < TOL
+    assert abs(seg3[9 , 1] - (-0.20684617881102837)) < TOL
+    assert abs(seg3[14, 0] - 0.5448859436213189) < TOL
+    assert abs(seg3[14, 1] - (-0.19790052084563603)) < TOL
+    assert abs(seg3[19, 0] - 0.5623203286112102) < TOL
+    assert abs(seg3[19, 1] - (-0.1918875465706913)) < TOL
+    assert abs(seg3[24, 0] - 0.5773684091740361) < TOL
+    assert abs(seg3[24, 1] - (-0.18797281379317218)) < TOL
+    assert abs(seg3[29, 0] - 0.5936666484608587) < TOL
+    assert abs(seg3[29, 1] - (-0.1813653812146642)) < TOL
+    assert abs(seg3[34, 0] - 0.6133915701508988) < TOL
+    assert abs(seg3[34, 1] - (-0.17095132560862691)) < TOL
 
 
 # ── new_segment (exact-map method) ───────────────────────────────────────────
 
-def test_new_segment_from_primary_reference_values(manifold_at_xpoint, primary_seg):
+def test_new_segment_from_primary_reference_values(tracer_and_source):
     """Exact-map method with n_seg=3; spot-check the output."""
-    _, seg3 = manifold_at_xpoint.new_segment(primary_seg.copy(),
-                                              n_seg=3, l_lim=0.005, theta_lim=THETA_LIM)
+    _, t = tracer_and_source
+    mf = _fixed_input_manifold(t)
+    _, seg3 = mf.new_segment(HARD_PRIMARY.copy(),
+                             n_seg=3, l_lim=0.005, theta_lim=THETA_LIM)
 
     assert abs(seg3[0,  0] - 0.5037194321479069) < TOL
     assert abs(seg3[0,  1] - (-0.2167180039510279)) < TOL
@@ -428,3 +464,17 @@ def test_set_branch_full_flip_mirrors_pivot(tracer_and_source):
 
     # First points must be mirror images through xPoint.
     np.testing.assert_allclose(seg_flip[0], 2 * xp - seg_def[0], atol=1e-10)
+
+
+# ── segment continuity ────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("method", [0, 1])
+def test_run_segments_are_connected(method):
+    """Last point of segment k must coincide (within l_lim) with first point of segment k+1."""
+    l_lim = 0.005  # m
+    mf = _fresh_manifold()
+    mf.run(n_intervals=10, n_segments=5, method=method, l_lim=l_lim, theta_lim=THETA_LIM)
+    seg = mf.output_data  # each shape=(npts,2), cols=[R,Z], units=m
+    for k in range(len(seg) - 1):
+        gap = np.linalg.norm(seg[k][-1] - seg[k + 1][0])
+        assert gap <= l_lim, f"gap {gap:.4g} m between segments {k} and {k + 1}"

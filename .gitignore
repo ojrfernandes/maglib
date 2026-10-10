@@ -14,3 +14,4 @@ tests/python/__pycache__
 examples/**/*.txt*
 examples/**/*.dat*
 examples/**/*.npz*
+graphify-out
