@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
   }
 
   // loop over Poincaré sections
+  int exit_code = 0;
   for (const auto &phi : poincare_sections) {
     double phi_rad = phi * M_PI / 180.0; // convert degrees to radians
 
@@ -160,6 +161,7 @@ int main(int argc, char *argv[]) {
     bool found_xp = manifold.find_xPoint(input.R_xPoint, input.Z_xPoint);
     if (!found_xp) {
       std::cerr << "Failed to find the X-Point at Phi = " << phi << std::endl;
+      exit_code = 1;
       continue;
     }
 
@@ -172,7 +174,14 @@ int main(int argc, char *argv[]) {
 
     // compute first primary segment (10 intervals = 11 points)
     std::cout << "\nComputing the first primary segment...\n" << std::endl;
-    std::vector<point> first_primary_segment = manifold.primarySegment(10);
+    std::vector<point> first_primary_segment;
+    try {
+      first_primary_segment = manifold.primarySegment(10);
+    } catch (const std::exception &e) {
+      std::cerr << "Error at Phi = " << phi << ": " << e.what() << std::endl;
+      exit_code = 1;
+      continue;
+    }
 
     if (!manifold.save(section_file)) {
       std::cerr << "Error saving output file: " << section_file << std::endl;
@@ -187,17 +196,27 @@ int main(int argc, char *argv[]) {
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
       std::vector<point> new_segment;
-      if (input.method == 0) {
-        new_segment = manifold.newSegment(first_primary_segment, i, input.l_lim,
-                                          theta_lim_rad);
-      } else if (input.method == 1) {
-        new_segment = manifold.newSegment(first_primary_segment, input.l_lim,
-                                          theta_lim_rad);
-        first_primary_segment = new_segment;
-      } else {
-        std::cerr << "Invalid method selected. Please choose 0 or 1."
-                  << std::endl;
-        return 1;
+      try {
+        if (input.method == 0) {
+          new_segment = manifold.newSegment(first_primary_segment, i,
+                                            input.l_lim, theta_lim_rad);
+        } else if (input.method == 1) {
+          new_segment = manifold.newSegment(first_primary_segment, input.l_lim,
+                                            theta_lim_rad);
+          first_primary_segment = new_segment;
+        } else {
+          std::cerr << "Invalid method selected. Please choose 0 or 1."
+                    << std::endl;
+          return 1;
+        }
+      } catch (const std::exception &e) {
+        // Segments 0..i-1 are already saved; later ones would build on a
+        // truncated curve, so stop this section.
+        std::cerr << "Error at Phi = " << phi << ", segment " << i + 1 << ": "
+                  << e.what() << "\nSegments before it were saved to "
+                  << section_file << std::endl;
+        exit_code = 1;
+        break;
       }
 
       if (!manifold.save(section_file)) {
@@ -214,5 +233,5 @@ int main(int argc, char *argv[]) {
   // Done!
   std::cout << "\nDone! \n";
 
-  return 0;
+  return exit_code;
 }

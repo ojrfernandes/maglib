@@ -138,7 +138,12 @@ point manifold::pivot() {
   double tr = jacobian[0][0] + jacobian[1][1];
   double det =
       jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
-  double sq = std::sqrt(tr * tr - 4.0 * det);
+  double disc = tr * tr - 4.0 * det;
+  if (!std::isfinite(disc) || disc < 0.0)
+    throw std::runtime_error(
+        "manifold: X-point Jacobian has no real eigenvalues (not hyperbolic, "
+        "or the map failed near the X-point)");
+  double sq = std::sqrt(disc);
   double lam1 = (tr + sq) / 2.0;
   double lam2 = (tr - sq) / 2.0;
 
@@ -172,6 +177,9 @@ point manifold::pivot() {
 std::vector<point> manifold::primarySegment(size_t n_intervals) {
   point pivot_pt = pivot(); // also sets lambda_u
   point T_pivot = apply_map(pivot_pt.R, pivot_pt.Z, phi, 1);
+  if (std::isnan(T_pivot.R))
+    throw std::runtime_error(
+        "manifold: map failed at the primary segment's first point");
 
   if (verbose) {
     std::cout << "Primary segment's first point: R=" << pivot_pt.R
@@ -242,18 +250,10 @@ void manifold::insertPoint(std::vector<point> &segment, interpolantArc &arc,
   if (computeDistance(arc.x0, arc.x1) > precision_limit) {
     point new_point = arc.evalNewPoint(0.5);
 
-    point img = apply_map(new_point.R, new_point.Z, phi, 1);
-    if (std::isnan(img.R) || std::isnan(img.Z)) {
-      std::cerr << "Warning: NaN in insertPoint R=" << new_point.R
-                << " Z=" << new_point.Z << " — skipping insertion.\n";
-      return;
-    }
-
     if (verbose) {
       std::cout << "x0: " << arc.x0.R << " " << arc.x0.Z << "\n"
                 << "x1: " << arc.x1.R << " " << arc.x1.Z << "\n"
-                << "New point: " << new_point.R << " " << new_point.Z << "\n"
-                << "Img:       " << img.R << " " << img.Z << "\n";
+                << "New point: " << new_point.R << " " << new_point.Z << "\n";
     }
 
     if (static_cast<size_t>(arc.i0) < segment.size() &&
@@ -309,10 +309,9 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
     }
 
     if (std::isnan(x_i.R) || std::isnan(x_j.R) || std::isnan(x_k.R)) {
-      std::cerr << "Warning: map evaluation failed at triple index " << j
-                << " — stopping segment extension.\n";
-      cache_valid = false;
-      break;
+      throw std::runtime_error(
+          "manifold: map evaluation failed at triple index " +
+          std::to_string(j) + " (the new segment would be truncated)");
     }
 
     double l_i = computeDistance(x_i, x_j);
@@ -408,10 +407,9 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
     }
 
     if (std::isnan(x_i.R) || std::isnan(x_j.R) || std::isnan(x_k.R)) {
-      std::cerr << "Warning: map evaluation failed at triple index " << j
-                << " — stopping segment extension.\n";
-      cache_valid = false;
-      break;
+      throw std::runtime_error(
+          "manifold: map evaluation failed at triple index " +
+          std::to_string(j) + " (the new segment would be truncated)");
     }
 
     double l_i = computeDistance(x_i, x_j);
@@ -552,6 +550,14 @@ const std::vector<std::vector<point>> &manifold::get_output_data() const {
   return outputData;
 }
 
+// Signed turning angle at b for the path a -> b -> c, in (-pi, pi]; > 0 for a
+// counter-clockwise (left) turn in the (R, Z) plane.
+static double signedTurn(point a, point b, point c) {
+  point v1 = b - a;
+  point v2 = c - b;
+  return std::atan2(v1.R * v2.Z - v1.Z * v2.R, v1.R * v2.R + v1.Z * v2.Z);
+}
+
 std::vector<interpolantArc>
 manifold::buildInterpolants(const std::vector<point> &segment) {
   std::vector<interpolantArc> arcs;
@@ -573,18 +579,19 @@ manifold::buildInterpolants(const std::vector<point> &segment) {
       continue;
     }
 
+    // Signed turning angles at the arc's end points (> 0: left turn). The arc
+    // bulges to the side opposite the turn, hence the sign of a and b (offset
+    // along the left normal: > 0 bulges left, < 0 bulges right).
     double theta =
-        (i == 0) ? 0.0
-                 : computeAngle(segment[i - 1], segment[i], segment[i + 1]);
+        (i == 0) ? 0.0 : signedTurn(segment[i - 1], segment[i], segment[i + 1]);
     double theta_1 =
-        last ? 0.0 : computeAngle(segment[i], segment[i + 1], segment[i + 2]);
+        last ? 0.0 : signedTurn(segment[i], segment[i + 1], segment[i + 2]);
 
-    double m = std::tan(theta);
-    double m_1 = std::tan(theta_1);
-    constexpr double m_eps = 1e-12;
-    double a = (std::abs(m) < m_eps) ? 0.0 : (std::sqrt(1 + m * m) - 1) / m;
-    double b =
-        (std::abs(m_1) < m_eps) ? 0.0 : -(std::sqrt(1 + m_1 * m_1) - 1) / m_1;
+    // tan(theta/2) diverges as theta -> pi (sharp lobe tips); cap the turn at
+    // pi/2 so |a|, |b| <= 1 and the inserted point stays near its chord.
+    constexpr double theta_cap = 0.5 * M_PI;
+    double a = -std::tan(0.5 * std::clamp(theta, -theta_cap, theta_cap));
+    double b = std::tan(0.5 * std::clamp(theta_1, -theta_cap, theta_cap));
 
     arcs.push_back({segment[i], segment[i + 1], a, b, static_cast<int>(i),
                     static_cast<int>(i + 1)});

@@ -181,22 +181,23 @@ def test_new_segment_reference_values(tracer_and_source):
     _, seg3 = mf.new_segment(seg2, l_lim=0.005, theta_lim=THETA_LIM)
 
     # Reference values mirror Manifold_NewSegment_FromPrevious in tests/test_mfgen.cpp
+    # (signed-turning-angle interpolant; indices 9-34 differ ~1e-5 m from the old unsigned one)
     assert abs(seg3[0 , 0] - 0.5037194236606823) < TOL
     assert abs(seg3[0 , 1] - (-0.2167180059957065)) < TOL
     assert abs(seg3[4 , 0] - 0.5177907016811655) < TOL
     assert abs(seg3[4 , 1] - (-0.21256465989197604)) < TOL
-    assert abs(seg3[9 , 0] - 0.5329375689462936) < TOL
-    assert abs(seg3[9 , 1] - (-0.20684617881102837)) < TOL
-    assert abs(seg3[14, 0] - 0.5448859436213189) < TOL
-    assert abs(seg3[14, 1] - (-0.19790052084563603)) < TOL
-    assert abs(seg3[19, 0] - 0.5623203286112102) < TOL
-    assert abs(seg3[19, 1] - (-0.1918875465706913)) < TOL
-    assert abs(seg3[24, 0] - 0.5773684091740361) < TOL
-    assert abs(seg3[24, 1] - (-0.18797281379317218)) < TOL
+    assert abs(seg3[9 , 0] - 0.5329413313161456) < TOL
+    assert abs(seg3[9 , 1] - (-0.20684384922194668)) < TOL
+    assert abs(seg3[14, 0] - 0.544888620002773) < TOL
+    assert abs(seg3[14, 1] - (-0.19789861738018513)) < TOL
+    assert abs(seg3[19, 0] - 0.5623249055389825) < TOL
+    assert abs(seg3[19, 1] - (-0.19188669144018536)) < TOL
+    assert abs(seg3[24, 0] - 0.5773761419825298) < TOL
+    assert abs(seg3[24, 1] - (-0.18797022952026268)) < TOL
     assert abs(seg3[29, 0] - 0.5936666484608587) < TOL
     assert abs(seg3[29, 1] - (-0.1813653812146642)) < TOL
-    assert abs(seg3[34, 0] - 0.6133915701508988) < TOL
-    assert abs(seg3[34, 1] - (-0.17095132560862691)) < TOL
+    assert abs(seg3[34, 0] - 0.6134021821972827) < TOL
+    assert abs(seg3[34, 1] - (-0.17094516309055374)) < TOL
 
 
 # ── new_segment (exact-map method) ───────────────────────────────────────────
@@ -223,6 +224,13 @@ def test_new_segment_from_primary_reference_values(tracer_and_source):
 def test_new_segment_wrong_shape_raises(manifold_at_xpoint):
     bad = np.zeros((5, 3))
     with pytest.raises((ValueError, RuntimeError)):
+        manifold_at_xpoint.new_segment(bad, l_lim=0.005, theta_lim=THETA_LIM)
+
+
+def test_new_segment_failed_map_raises(manifold_at_xpoint):
+    # shape=(3,2), units=m; far outside the source domain, so tracing fails
+    bad = np.array([[50.0, 50.0], [50.1, 50.0], [50.2, 50.0]])
+    with pytest.raises(RuntimeError, match="map evaluation failed"):
         manifold_at_xpoint.new_segment(bad, l_lim=0.005, theta_lim=THETA_LIM)
 
 

@@ -59,6 +59,9 @@ class manifold {
     //   .dat / .txt  — space-separated text with header (columns: seg, R, Z)
     //   .csv         — comma-separated text with header (columns: seg, R, Z)
     bool save(const std::string &path) const;
+    // One interpolant arc per interval of a segment (needs >= 3 points).
+    // Static and public so the geometry can be tested without a field source.
+    static std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
     // Read-only access to accumulated segment data
     const std::vector<std::vector<point>> &get_output_data() const;
 
@@ -68,7 +71,6 @@ class manifold {
     void eval_jacobian(double R, double Z, double Phi, double h, double jacobian[2][2]);
     void insertPoint(std::vector<point> &segment, size_t index, bool &overlap);
     void insertPoint(std::vector<point> &segment, interpolantArc &arc, bool &overlap);
-    std::vector<interpolantArc> buildInterpolants(const std::vector<point> &segment);
     static double computeDistance(point a, point b);
     static double computeAngle(point a, point b, point c);
     point apply_map(double R, double Z, double Phi, int nTurns);

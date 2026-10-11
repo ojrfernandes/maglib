@@ -510,6 +510,16 @@ TEST_F(MfgenTest, Manifold_PrimarySegment) {
     EXPECT_NEAR(segment.back().Z, -0.2185929033960707, 1e-6);
 }
 
+// Test: a failed map evaluation is reported, not silently truncated
+TEST_F(MfgenTest, Manifold_NewSegment_ThrowsOnFailedMap) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    // Points far outside the source domain: field-line tracing fails.
+    std::vector<point> bad_seg = {{50.0, 50.0}, {50.1, 50.0}, {50.2, 50.0}};
+    EXPECT_THROW(mf.newSegment(bad_seg, 0.005, THETA_LIM), std::runtime_error);
+    EXPECT_THROW(mf.newSegment(bad_seg, 1, 0.005, THETA_LIM), std::runtime_error);
+}
+
 // Test: New segment computation from previous segment
 TEST_F(MfgenTest, Manifold_NewSegment_FromPrevious) {
     manifold mf(*tracer, 0, 0);
@@ -539,24 +549,26 @@ TEST_F(MfgenTest, Manifold_NewSegment_FromPrevious) {
     //   - Bug 2: new_seg now starts empty; first 3 entries are actual map images,
     //     not raw points from the previous segment generation.
     //   - Bug 5: buildInterpolants now starts at i=0, covering the first interval.
+    //   - Interpolant arcs use signed turning angles (bulge on the correct side for
+    //     both turning directions): indices 9-34 moved by ~1e-5 m.
     //   Indices 4-34 are now shifted along the manifold relative to the pre-fix
     //   values, with monotonically increasing R and decreasing Z — physically correct.
     EXPECT_NEAR(new_seg_3[0].R,  0.50371942366068234, 1e-6);
     EXPECT_NEAR(new_seg_3[0].Z,  -0.21671800599570651, 1e-6);
     EXPECT_NEAR(new_seg_3[4].R,  0.51779070168116548, 1e-6);
     EXPECT_NEAR(new_seg_3[4].Z,  -0.21256465989197604, 1e-6);
-    EXPECT_NEAR(new_seg_3[9].R,  0.53293756894629363, 1e-6);
-    EXPECT_NEAR(new_seg_3[9].Z,  -0.20684617881102837, 1e-6);
-    EXPECT_NEAR(new_seg_3[14].R, 0.54488594362131892, 1e-6);
-    EXPECT_NEAR(new_seg_3[14].Z, -0.19790052084563603, 1e-6);
-    EXPECT_NEAR(new_seg_3[19].R, 0.56232032861121017, 1e-6);
-    EXPECT_NEAR(new_seg_3[19].Z, -0.19188754657069129, 1e-6);
-    EXPECT_NEAR(new_seg_3[24].R, 0.57736840917403609, 1e-6);
-    EXPECT_NEAR(new_seg_3[24].Z, -0.18797281379317218, 1e-6);
+    EXPECT_NEAR(new_seg_3[9].R,  0.5329413313161456, 1e-6);
+    EXPECT_NEAR(new_seg_3[9].Z,  -0.20684384922194668, 1e-6);
+    EXPECT_NEAR(new_seg_3[14].R, 0.544888620002773, 1e-6);
+    EXPECT_NEAR(new_seg_3[14].Z, -0.19789861738018513, 1e-6);
+    EXPECT_NEAR(new_seg_3[19].R, 0.5623249055389825, 1e-6);
+    EXPECT_NEAR(new_seg_3[19].Z, -0.19188669144018536, 1e-6);
+    EXPECT_NEAR(new_seg_3[24].R, 0.5773761419825298, 1e-6);
+    EXPECT_NEAR(new_seg_3[24].Z, -0.18797022952026268, 1e-6);
     EXPECT_NEAR(new_seg_3[29].R, 0.5936666484608587,  1e-6);
     EXPECT_NEAR(new_seg_3[29].Z, -0.1813653812146642,  1e-6);
-    EXPECT_NEAR(new_seg_3[34].R, 0.61339157015089885, 1e-6);
-    EXPECT_NEAR(new_seg_3[34].Z, -0.17095132560862691, 1e-6);
+    EXPECT_NEAR(new_seg_3[34].R, 0.6134021821972827, 1e-6);
+    EXPECT_NEAR(new_seg_3[34].Z, -0.17094516309055374, 1e-6);
 }
 
 // Test: New segment computation from primary segment
@@ -735,5 +747,59 @@ TEST_F(MfgenTest, Manifold_Run_ExactMap_MatchesDirect) {
     for (size_t i = 0; i < seg1.size(); ++i) {
         EXPECT_DOUBLE_EQ(mf1.get_output_data()[1][i].R, seg1[i].R);
         EXPECT_DOUBLE_EQ(mf1.get_output_data()[1][i].Z, seg1[i].Z);
+    }
+}
+
+// ==================== INTERPOLANT GEOMETRY (no field source needed) ====================
+
+// Points on the unit circle at constant angular step; sgn=+1 counter-clockwise, -1 clockwise.
+static std::vector<point> circle_points(double sgn, double dtheta, int n) {
+    std::vector<point> P; // shape=(n,2), cols=[R,Z], units=m
+    for (int k = 0; k < n; ++k)
+        P.push_back({std::cos(sgn * k * dtheta), std::sin(sgn * k * dtheta)});
+    return P;
+}
+
+// The interpolant midpoint of an interior interval must lie on the circle for
+// either turning direction (error well below the chord midpoint's sagitta ~1e-2).
+TEST(ManifoldGeometry, Interpolant_Midpoint_OnCircle_BothTurningDirections) {
+    const double dtheta = 0.3; // rad
+    for (double sgn : {+1.0, -1.0}) {
+        auto P    = circle_points(sgn, dtheta, 4);
+        auto arcs = manifold::buildInterpolants(P);
+        ASSERT_EQ(arcs.size(), 3u);
+        point m    = arcs[1].evalNewPoint(0.5);
+        point want = {std::cos(sgn * 1.5 * dtheta), std::sin(sgn * 1.5 * dtheta)};
+        double err = std::hypot(m.R - want.R, m.Z - want.Z);
+        EXPECT_LT(err, 1e-3) << "turning direction sgn=" << sgn;
+    }
+}
+
+// Straight line: no curvature, midpoint is the chord midpoint.
+TEST(ManifoldGeometry, Interpolant_Midpoint_StraightLine) {
+    std::vector<point> P = {{0.0, 0.0}, {1.0, 0.0}, {2.0, 0.0}, {3.0, 0.0}};
+    auto arcs = manifold::buildInterpolants(P);
+    point m = arcs[1].evalNewPoint(0.5);
+    EXPECT_NEAR(m.R, 1.5, 1e-14);
+    EXPECT_NEAR(m.Z, 0.0, 1e-14);
+}
+
+// The last interval gets an arc too (it must be refinable).
+TEST(ManifoldGeometry, Interpolant_ArcForEveryInterval) {
+    auto P = circle_points(+1.0, 0.3, 5);
+    EXPECT_EQ(manifold::buildInterpolants(P).size(), P.size() - 1);
+}
+
+// A near-reversal (turning angle close to pi) must not send the midpoint off to
+// infinity: it stays within one chord length of the chord midpoint.
+TEST(ManifoldGeometry, Interpolant_Midpoint_BoundedAtSharpTurn) {
+    std::vector<point> P = {{0.0, 0.0}, {1.0, 0.0}, {0.0, 1e-6}, {1.0, 1e-6}};
+    auto arcs = manifold::buildInterpolants(P);
+    for (const auto &arc : arcs) {
+        point m    = arc.evalNewPoint(0.5);
+        point base = (arc.x0 + arc.x1) * 0.5;
+        double chord = std::hypot(arc.x1.R - arc.x0.R, arc.x1.Z - arc.x0.Z);
+        ASSERT_TRUE(std::isfinite(m.R) && std::isfinite(m.Z));
+        EXPECT_LT(std::hypot(m.R - base.R, m.Z - base.Z), chord);
     }
 }
