@@ -11,6 +11,9 @@
 
 // Turning-angle refinement threshold passed to manifold (radians); 20 deg
 static constexpr double THETA_LIM = 20.0 * M_PI / 180.0;
+// Magnetic axis of tests/data/C1.h5 (scalars/xmag, zmag)
+static constexpr double MAG_AXIS_R = 0.63088644;
+static constexpr double MAG_AXIS_Z = -0.00082328;
 
 // Test fixture for mfgen tests
 class MfgenTest : public ::testing::Test {
@@ -508,6 +511,108 @@ TEST_F(MfgenTest, Manifold_PrimarySegment) {
     EXPECT_NEAR(segment.front().Z, -0.2185977085445460, 1e-6);
     EXPECT_NEAR(segment.back().R, 0.4979855389268979, 1e-6);
     EXPECT_NEAR(segment.back().Z, -0.2185929033960707, 1e-6);
+}
+
+// Test: backtracking in the refinement must not record a node twice
+// (a deep segment used to contain exact-duplicate consecutive points).
+TEST_F(MfgenTest, Manifold_NewSegment_NoDuplicatePoints) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf.xPoint.R = 0.4979691771716279;
+    mf.xPoint.Z = -0.2185980054447758;
+    std::vector<point> seg = mf.primarySegment(10);
+
+    for (int n = 1; n <= 4; ++n)
+        seg = mf.newSegment(seg, 2e-2, THETA_LIM);
+
+    ASSERT_GT(seg.size(), 100u); // deep enough that refinement backtracks
+    for (size_t i = 1; i < seg.size(); ++i)
+        EXPECT_FALSE(seg[i] == seg[i - 1]) << "duplicate at index " << i;
+}
+
+// Test: with no insertion budget the triples are accepted as they are
+// (the segment is not truncated): one image per input node.
+TEST_F(MfgenTest, Manifold_NewSegment_ZeroInsertionBudgetKeepsAllNodes) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 0);
+    mf.xPoint.R = 0.4979691771716279;
+    mf.xPoint.Z = -0.2185980054447758;
+    std::vector<point> primary = mf.primarySegment(10);
+
+    std::vector<point> seg;
+    EXPECT_NO_THROW(seg = mf.newSegment(primary, 1e-9, THETA_LIM));
+    EXPECT_EQ(seg.size(), primary.size());
+    EXPECT_NO_THROW(seg = mf.newSegment(primary, 1, 1e-9, THETA_LIM));
+    EXPECT_EQ(seg.size(), primary.size());
+}
+
+// Test: a base point that is not a saddle (complex multipliers) is rejected
+TEST_F(MfgenTest, Manifold_PrimarySegment_ThrowsAtNonHyperbolicPoint) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    mf.xPoint.R = MAG_AXIS_R; // inside the last closed surface: elliptic
+    mf.xPoint.Z = MAG_AXIS_Z;
+    EXPECT_THROW(mf.primarySegment(10), std::runtime_error);
+}
+
+// Test: too few points to refine is an error, not an empty result
+TEST_F(MfgenTest, Manifold_NewSegment_ThrowsOnTooFewPoints) {
+    manifold mf(*tracer, 0, 0);
+    mf.configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+    std::vector<point> two = {{0.4979701, -0.2185977}, {0.4979716, -0.2185972}};
+    EXPECT_THROW(mf.newSegment(two, 0.005, THETA_LIM), std::invalid_argument);
+    EXPECT_THROW(mf.newSegment(two, 1, 0.005, THETA_LIM), std::invalid_argument);
+}
+
+// Distance from p to the polyline through pts.
+static double dist_to_polyline(const point &p, const std::vector<point> &pts) {
+    double best = 1e300;
+    for (size_t k = 0; k + 1 < pts.size(); ++k) {
+        point a = pts[k], ab = pts[k + 1] - pts[k];
+        double L2 = ab.R * ab.R + ab.Z * ab.Z;
+        double u = L2 > 0 ? ((p.R - a.R) * ab.R + (p.Z - a.Z) * ab.Z) / L2 : 0.0;
+        u = std::clamp(u, 0.0, 1.0);
+        point c = a + ab * u;
+        best = std::min(best, std::hypot(p.R - c.R, p.Z - c.Z));
+    }
+    return best;
+}
+
+// Test: interpolant method vs exact-map method (Ciro et al., Chaos 28, 093106,
+// Sec. VI C). The exact nodes must lie within the interpolation baseline
+// H_c = theta_c * l_c / 8 (Eq. 40) of the interpolant curve, and well below it
+// when the curve is sampled through the arcs (sensitive to the arc sign).
+TEST_F(MfgenTest, Manifold_Interpolant_MatchesExactMethodWithinBaseline) {
+    const double l_lim = 5e-3;
+    manifold mf0(*tracer, 0, 0), mf1(*tracer, 0, 0);
+    for (manifold *m : {&mf0, &mf1}) {
+        m->configure(1e-6, 1e-8, 1e-14, 50, 1e-14, 100);
+        m->xPoint.R = 0.4979691771716279;
+        m->xPoint.Z = -0.2185980054447758;
+    }
+    std::vector<point> primary0 = mf0.primarySegment(10);
+    std::vector<point> exact = mf0.newSegment(primary0, 3, l_lim, THETA_LIM);
+
+    std::vector<point> approx = mf1.primarySegment(10);
+    for (int n = 1; n <= 3; ++n)
+        approx = mf1.newSegment(approx, l_lim, THETA_LIM);
+
+    std::vector<point> curve; // dense sampling of the interpolant arcs
+    for (const auto &arc : manifold::buildInterpolants(approx))
+        for (int k = 0; k < 16; ++k)
+            curve.push_back(arc.evalNewPoint(k / 16.0));
+    curve.push_back(approx.back());
+
+    double max_chord = 0.0, max_arc = 0.0;
+    for (const auto &x : exact) {
+        max_chord = std::max(max_chord, dist_to_polyline(x, approx));
+        max_arc = std::max(max_arc, dist_to_polyline(x, curve));
+    }
+    const double H_c = THETA_LIM * l_lim / 8.0;
+    std::cout << "max dist exact->chords " << max_chord << ", ->arcs " << max_arc
+              << ", H_c " << H_c << "\n";
+    EXPECT_LT(max_chord, H_c);
+    EXPECT_LT(max_arc, 0.05 * H_c); // 2.8e-6 measured; a wrong-sign arc gives 1.6e-5
 }
 
 // Test: a failed map evaluation is reported, not silently truncated

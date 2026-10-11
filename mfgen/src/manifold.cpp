@@ -274,10 +274,9 @@ void manifold::insertPoint(std::vector<point> &segment, interpolantArc &arc,
 
 std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
                                         double l_lim, double theta_lim) {
-  if (prev_seg.size() < 3) {
-    std::cerr << "Error: Previous segment must have at least three points.\n";
-    return {};
-  }
+  if (prev_seg.size() < 3)
+    throw std::invalid_argument(
+        "manifold: previous segment must have at least three points");
 
   std::vector<point> new_seg;
 
@@ -289,24 +288,26 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
   std::vector<interpolantArc> arcs = buildInterpolants(prev_seg);
   size_t j = 1;
 
-  // Cache the two most recently computed map images so that consecutive
-  // accepted triples only require one new map evaluation (x_k) instead of
-  // three.  The cache is invalidated whenever a point is inserted (which
-  // rebuilds arcs and may decrement j).
-  bool cache_valid = false;
-  point cached_xj, cached_xk;
+  // img[k] = map image of prev_seg[k] (NaN until computed). A node is mapped at
+  // most once: insertions and backtracking never change the image of an
+  // existing node, only add new, unmapped ones.
+  const point unmapped{std::nan(""), std::nan("")};
+  std::vector<point> img(prev_seg.size(), unmapped);
+  auto image = [&](size_t k) {
+    if (std::isnan(img[k].R))
+      img[k] = apply_map(prev_seg[k].R, prev_seg[k].Z, phi, 1);
+    return img[k];
+  };
+  // Refine arc k (between nodes k and k+1); keep img aligned with prev_seg.
+  auto refine = [&](size_t k) {
+    const size_t n = prev_seg.size();
+    insertPoint(prev_seg, arcs[k], overlap);
+    if (prev_seg.size() > n)
+      img.insert(img.begin() + k + 1, unmapped);
+  };
 
   while (j < arcs.size()) {
-    point x_i, x_j, x_k;
-    if (cache_valid) {
-      x_i = cached_xj;
-      x_j = cached_xk;
-      x_k = apply_map(arcs[j].x1.R, arcs[j].x1.Z, phi, 1);
-    } else {
-      x_i = apply_map(arcs[j - 1].x0.R, arcs[j - 1].x0.Z, phi, 1);
-      x_j = apply_map(arcs[j].x0.R, arcs[j].x0.Z, phi, 1);
-      x_k = apply_map(arcs[j].x1.R, arcs[j].x1.Z, phi, 1);
-    }
+    const point x_i = image(j - 1), x_j = image(j), x_k = image(j + 1);
 
     if (std::isnan(x_i.R) || std::isnan(x_j.R) || std::isnan(x_k.R)) {
       throw std::runtime_error(
@@ -330,36 +331,35 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
 
     if (!capped && l_theta > theta_lim_aux) {
       if (l_i > l_ii) {
-        insertPoint(prev_seg, arcs[j - 1], overlap);
+        refine(j - 1);
         if (j != 1)
           --j;
       } else {
-        insertPoint(prev_seg, arcs[j], overlap);
+        refine(j);
       }
       ++insertion_count;
       inserted = true;
       refining_angle = true;
     } else if (!capped && l_i > l_lim) {
-      insertPoint(prev_seg, arcs[j - 1], overlap);
+      refine(j - 1);
       ++insertion_count;
       if (j != 1)
         --j;
       inserted = true;
       refining_angle = false;
     } else if (!capped && l_ii > l_lim) {
-      insertPoint(prev_seg, arcs[j], overlap);
+      refine(j);
       ++insertion_count;
       inserted = true;
       refining_angle = false;
     } else {
+      // Backtracking (--j) re-accepts triples already recorded: keep one x_i per node.
+      new_seg.resize(j - 1);
       new_seg.push_back(x_i);
       if (j == arcs.size() - 1) {
         new_seg.push_back(x_j);
         new_seg.push_back(x_k);
       }
-      cached_xj = x_j;
-      cached_xk = x_k;
-      cache_valid = true;
       ++j;
       insertion_count = 0;
     }
@@ -369,10 +369,8 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
       overlap = false;
     }
 
-    if (inserted) {
+    if (inserted)
       arcs = buildInterpolants(prev_seg);
-      cache_valid = false;
-    }
   }
 
   outputData.push_back(new_seg);
@@ -381,6 +379,10 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg,
 
 std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
                                         double l_lim, double theta_lim) {
+  if (prev_seg.size() < 3)
+    throw std::invalid_argument(
+        "manifold: previous segment must have at least three points");
+
   std::vector<point> new_seg;
   size_t j = 1;
   double theta_lim_aux = theta_lim;
@@ -388,23 +390,25 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
   bool refining_angle = false;
   bool overlap = false;
 
-  // Cache the two most recently computed map images to avoid redundant
-  // evaluations across consecutive accepted triples.  Invalidated on any
-  // insertion (which may also decrement j).
-  bool cache_valid = false;
-  point cached_xj, cached_xk;
+  // img[k] = map image of prev_seg[k] (NaN until computed); each node is mapped
+  // at most once, whatever the insertions and backtracking do.
+  const point unmapped{std::nan(""), std::nan("")};
+  std::vector<point> img(prev_seg.size(), unmapped);
+  auto image = [&](size_t k) {
+    if (std::isnan(img[k].R))
+      img[k] = apply_map(prev_seg[k].R, prev_seg[k].Z, phi, nSeg);
+    return img[k];
+  };
+  // Insert a node at index k (midpoint of k-1 and k); keep img aligned.
+  auto refine = [&](size_t k) {
+    const size_t n = prev_seg.size();
+    insertPoint(prev_seg, k, overlap);
+    if (prev_seg.size() > n)
+      img.insert(img.begin() + k, unmapped);
+  };
 
   while (j < prev_seg.size() - 1) {
-    point x_i, x_j, x_k;
-    if (cache_valid) {
-      x_i = cached_xj;
-      x_j = cached_xk;
-      x_k = apply_map(prev_seg[j + 1].R, prev_seg[j + 1].Z, phi, nSeg);
-    } else {
-      x_i = apply_map(prev_seg[j - 1].R, prev_seg[j - 1].Z, phi, nSeg);
-      x_j = apply_map(prev_seg[j].R, prev_seg[j].Z, phi, nSeg);
-      x_k = apply_map(prev_seg[j + 1].R, prev_seg[j + 1].Z, phi, nSeg);
-    }
+    const point x_i = image(j - 1), x_j = image(j), x_k = image(j + 1);
 
     if (std::isnan(x_i.R) || std::isnan(x_j.R) || std::isnan(x_k.R)) {
       throw std::runtime_error(
@@ -427,36 +431,31 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
 
     if (!capped && l_theta > theta_lim_aux) {
       if (l_i > l_ii) {
-        insertPoint(prev_seg, j, overlap);
+        refine(j);
         if (j != 1)
           --j;
       } else {
-        insertPoint(prev_seg, j + 1, overlap);
+        refine(j + 1);
       }
       ++insertion_count;
-      cache_valid = false;
       refining_angle = true;
     } else if (!capped && l_i > l_lim) {
-      insertPoint(prev_seg, j, overlap);
+      refine(j);
       ++insertion_count;
       if (j != 1)
         --j;
-      cache_valid = false;
       refining_angle = false;
     } else if (!capped && l_ii > l_lim) {
-      insertPoint(prev_seg, j + 1, overlap);
+      refine(j + 1);
       ++insertion_count;
-      cache_valid = false;
       refining_angle = false;
     } else {
+      new_seg.resize(j - 1);
       new_seg.push_back(x_i);
       if (j == prev_seg.size() - 2) {
         new_seg.push_back(x_j);
         new_seg.push_back(x_k);
       }
-      cached_xj = x_j;
-      cached_xk = x_k;
-      cache_valid = true;
       ++j;
       insertion_count = 0;
     }
@@ -464,12 +463,6 @@ std::vector<point> manifold::newSegment(std::vector<point> &prev_seg, int nSeg,
     if (overlap) {
       theta_lim_aux *= 1.5;
       overlap = false;
-    }
-
-    if (insertion_count >= max_insertions) {
-      std::cerr << "Warning: Maximum number of insertions reached. "
-                   "Stopping refinement at this segment.\n";
-      break;
     }
   }
 

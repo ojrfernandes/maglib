@@ -363,3 +363,4 @@ maglib/
 - **Fusion-IO linking errors** — verify `libfusionio.so` and `libm3dc1.so` exist in `$FUSION_IO_DIR/lib`.
 - **`import maglib` fails** — check that `PYTHONPATH` includes the `python/` directory and that the build completed with Python bindings enabled.
 - **`lobe_map` / `simplify` ImportError** — install shapely: `pip install shapely`.
+- **`mfgen` exits with status 1 / `Manifold.new_segment` raises `RuntimeError`** — a field-line trace failed while building a segment (the point left the domain, or the X-point is not a saddle). The segments computed before the failure are saved; later ones would build on a truncated curve, so the section is stopped. Check the X-point, `epsilon`, and the first wall/domain.
