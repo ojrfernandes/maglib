@@ -5,6 +5,11 @@ add_library(maglit STATIC
     m3dc1_source.h
     superposition_source.cpp
     superposition_source.h
+    equilibrium_source.cpp
+    equilibrium_source.h
+    grid_perturbation_source.cpp
+    grid_perturbation_source.h
+    perturbed_source.h
     maglit.cpp
     maglit.h
     collider.cpp

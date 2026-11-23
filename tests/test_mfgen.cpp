@@ -422,6 +422,47 @@ TEST_F(MfgenTest, InputRead_XPoint_ParsedFromFile) {
 M3DC1Source *MfgenTest::source = nullptr;
 maglit      *MfgenTest::tracer = nullptr;
 
+// [EQUILIBRIUM SOURCE]: parsing, mutual exclusion, mandatory manual X-point
+static std::string mfgen_input_with(const std::string &dir, const std::string &name,
+                                    const std::string &body) {
+    std::string   path = dir + "/" + name;
+    std::ofstream f(path);
+    f << "output_path = test_output.dat\n" << body
+      << "manifold = 0\nmethod = 1\nPhi = 0\nnSegments = 5\n";
+    return path;
+}
+
+TEST_F(MfgenTest, InputRead_EquilibriumSourceParsed) {
+    input_read reader(mfgen_input_with(test_dir, "eq.txt",
+                                       "[EQUILIBRIUM SOURCE]\n"
+                                       "equilibrium_path = equilibrium.xml\n"
+                                       "perturbation_path = perturbation.dat\n"
+                                       "perturbation_phase = -30\n"
+                                       "R_xPoint = 1.4\nZ_xPoint = -0.9\n"));
+    ASSERT_TRUE(reader.readInputFile());
+    EXPECT_EQ(reader.equilibrium_path, "equilibrium.xml");
+    EXPECT_EQ(reader.perturbation_path, "perturbation.dat");
+    EXPECT_DOUBLE_EQ(reader.perturbation_phase, -30.0);
+    EXPECT_DOUBLE_EQ(reader.perturbation_amplitude, 1.0);
+    EXPECT_TRUE(reader.xpoint_set);
+}
+
+TEST_F(MfgenTest, InputRead_EquilibriumSourceRequiresXPoint) {
+    input_read reader(mfgen_input_with(test_dir, "eq_noxp.txt",
+                                       "[EQUILIBRIUM SOURCE]\nequilibrium_path = equilibrium.xml\n"));
+    EXPECT_FALSE(reader.readInputFile());
+}
+
+TEST_F(MfgenTest, InputRead_SourceSectionsMutuallyExclusive) {
+    input_read both(mfgen_input_with(test_dir, "both.txt",
+                                     "[M3DC1 SOURCE]\nnsources = 1\nsource_0 = test_source.h5\n"
+                                     "[EQUILIBRIUM SOURCE]\nequilibrium_path = equilibrium.xml\n"
+                                     "R_xPoint = 1.4\nZ_xPoint = -0.9\n"));
+    EXPECT_FALSE(both.readInputFile());
+    input_read none(mfgen_input_with(test_dir, "none.txt", "R_xPoint = 1.4\nZ_xPoint = -0.9\n"));
+    EXPECT_FALSE(none.readInputFile());
+}
+
 // Test: Constructor and basic initialization
 TEST_F(MfgenTest, Manifold_Constructor) {
     // Test stable manifold at phi=0

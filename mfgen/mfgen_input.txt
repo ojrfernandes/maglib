@@ -27,6 +27,15 @@
 #       phase_2     = 80.0
 #       amplitude_2 = 1.0
 #
+#  --- Alternative to [M3DC1 SOURCE]: equilibrium file + optional gridded perturbation ---
+#  B = B_eq(R,phi,Z) + A * B_pert(R, phi - delta, Z);  use one section or the other, not both.
+#[EQUILIBRIUM SOURCE]
+#       equilibrium_path       = equilibrium.xml    # magnetics XML or G-EQDSK (detected from content)
+#       perturbation_path      = perturbation.dat   # optional; restore_field() binary, may cover 2pi/N only
+#       perturbation_phase     = 0.0                # toroidal phase shift delta in degrees
+#       perturbation_amplitude = 1.0                # linear scale factor A
+#  (R_xPoint and Z_xPoint below are required with [EQUILIBRIUM SOURCE])
+#
 #=============== TRACING PARAMETERS
 #
         manifold = 0                    # 0 = unstable (forward map);  1 = stable (inverse map)

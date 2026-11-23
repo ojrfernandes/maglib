@@ -150,6 +150,14 @@ bool input_read::readInputFile() {
                 std::cerr << "Error: h_max must be a positive number." << std::endl;
                 return false;
             }
+        } else if (key == "equilibrium_path") {
+            this->equilibrium_path = value;
+        } else if (key == "perturbation_path") {
+            this->perturbation_path = value;
+        } else if (key == "perturbation_phase") {
+            this->perturbation_phase = std::stod(value);
+        } else if (key == "perturbation_amplitude") {
+            this->perturbation_amplitude = std::stod(value);
         } else if (key == "nsources") {
             this->nsources = std::stoi(value);
             if (this->nsources < 1) {
@@ -192,8 +200,19 @@ bool input_read::readInputFile() {
         std::cerr << "Error on input: One or more required file paths are missing." << std::endl;
         return false;
     }
-    if (this->nsources < 1) {
-        std::cerr << "Error: nsources must be set to a positive integer in [M3DC1 SOURCE]." << std::endl;
+    // Exactly one field source: [M3DC1 SOURCE] (nsources) or [EQUILIBRIUM SOURCE] (equilibrium_path)
+    const bool eq_mode = !this->equilibrium_path.empty();
+    if (eq_mode == (this->nsources > 0)) {
+        std::cerr << "Error: specify exactly one field source: [M3DC1 SOURCE] (nsources >= 1) "
+                     "or [EQUILIBRIUM SOURCE] (equilibrium_path)." << std::endl;
+        return false;
+    }
+    if (eq_mode && !this->components.empty()) {
+        std::cerr << "Error: source_N/timeslice_N/phase_N/amplitude_N keys require [M3DC1 SOURCE]." << std::endl;
+        return false;
+    }
+    if (!eq_mode && !this->perturbation_path.empty()) {
+        std::cerr << "Error: perturbation_path requires equilibrium_path in [EQUILIBRIUM SOURCE]." << std::endl;
         return false;
     }
     if ((int)this->components.size() != this->nsources) {

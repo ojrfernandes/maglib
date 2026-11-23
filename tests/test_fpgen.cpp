@@ -344,6 +344,58 @@ TEST_F(FpgenTest, InputRead_NtorRejectsNonPositive) {
     EXPECT_FALSE(reader.readInputFile());
 }
 
+// [EQUILIBRIUM SOURCE]: parsing and mutual exclusion with [M3DC1 SOURCE]
+static std::string fpgen_input_with(const std::string &dir, const std::string &name,
+                                    const std::string &source_section) {
+    std::string   path = dir + "/" + name;
+    std::ofstream f(path);
+    f << "first_wall_path = test_shape.txt\n"
+      << "output_path = test_output.dat\n"
+      << source_section
+      << "manifold = 0\n"
+      << "grid_R1 = 0.435\ngrid_Z1 = -0.239\ngrid_R2 = 0.435\ngrid_Z2 = -0.232\n"
+      << "nRZ = 10\nnPhi = 20\nnum_threads = 1\nmax_turns = 1000\n"
+      << "h_init = 1e-2\nh_min = 1e-6\nh_max = 1e-2\n";
+    return path;
+}
+
+static const char *kM3DC1Section =
+    "[M3DC1 SOURCE]\nnsources = 1\nsource_0 = test_source.h5\ntimeslice_0 = 1\n";
+static const char *kEquilibriumSection =
+    "[EQUILIBRIUM SOURCE]\n"
+    "equilibrium_path = equilibrium.xml\n"
+    "perturbation_path = perturbation.dat\n"
+    "perturbation_phase = 45.0   # deg\n"
+    "perturbation_amplitude = 2.0\n";
+
+TEST_F(FpgenTest, InputRead_EquilibriumSourceParsed) {
+    input_read reader(fpgen_input_with(test_dir, "eq.txt", kEquilibriumSection));
+    ASSERT_TRUE(reader.readInputFile());
+    EXPECT_EQ(reader.equilibrium_path, "equilibrium.xml");
+    EXPECT_EQ(reader.perturbation_path, "perturbation.dat");
+    EXPECT_DOUBLE_EQ(reader.perturbation_phase, 45.0);
+    EXPECT_DOUBLE_EQ(reader.perturbation_amplitude, 2.0);
+    EXPECT_EQ(reader.nsources, 0);
+}
+
+TEST_F(FpgenTest, InputRead_EquilibriumWithoutPerturbation) {
+    input_read reader(fpgen_input_with(test_dir, "eq_only.txt",
+                                       "[EQUILIBRIUM SOURCE]\nequilibrium_path = g_eqdsk\n"));
+    ASSERT_TRUE(reader.readInputFile());
+    EXPECT_TRUE(reader.perturbation_path.empty());
+}
+
+TEST_F(FpgenTest, InputRead_SourceSectionsMutuallyExclusive) {
+    input_read both(fpgen_input_with(test_dir, "both.txt",
+                                     std::string(kM3DC1Section) + kEquilibriumSection));
+    EXPECT_FALSE(both.readInputFile());
+    input_read none(fpgen_input_with(test_dir, "none.txt", ""));
+    EXPECT_FALSE(none.readInputFile());
+    input_read pert_only(fpgen_input_with(test_dir, "pert_only.txt",
+                                          std::string(kM3DC1Section) + "perturbation_path = p.dat\n"));
+    EXPECT_FALSE(pert_only.readInputFile());
+}
+
 // Test: Multiple reads from same object
 TEST_F(FpgenTest, InputRead_MultipleReads) {
     input_read reader(valid_input_file);

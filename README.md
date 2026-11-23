@@ -121,9 +121,24 @@ tracer.set_monitor("first_wall.txt")
 
 `phase_shift` is in **radians**. `amplitude` may be negative. The equilibrium (timeslice=-1) is opened automatically from the first component's file — no separate `M3DC1Source` is needed. `SuperpositionSource` satisfies the same `FieldSource` interface as `M3DC1Source` and can be passed anywhere a tracer is expected.
 
+### Equilibrium file + gridded perturbation
+
+`EquilibriumSource` reads an axisymmetric equilibrium from a magnetics XML or a G-EQDSK file (format detected from content). `GridPerturbationSource` reads a perturbation-only field (e.g. vacuum RMP plus plasma response) from a restore_field() stream binary on a uniform (φ, R, Z) grid; the stored φ range may be a single period 2π/N. `PerturbedSource` combines them:
+
+```
+B = B_eq(R, φ, Z) + A · B_pert(R, φ−δ, Z)
+```
+
+```python
+source = maglib.PerturbedSource("equilibrium.xml", "perturbation.dat", amplitude=1.0, phase_shift=0.0)
+tracer = maglib.Maglit(source)
+```
+
+`phase_shift` is in **radians**. ψ and ψ_N come from the equilibrium. Evaluation fails outside the perturbation's R–Z box, so the wall must lie inside it. The perturbation file is memory-mapped, so one source per thread does not duplicate it in memory.
+
 ### Angle conventions
 
-Degrees are used **only** in the CLI text input files (`phase_N`, `Phi`, `phi_0`, `phi_1`, `theta_lim`); `mfgen`/`fpgen` convert them to radians in `run.cpp`. Everything else — the C++ classes, the Python API (`phase_shift`, `phi`, `phi_max`, `theta_lim`, ...) and all output columns — uses **radians**. Use `math.radians` / `np.radians` in Python scripts.
+Degrees are used **only** in the CLI text input files (`phase_N`, `perturbation_phase`, `Phi`, `phi_0`, `phi_1`, `theta_lim`); `mfgen`/`fpgen` convert them to radians in `run.cpp`. Everything else — the C++ classes, the Python API (`phase_shift`, `phi`, `phi_max`, `theta_lim`, ...) and all output columns — uses **radians**. Use `math.radians` / `np.radians` in Python scripts.
 
 ### Magnetic footprint
 
@@ -254,7 +269,7 @@ fpgen   # reads fpgen_input.txt
 mfgen   # reads mfgen_input.txt
 ```
 
-Input files use a section-based format. The `[M3DC1 SOURCE]` section is required and controls the field source:
+Input files use a section-based format. Exactly one source section is required, `[M3DC1 SOURCE]` or `[EQUILIBRIUM SOURCE]`:
 
 ```ini
 # I/O parameters (top level)
@@ -270,6 +285,18 @@ amplitude_0 = 1.0      # linear scale factor A
 ```
 
 For superposition of N single-coil runs, set `nsources = N` and provide `source_0`…`source_{N-1}` with their respective `timeslice_N`, `phase_N`, and `amplitude_N` entries. The equilibrium is loaded automatically (timeslice=-1) from the first component's file.
+
+Alternatively, an equilibrium file with an optional gridded perturbation:
+
+```ini
+[EQUILIBRIUM SOURCE]
+equilibrium_path       = equilibrium.xml    # magnetics XML or G-EQDSK
+perturbation_path      = perturbation.dat   # optional; may cover 2π/N only
+perturbation_phase     = 0.0                # toroidal phase shift δ in degrees
+perturbation_amplitude = 1.0                # linear scale factor A
+```
+
+With this section `mfgen` needs `R_xPoint` and `Z_xPoint` in the input.
 
 `fpgen`'s mapping parameters accept an optional `ntor` (default 1), restricting the traced toroidal grid to `[0, 2π/ntor)` instead of the full `[0, 2π)`.
 
@@ -333,7 +360,7 @@ GoogleTest is fetched automatically by CMake. pytest must be installed: `pip ins
 
 ```
 maglib/
-├── maglit/          Core integrator (sode, collider, maglit, FieldSource, M3DC1Source, SuperpositionSource)
+├── maglit/          Core integrator (sode, collider, maglit, FieldSource, M3DC1Source, SuperpositionSource, EquilibriumSource, GridPerturbationSource, PerturbedSource)
 ├── fpgen/           Footprint generator CLI (footprint.h/cpp, input_read, run.cpp)
 ├── mfgen/           Manifold generator CLI (manifold.h/cpp, input_read, run.cpp)
 ├── python/

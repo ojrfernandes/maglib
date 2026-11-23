@@ -13,6 +13,7 @@ pybind11_add_module(_maglib
     src/collider_bindings.cpp
     src/field_source_bindings.cpp
     src/superposition_source_bindings.cpp
+    src/equilibrium_source_bindings.cpp
     src/maglit_bindings.cpp
     src/footprint_bindings.cpp
     src/manifold_bindings.cpp
@@ -21,6 +22,8 @@ pybind11_add_module(_maglib
     ${CMAKE_SOURCE_DIR}/maglit/maglit.cpp
     ${CMAKE_SOURCE_DIR}/maglit/m3dc1_source.cpp
     ${CMAKE_SOURCE_DIR}/maglit/superposition_source.cpp
+    ${CMAKE_SOURCE_DIR}/maglit/equilibrium_source.cpp
+    ${CMAKE_SOURCE_DIR}/maglit/grid_perturbation_source.cpp
     ${CMAKE_SOURCE_DIR}/fpgen/src/footprint.cpp
     ${CMAKE_SOURCE_DIR}/mfgen/src/manifold.cpp
 )

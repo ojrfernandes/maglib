@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <m3dc1_source.h>
 #include <memory>
+#include <perturbed_source.h>
 #include <superposition_source.h>
 #include <thread>
 
@@ -41,17 +42,25 @@ int main(int argc, char *argv[]) {
                  : "hdf5 (null " + std::to_string(input.xpoint_null) + ")");
 
   std::cout << "--------------- I/O PARAMETERS ----------------\n\n";
-  std::cout << "nsources       = " << input.nsources << "\n";
-  for (int i = 0; i < input.nsources; ++i)
-    std::cout << "  source_" << i << "     = " << input.components[i].path
-              << "  ts=" << input.components[i].timeslice
-              << "  phase=" << input.components[i].phase << " deg"
-              << "  amp=" << input.components[i].amplitude << "\n";
+  if (!input.equilibrium_path.empty()) {
+    std::cout << "equilibrium    = " << input.equilibrium_path << "\n"
+              << "perturbation   = "
+              << (input.perturbation_path.empty() ? "none" : input.perturbation_path)
+              << "  phase=" << input.perturbation_phase << " deg"
+              << "  amp=" << input.perturbation_amplitude << "\n";
+  } else {
+    std::cout << "nsources       = " << input.nsources << "\n";
+    for (int i = 0; i < input.nsources; ++i)
+      std::cout << "  source_" << i << "     = " << input.components[i].path
+                << "  ts=" << input.components[i].timeslice
+                << "  phase=" << input.components[i].phase << " deg"
+                << "  amp=" << input.components[i].amplitude << "\n";
+  }
   std::cout << "output_path    = " << input.output_path << "\n\n"
             << "--------------- TRACING PARAMETERS ------------\n\n"
-            << "timeslice      = " << (input.nsources == 1
-                                        ? std::to_string(input.components[0].timeslice)
-                                        : "per-component") << "\n"
+            << "timeslice      = " << (input.nsources == 0   ? std::string("n/a")
+                                        : input.nsources == 1 ? std::to_string(input.components[0].timeslice)
+                                                              : std::string("per-component")) << "\n"
             << "manifold       = " << input.manifold << "\n"
             << "method         = " << input.method << "\n"
             << "Phi            = " << input.Phi << "\n"
@@ -102,7 +111,16 @@ int main(int argc, char *argv[]) {
   // Create source once — reused across all Poincaré sections.
   std::cout << "\nOpening field source...\n" << std::endl;
   std::unique_ptr<FieldSource> source;
-  if (input.nsources == 1) {
+  if (!input.equilibrium_path.empty()) {
+    try {
+      source = make_equilibrium_source(input.equilibrium_path, input.perturbation_path,
+                                       input.perturbation_amplitude,
+                                       input.perturbation_phase * M_PI / 180.0);
+    } catch (const std::exception &e) {
+      std::cerr << "Error: " << e.what() << std::endl;
+      return 1;
+    }
+  } else if (input.nsources == 1) {
     source = std::make_unique<M3DC1Source>(
         input.components[0].path.c_str(), input.components[0].timeslice);
   } else {

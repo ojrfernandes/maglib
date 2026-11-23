@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <m3dc1_source.h>
 #include <memory>
+#include <perturbed_source.h>
 #include <superposition_source.h>
 #include <thread>
 #include <unistd.h>
@@ -26,18 +27,26 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "--------------- I/O PARAMETERS ----------------\n\n";
-    std::cout << "nsources        = " << input.nsources << "\n";
-    for (int i = 0; i < input.nsources; ++i)
-        std::cout << "  source_" << i << "      = " << input.components[i].path
-                  << "  ts=" << input.components[i].timeslice
-                  << "  phase=" << input.components[i].phase << " deg"
-                  << "  amp=" << input.components[i].amplitude << "\n";
+    if (!input.equilibrium_path.empty()) {
+        std::cout << "equilibrium     = " << input.equilibrium_path << "\n"
+                  << "perturbation    = "
+                  << (input.perturbation_path.empty() ? "none" : input.perturbation_path)
+                  << "  phase=" << input.perturbation_phase << " deg"
+                  << "  amp=" << input.perturbation_amplitude << "\n";
+    } else {
+        std::cout << "nsources        = " << input.nsources << "\n";
+        for (int i = 0; i < input.nsources; ++i)
+            std::cout << "  source_" << i << "      = " << input.components[i].path
+                      << "  ts=" << input.components[i].timeslice
+                      << "  phase=" << input.components[i].phase << " deg"
+                      << "  amp=" << input.components[i].amplitude << "\n";
+    }
     std::cout << "first_wall_path = " << input.first_wall_path << "\n"
               << "output_path     = " << input.output_path     << "\n\n"
               << "--------------- MAPPING PARAMETERS ------------\n\n"
-              << "timeslice    = " << (input.nsources == 1
-                                       ? std::to_string(input.components[0].timeslice)
-                                       : "per-component") << "\n"
+              << "timeslice    = " << (input.nsources == 0   ? std::string("n/a")
+                                       : input.nsources == 1 ? std::to_string(input.components[0].timeslice)
+                                                             : std::string("per-component")) << "\n"
               << "manifold     = " << input.manifold    << "\n"
               << "grid_R1      = " << input.grid_R1     << "\n"
               << "grid_Z1      = " << input.grid_Z1     << "\n"
@@ -73,6 +82,10 @@ int main(int argc, char *argv[]) {
     // Each thread needs its own FieldSource (Fusion-IO is not thread-safe).
     // unique_ptr keeps each source at a stable address for the maglit references.
     auto make_source = [&]() -> std::unique_ptr<FieldSource> {
+        if (!input.equilibrium_path.empty())
+            return make_equilibrium_source(input.equilibrium_path, input.perturbation_path,
+                                           input.perturbation_amplitude,
+                                           input.perturbation_phase * M_PI / 180.0);
         if (input.nsources == 1) {
             return std::make_unique<M3DC1Source>(
                 input.components[0].path.c_str(), input.components[0].timeslice);
@@ -88,11 +101,16 @@ int main(int argc, char *argv[]) {
     std::vector<std::unique_ptr<maglit>>      tracers;
     sources.reserve(input.num_threads);
     tracers.reserve(input.num_threads);
-    for (int i = 0; i < input.num_threads; ++i) {
-        sources.push_back(make_source());
-        tracers.push_back(std::make_unique<maglit>(*sources.back()));
-        tracers.back()->set_monitor(input.first_wall_path);
-        tracers.back()->configure(input.h_init, input.h_min, input.h_max);
+    try {
+        for (int i = 0; i < input.num_threads; ++i) {
+            sources.push_back(make_source());
+            tracers.push_back(std::make_unique<maglit>(*sources.back()));
+            tracers.back()->set_monitor(input.first_wall_path);
+            tracers.back()->configure(input.h_init, input.h_min, input.h_max);
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
     }
 
     std::vector<maglit*> tracer_ptrs;

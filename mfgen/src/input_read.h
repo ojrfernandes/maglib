@@ -32,6 +32,12 @@ class input_read {
     int                       nsources   = 0;  // must be set explicitly in [M3DC1 SOURCE]
     std::vector<SourceComponent> components;   // indexed 0..nsources-1
 
+    // [EQUILIBRIUM SOURCE] section — alternative to [M3DC1 SOURCE].
+    std::string equilibrium_path;               // magnetics XML or G-EQDSK
+    std::string perturbation_path;              // optional restore_field() binary perturbation
+    double      perturbation_phase     = 0.0;   // degrees (converted to rad in run.cpp)
+    double      perturbation_amplitude = 1.0;
+
     // Tracing parameters
     int    manifold    = 0;   // 0 = unstable (forward map);  1 = stable (inverse map)
     int    method      = 0;   // method: exact-map=0, interpolant=1
