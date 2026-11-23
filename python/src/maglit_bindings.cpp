@@ -64,8 +64,8 @@ phi : float
 phi_max : float
     Integration will not advance past this angle (radians).
 dir : int
-    Boundary monitor direction: 0 = ignore, 1 = stop on inside→outside,
-    -1 = stop on outside→inside.
+    Boundary monitor direction: 0 = ignore, -1 = stop when the line leaves the
+    wall polygon (inside→outside), 1 = stop when it enters (outside→inside).
 
 Returns
 -------

@@ -329,7 +329,7 @@ PYTHONPATH=/path/to/maglib/python python examples/<script>.py
 
 ### Test data
 
-C++ and Python tests require sample M3D-C1 data hosted on Figshare:
+C++ and Python tests require the sample M3D-C1 data hosted on Figshare (`C1.h5`; the examples also use `tcabr_first_wall.txt`):
 
 📦 https://doi.org/10.6084/m9.figshare.30593324.v1
 
@@ -341,6 +341,8 @@ tests/
     ├── C1.h5
     └── tcabr_first_wall.txt
 ```
+
+The wall-dependent tests use the committed 68-vertex wall `fpgen/tcabr_first_wall_m3dc1.txt`, against which their reference values were computed.
 
 ### Run tests
 

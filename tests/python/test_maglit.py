@@ -2,7 +2,7 @@
 Python tests for M3DC1Source and Maglit.
 
 Mirrors the C++ GoogleTest suite in tests/test_maglit.cpp. Requires
-tests/data/C1.h5 and tests/data/tcabr_first_wall.txt.
+tests/data/C1.h5; the wall is the committed fpgen/tcabr_first_wall_m3dc1.txt.
 """
 
 import math
@@ -15,7 +15,7 @@ from maglib import M3DC1Source, Maglit, SodeStatus
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 C1_H5    = os.path.join(DATA_DIR, "C1.h5")
-WALL_TXT = os.path.join(DATA_DIR, "tcabr_first_wall.txt")
+WALL_TXT = os.path.join(os.path.dirname(__file__), "..", "..", "fpgen", "tcabr_first_wall_m3dc1.txt")
 
 TOL = 1e-6
 

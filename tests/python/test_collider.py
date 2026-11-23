@@ -60,7 +60,7 @@ def reversed_square_file(tmp_path):
 
 @pytest.fixture
 def tcabr_file():
-    return os.path.join(DATA_DIR, "tcabr_first_wall.txt")
+    return os.path.join(os.path.dirname(__file__), "..", "..", "fpgen", "tcabr_first_wall_m3dc1.txt")
 
 
 # ── Construction ──────────────────────────────────────────────────────────────

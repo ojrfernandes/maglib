@@ -10,7 +10,7 @@ class MaglitTest : public ::testing::Test {
     static void SetUpTestSuite() {
         std::snprintf(source_path, sizeof(source_path),
                       "%s/C1.h5", TEST_DATA_DIR);
-        shape_path  = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+        shape_path  = TEST_WALL_FILE;
         source_vac  = new M3DC1Source(source_path, -1);
         tracer_vac  = new maglit(*source_vac);
         tracer_vac->configure(0.01, 1e-6, 0.1);

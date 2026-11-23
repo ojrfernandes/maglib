@@ -39,6 +39,7 @@ target_include_directories(test_maglit PRIVATE
 )
 target_compile_definitions(test_maglit PRIVATE
     TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+    TEST_WALL_FILE="${CMAKE_SOURCE_DIR}/fpgen/tcabr_first_wall_m3dc1.txt"
 )
 
 # Integration tests (for programs)
@@ -61,6 +62,7 @@ target_include_directories(test_fpgen PRIVATE
 )
 target_compile_definitions(test_fpgen PRIVATE
     TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+    TEST_WALL_FILE="${CMAKE_SOURCE_DIR}/fpgen/tcabr_first_wall_m3dc1.txt"
 )
 
 # MFGEN

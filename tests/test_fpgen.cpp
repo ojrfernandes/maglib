@@ -13,7 +13,7 @@ class FpgenTest : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
         std::string src_path        = std::string(TEST_DATA_DIR) + "/C1.h5";
-        std::string first_wall_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+        std::string first_wall_path = TEST_WALL_FILE;
         source = new M3DC1Source(src_path.c_str(), 1);
         tracer = new maglit(*source);
         tracer->configure(0.01, 1e-6, 0.1);
@@ -666,7 +666,7 @@ TEST_F(FpgenTest, Footprint_Save_UnknownExtension) {
 static void make_tracer(std::unique_ptr<M3DC1Source> &src_out,
                         std::unique_ptr<maglit>       &tracer_out) {
     std::string src_path        = std::string(TEST_DATA_DIR) + "/C1.h5";
-    std::string first_wall_path = std::string(TEST_DATA_DIR) + "/tcabr_first_wall.txt";
+    std::string first_wall_path = TEST_WALL_FILE;
     src_out    = std::make_unique<M3DC1Source>(src_path.c_str(), 1);
     tracer_out = std::make_unique<maglit>(*src_out);
     tracer_out->configure(0.01, 1e-6, 0.1);

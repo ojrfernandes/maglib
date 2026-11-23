@@ -15,7 +15,7 @@ from maglib import M3DC1Source, Maglit, Footprint
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 C1_H5    = os.path.join(DATA_DIR, "C1.h5")
-WALL_TXT = os.path.join(DATA_DIR, "tcabr_first_wall.txt")
+WALL_TXT = os.path.join(os.path.dirname(__file__), "..", "..", "fpgen", "tcabr_first_wall_m3dc1.txt")
 
 TOL = 1e-3   # matches C++ reference-value tolerance
 
