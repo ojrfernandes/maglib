@@ -7,7 +7,7 @@ from matplotlib.ticker import FuncFormatter
 
 def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet", cmap_key=10,
                    figsize=(10, 5), sizef=1, dpi=80, v_min=None, v_max=None,
-                   turn_cap=None, psi_cap=False, savefig=None):
+                   turn_cap=None, polturn_cap=None, psi_cap=False, savefig=None):
     """
     Plot footprint data from fpgen output or a maglib.Footprint object.
 
@@ -16,9 +16,12 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     source : str, numpy.ndarray, or Footprint
         File path, (N, >=6) array, or Footprint object.
         Columns: R0, Z0, phi0, connection_length, psiN_min, turns[, polTurn].
-        polTurn (column 6) is not plotted.
+        polTurn (column 6) is present in fpgen output since the 7-column format.
     which_plot : str
-        Subset to plot: "cl", "psi", "turns", "au", or "all". Default "all".
+        Subset to plot: "cl", "psi", "turns", "polturns", "au", or "all".
+        Default "all". "all" includes "polturns" only when the data has the
+        polTurn column; requesting "polturns" explicitly on 6-column data
+        raises ValueError.
     xaxis : str
         X-axis units: "rad" or "deg". Default "rad".
     ntor : int, optional
@@ -30,7 +33,7 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     cmap : str
         Matplotlib colormap name. Default "jet".
     cmap_key : int
-        Number of discrete colors used for "turns" and "au" plots. Default 10.
+        Number of discrete colors used for "turns", "polturns" and "au" plots. Default 10.
     figsize : tuple of float
         Base figure size in inches. Default (10, 5).
     sizef : float
@@ -41,6 +44,9 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
         Manual colormap bounds for the "au" plot. Both must be provided together.
     turn_cap : tuple of float, optional
         (min, max) color scale bounds for the "turns" plot. Uses LogNorm when None.
+    polturn_cap : tuple of float, optional
+        (min, max) color scale bounds for the "polturns" plot. Uses LogNorm when
+        None; lines with polTurn = 0 (no completed poloidal turn) are then left blank.
     psi_cap : bool
         Mask points where psiN_min >= 1 or turns <= 1 (open field lines). Default False.
     savefig : str, optional
@@ -58,8 +64,11 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     if data.ndim != 2 or data.shape[1] < 6:
         raise ValueError("Footprint data must have shape (N, >=6).")
 
-    if which_plot not in ("cl", "psi", "turns", "au", "all"):
-        raise ValueError("which_plot must be 'cl', 'psi', 'turns', 'au', or 'all'.")
+    if which_plot not in ("cl", "psi", "turns", "polturns", "au", "all"):
+        raise ValueError("which_plot must be 'cl', 'psi', 'turns', 'polturns', 'au', or 'all'.")
+    has_pol = data.shape[1] >= 7
+    if which_plot == "polturns" and not has_pol:
+        raise ValueError("'polturns' needs the polTurn column: footprint data must have shape (N, 7).")
     if xaxis not in ("rad", "deg"):
         raise ValueError("xaxis must be 'rad' or 'deg'.")
     if ntor is not None and (not isinstance(ntor, (int, np.integer)) or ntor < 1):
@@ -83,12 +92,14 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     z_cl = data[:, 3]
     z_psi = data[:, 4]
     z_turns = data[:, 5]
+    z_pol = data[:, 6] if has_pol else np.zeros(len(data))
 
     n_phi = len(np.unique(x))
     n_y = len(data) // n_phi
     z_cl = np.reshape(z_cl, (n_phi, n_y)).T
     z_psi = np.reshape(z_psi, (n_phi, n_y)).T
     z_turns = np.reshape(z_turns, (n_phi, n_y)).T
+    z_pol = np.reshape(z_pol, (n_phi, n_y)).T
 
     # Span (degrees) of the toroidal range actually present in `source`,
     # inferred from the phi0 sample spacing (stored in radians, see
@@ -103,6 +114,7 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
         z_cl = np.tile(z_cl, (1, ntor))
         z_psi = np.tile(z_psi, (1, ntor))
         z_turns = np.tile(z_turns, (1, ntor))
+        z_pol = np.tile(z_pol, (1, ntor))
         span_deg *= ntor
 
     if psi_cap:
@@ -110,6 +122,7 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
         z_cl = np.ma.masked_where(mask, z_cl)
         z_psi = np.ma.masked_where(mask, z_psi)
         z_turns = np.ma.masked_where(mask, z_turns)
+        z_pol = np.ma.masked_where(mask, z_pol)
 
     cmap_cont = mpl.colormaps.get_cmap(cmap)
     cmap_disc = mpl.colormaps.get_cmap(cmap).resampled(cmap_key)
@@ -166,6 +179,20 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
         fig.colorbar(im, ax=ax).set_label("toroidal turns")
         _xaxis(ax)
         _save("turns")
+        plt.show(block=False)
+
+    if which_plot == "polturns" or (which_plot == "all" and has_pol):
+        if polturn_cap is not None:
+            norm, vmin, vmax = None, polturn_cap[0], polturn_cap[1]
+        elif np.any(z_pol > 0):
+            norm, vmin, vmax = LogNorm(), None, None  # LogNorm masks polTurn = 0
+        else:
+            norm, vmin, vmax = None, None, None  # all zero: LogNorm has no range
+        fig, ax = plt.subplots(figsize=fsize, dpi=dpi)
+        im = ax.imshow(z_pol, cmap=cmap_disc, norm=norm, vmin=vmin, vmax=vmax, **imshow_kw)
+        fig.colorbar(im, ax=ax).set_label("poloidal turns")
+        _xaxis(ax)
+        _save("polturns")
         plt.show(block=False)
 
     if which_plot in ("all", "au"):

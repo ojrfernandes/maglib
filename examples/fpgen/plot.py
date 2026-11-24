@@ -15,9 +15,9 @@ plot_footprint() accepts three source types:
   2. numpy array — (N, 7) array held in memory (older 6-column files also work)
   3. Footprint object — only available immediately after run.py in the same session
 
-All four sub-plots are shown: "cl" (connection length), "psi" (psi_N min),
-"turns" (toroidal turns), and "au" (combined proxy). The "all" shortcut
-produces all four in sequence.
+Sub-plots: "cl" (connection length), "psi" (psi_N min), "turns" (toroidal
+turns), "polturns" (poloidal turns; 7-column data only), and "au" (combined
+proxy). The "all" shortcut produces each available one in sequence.
 """
 
 from pathlib import Path

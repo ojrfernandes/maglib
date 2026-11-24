@@ -199,6 +199,37 @@ def test_plot_footprint_turn_cap(fp_data):
     plot_footprint(fp_data, which_plot="turns", turn_cap=(2, 10))
 
 
+def _with_polturn(data, pol):
+    return np.column_stack([data, pol])
+
+
+def test_plot_footprint_polturns(fp_data):
+    pol = np.arange(len(fp_data)) % 4  # includes zeros (no completed turn)
+    plot_footprint(_with_polturn(fp_data, pol), which_plot="polturns")
+    im = plt.gca().get_images()[0]
+    assert im.get_array().shape == (3, 4)  # (n_y, n_phi)
+    assert np.ma.count_masked(im.norm(im.get_array())) == np.count_nonzero(pol == 0)
+
+
+def test_plot_footprint_polturns_all_zero_and_cap(fp_data):
+    data = _with_polturn(fp_data, np.zeros(len(fp_data)))
+    plot_footprint(data, which_plot="polturns")
+    plot_footprint(data, which_plot="polturns", polturn_cap=(0, 5), psi_cap=True)
+
+
+def test_plot_footprint_polturns_requires_column(fp_data):
+    with pytest.raises(ValueError):
+        plot_footprint(fp_data, which_plot="polturns")
+
+
+def test_plot_footprint_all_includes_polturns_when_present(fp_data):
+    plot_footprint(fp_data, which_plot="all")
+    n6 = len(plt.get_fignums())
+    plt.close("all")
+    plot_footprint(_with_polturn(fp_data, np.ones(len(fp_data))), which_plot="all")
+    assert len(plt.get_fignums()) == n6 + 1
+
+
 def test_plot_footprint_default_extent_full_circle():
     """ntor=None with full-circle data (ntor=1 at generation time) → extent spans 360deg."""
     data = _make_fp_data(n_phi=4, n_y=3, ntor=1)
