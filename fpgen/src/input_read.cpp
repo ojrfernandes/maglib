@@ -32,6 +32,7 @@ bool input_read::readInputFile() {
     };
 
     std::string current_section = "";
+    bool        R_axis_set = false, Z_axis_set = false;
 
     while (std::getline(file, line)) {
         // Trim the line first
@@ -116,6 +117,12 @@ bool input_read::readInputFile() {
                 std::cerr << "Error: ntor must be a positive integer." << std::endl;
                 return false;
             }
+        } else if (key == "R_axis") {
+            this->R_axis = std::stod(value);
+            R_axis_set   = true;
+        } else if (key == "Z_axis") {
+            this->Z_axis = std::stod(value);
+            Z_axis_set   = true;
         } else if (key == "num_threads") {
             this->num_threads = std::stoi(value);
             // check if num_threads is a positive integer
@@ -227,6 +234,12 @@ bool input_read::readInputFile() {
             return false;
         }
     }
+
+    if (R_axis_set != Z_axis_set) {
+        std::cerr << "Error: R_axis and Z_axis must be given together." << std::endl;
+        return false;
+    }
+    this->axis_set = R_axis_set;
 
     // Validate step-size relationships after all keys are parsed
     if (this->h_max < this->h_min) {

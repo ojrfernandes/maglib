@@ -32,6 +32,12 @@ class EquilibriumSource : public FieldSource {
     bool eval_B(double R, double phi, double Z, double B[3]) override;
     bool eval_psin(double R, double phi, double Z, double &psin) override;
     bool eval_psi(double R, double phi, double Z, double &psi) override;
+    // XML: op (R, Z); G-EQDSK: (rmaxis, zmaxis).
+    bool magnetic_axis(double &R, double &Z) override {
+        R = R_axis_;
+        Z = Z_axis_;
+        return valid_;
+    }
 
     // Returns false if the file could not be read or is inconsistent.
     bool is_valid() const { return valid_; }
@@ -50,6 +56,7 @@ class EquilibriumSource : public FieldSource {
     std::vector<double> psi_, psiR_, psiZ_, psiRZ_;
 
     double psi_axis_ = 0, psi_bdry_ = 0; // Wb
+    double R_axis_ = 0, Z_axis_ = 0;     // magnetic axis [m]
     double sigma_    = 1;                // sign of the poloidal field relative to grad psi x grad phi
 
     // F(psi_N) [T m]: abscissae, values, natural-spline second derivatives

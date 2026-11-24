@@ -12,7 +12,7 @@ Usage
 plot_footprint() accepts three source types:
 
   1. File path   — load from .dat / .csv / .npy / .npz on disk
-  2. numpy array — (N, 6) array held in memory
+  2. numpy array — (N, 7) array held in memory (older 6-column files also work)
   3. Footprint object — only available immediately after run.py in the same session
 
 All four sub-plots are shown: "cl" (connection length), "psi" (psi_N min),

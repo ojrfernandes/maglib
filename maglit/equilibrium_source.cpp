@@ -180,6 +180,8 @@ bool EquilibriumSource::load_xml(const std::string &text) {
     build_derivatives();
 
     psi_axis_ = op[0];
+    R_axis_   = op[1];
+    Z_axis_   = op[2];
     const double Z_axis = op[2];
 
     // xp: rows (psi, R, Z), one column per entry; keep genuine saddles only
@@ -313,6 +315,8 @@ bool EquilibriumSource::load_geqdsk(const std::string &text) {
     for (size_t i = 0; i < psirz.size(); ++i)
         psi_[i] = kTwoPi * psirz[i]; // psirz[iz*nw + ir] == our (nZ,nR) row-major
     psi_axis_ = kTwoPi * simag;
+    R_axis_   = b2[0]; // rmaxis
+    Z_axis_   = b2[1]; // zmaxis
     psi_bdry_ = kTwoPi * sibry;
     // B_Z at the outboard midplane must have the sign of -Ip (Ampere, phi counter-clockwise)
     sigma_ = ((current > 0) == (simag > sibry)) ? 1.0 : -1.0;

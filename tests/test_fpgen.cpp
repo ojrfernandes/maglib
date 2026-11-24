@@ -437,6 +437,24 @@ TEST_F(FpgenTest, Footprint_ConstructorRejectsInvalidNtor) {
 }
 
 // Test: ntor restricts the toroidal starting grid to [0, 2*pi/ntor)
+// R_axis / Z_axis: both or neither
+TEST_F(FpgenTest, InputRead_MagneticAxisKeys) {
+    std::string both = fpgen_input_with(test_dir, "axis_both.txt",
+                                        std::string(kM3DC1Section) + "R_axis = 0.63\nZ_axis = -0.01\n");
+    input_read  r1(both);
+    ASSERT_TRUE(r1.readInputFile());
+    EXPECT_TRUE(r1.axis_set);
+    EXPECT_DOUBLE_EQ(r1.R_axis, 0.63);
+    EXPECT_DOUBLE_EQ(r1.Z_axis, -0.01);
+
+    input_read r0(fpgen_input_with(test_dir, "axis_none.txt", kM3DC1Section));
+    ASSERT_TRUE(r0.readInputFile());
+    EXPECT_FALSE(r0.axis_set);
+
+    input_read r_only(fpgen_input_with(test_dir, "axis_R.txt", std::string(kM3DC1Section) + "R_axis = 0.63\n"));
+    EXPECT_FALSE(r_only.readInputFile());
+}
+
 TEST_F(FpgenTest, Footprint_NtorRestrictsPhiGrid) {
     int       manifold = 0;
     double    grid_R1 = 0.435;
@@ -468,14 +486,14 @@ TEST_F(FpgenTest, Footprint_OutputDataInitialization) {
     // Check that outputData is properly sized
     EXPECT_EQ(fp.get_output_data().size(), nRZ * nPhi);
 
-    // Check that each row has 6 columns
+    // Check that each row has 7 columns
     if (fp.get_output_data().size() > 0) {
-        EXPECT_EQ(fp.get_output_data()[0].size(), 6);
+        EXPECT_EQ(fp.get_output_data()[0].size(), 7);
     }
 
     // Check all rows are properly initialized
     for (const auto &row : fp.get_output_data()) {
-        EXPECT_EQ(row.size(), 6);
+        EXPECT_EQ(row.size(), 7);
     }
 }
 
@@ -498,9 +516,9 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
     // Check that outputData is populated
     EXPECT_EQ(fp.get_output_data().size(), nR * nZ);
 
-    // Check that each row has 6 columns
+    // Check that each row has 7 columns
     if (fp.get_output_data().size() > 0) {
-        EXPECT_EQ(fp.get_output_data()[0].size(), 6);
+        EXPECT_EQ(fp.get_output_data()[0].size(), 7);
     }
 
     // Check that data values (within 3 digit precision) are
@@ -537,6 +555,79 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Wall) {
     EXPECT_EQ(fp.get_output_data()[1][5], 3);
     EXPECT_EQ(fp.get_output_data()[2][5], 1);
     EXPECT_EQ(fp.get_output_data()[3][5], 3);
+
+    // short open lines: no completed poloidal turn
+    for (int k = 0; k < 4; ++k)
+        EXPECT_EQ(fp.get_output_data()[k][6], 0);
+}
+
+// Single long line from the wall grid (axis read from C1.h5): 8 toroidal, 2 poloidal turns.
+TEST_F(FpgenTest, Footprint_PoloidalTurns_LongLine) {
+    const double Z0 = -0.239 + 0.007 / 3.0;
+    footprint    fp(0, 0.435, Z0, 0.435, Z0, 1, 1, 300);
+    std::vector<maglit *> tracers = {tracer};
+    ASSERT_NO_THROW(fp.run(tracers));
+    EXPECT_EQ(fp.get_output_data()[0][5], 8);
+    EXPECT_EQ(fp.get_output_data()[0][6], 2);
+
+    // manual axis equal to the source's gives the identical result
+    double R_ax, Z_ax;
+    ASSERT_TRUE(source->magnetic_axis(R_ax, Z_ax));
+    footprint fp_manual(0, 0.435, Z0, 0.435, Z0, 1, 1, 300);
+    fp_manual.set_magnetic_axis(R_ax, Z_ax);
+    fp_manual.run(tracers);
+    EXPECT_EQ(fp_manual.get_output_data(), fp.get_output_data());
+}
+
+TEST_F(FpgenTest, M3DC1Source_MagneticAxis) {
+    double R, Z;
+    ASSERT_TRUE(source->magnetic_axis(R, Z));
+    // tests/data/C1.h5 scalars/xmag[0], zmag[0]
+    EXPECT_NEAR(R, 0.63088644, 1e-6);
+    EXPECT_NEAR(Z, -0.00082328, 1e-6);
+}
+
+// Unwrapped poloidal angle on synthetic paths about an arbitrary axis
+TEST(PoloidalAngle, WindingOnSyntheticPaths) {
+    const double Rax = 0.6, Zax = -0.1, a = 0.2;
+    auto wind = [&](const std::vector<double> &th) {
+        double sum = 0;
+        for (size_t k = 1; k < th.size(); ++k)
+            sum += poloidal_angle_step(Rax, Zax, Rax + a * cos(th[k - 1]), Zax + a * sin(th[k - 1]),
+                                       Rax + a * cos(th[k]), Zax + a * sin(th[k]));
+        return sum;
+    };
+    std::vector<double> th;
+    for (int k = 0; k <= 700; ++k) th.push_back(2.0 + 3.5 * 2 * M_PI * k / 700.0); // 3.5 turns, crosses +-pi
+    EXPECT_NEAR(wind(th), 3.5 * 2 * M_PI, 1e-9);
+    EXPECT_EQ(static_cast<int>(floor(fabs(wind(th)) / (2 * M_PI))), 3);
+
+    std::vector<double> rev(th.rbegin(), th.rend()); // opposite direction
+    EXPECT_NEAR(wind(rev), -3.5 * 2 * M_PI, 1e-9);
+
+    th.clear(); // oscillation around theta0 = pi (the atan2 branch cut): no net winding
+    for (int k = 0; k <= 400; ++k) th.push_back(M_PI + 0.8 * sin(0.1 * k));
+    EXPECT_NEAR(wind(th), 0.8 * sin(40.0), 1e-9);
+}
+
+// Source without an axis and no manual axis: run() throws before tracing
+TEST(FootprintAxis, ThrowsWithoutAxis) {
+    struct NoAxisSource : FieldSource {
+        bool eval_B(double, double, double, double B[3]) override {
+            B[0] = 0; B[1] = 1; B[2] = 0;
+            return true;
+        }
+        bool eval_psin(double, double, double, double &) override { return false; }
+        bool eval_psi(double, double, double, double &) override { return false; }
+    } src;
+    maglit                t(src);
+    std::vector<maglit *> tracers = {&t};
+    footprint             fp(0, 0.5, 0.0, 0.5, 0.0, 1, 1, 1);
+    EXPECT_THROW(fp.run(tracers), std::runtime_error);
+
+    fp.set_magnetic_axis(0.3, 0.0); // then it runs: straight toroidal line, no poloidal motion
+    EXPECT_NO_THROW(fp.run(tracers));
+    EXPECT_EQ(fp.get_output_data()[0][6], 0);
 }
 
 // Test: Simple 2 x 2 tcabr floor grid run limited to 50 turns
@@ -558,9 +649,9 @@ TEST_F(FpgenTest, Footprint_RunGrid_Simple2x2_Floor) {
     // Check that outputData is populated
     EXPECT_EQ(fp.get_output_data().size(), nR * nZ);
 
-    // Check that each row has 6 columns
+    // Check that each row has 7 columns
     if (fp.get_output_data().size() > 0) {
-        EXPECT_EQ(fp.get_output_data()[0].size(), 6);
+        EXPECT_EQ(fp.get_output_data()[0].size(), 7);
     }
 
     // Check that data values (within 3 digit precision) are
@@ -646,7 +737,7 @@ TEST_F(FpgenTest, Footprint_Save_Csv) {
     std::ifstream f(path);
     std::string header;
     std::getline(f, header);
-    EXPECT_EQ(header, "R0,Z0,phi0,length,psiMin,turn");
+    EXPECT_EQ(header, "R0,Z0,phi0,length,psiMin,turn,polTurn");
 
     int data_lines = 0;
     std::string line;

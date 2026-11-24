@@ -46,6 +46,10 @@ class SuperpositionSource : public FieldSource {
     bool eval_B(double R, double phi, double Z, double B[3]) override;
     bool eval_psin(double R, double phi, double Z, double &psin) override;
     bool eval_psi(double R, double phi, double Z, double &psi) override;
+    // Delegated to the equilibrium source.
+    bool magnetic_axis(double &R, double &Z) override {
+        return eq_source_ && eq_source_->magnetic_axis(R, Z);
+    }
 
     // Returns false if no components have been added or any source failed to open.
     bool is_valid() const;

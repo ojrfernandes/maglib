@@ -45,6 +45,9 @@ class input_read {
     int    nRZ         = 0;   // grid dimension along the (R,Z) plane
     int    nPhi        = 0;   // grid dimension along toroidal direction (Phi)
     int    ntor        = 1;   // toroidal mode number; restricts phi grid to [0, 2*pi/ntor)
+    double R_axis      = 0.0; // magnetic axis R (m); origin of the poloidal angle
+    double Z_axis      = 0.0; // magnetic axis Z (m)
+    bool   axis_set    = false; // true when R_axis and Z_axis are given; otherwise read from the source
 
     // Additional parameters
     int    num_threads = 1;    // number of threads for OpenMP parallelization

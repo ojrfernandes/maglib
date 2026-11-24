@@ -12,7 +12,7 @@ import math
 import numpy as np
 import pytest
 
-from maglib import EquilibriumSource, GridPerturbationSource, PerturbedSource
+from maglib import EquilibriumSource, Footprint, GridPerturbationSource, Maglit, PerturbedSource
 
 R0, C, F0, EPS = 1.6, 1.0, -3.0, 0.05
 ZX = -2.0 / (3.0 * C)  # m, X-point Z
@@ -131,6 +131,12 @@ def test_equilibrium_psin_and_domain(which, geqdsk_path, xml_path):
     assert not src.eval_psin(float("nan"), 0.0, 0.0)[0]
 
 
+@pytest.mark.parametrize("which", ["geqdsk", "xml"])
+def test_equilibrium_magnetic_axis(which, geqdsk_path, xml_path):
+    src = EquilibriumSource(geqdsk_path if which == "geqdsk" else xml_path)
+    assert src.magnetic_axis() == pytest.approx((R0, 0.0), abs=1e-12)
+
+
 def test_equilibrium_ampere_sign(geqdsk_path):
     # Ip > 0 along +phi (counter-clockwise from above) => B_Z < 0 on the outboard midplane
     ok, B = EquilibriumSource(geqdsk_path).eval_B(1.9, 0.0, 0.0)
@@ -221,3 +227,16 @@ def test_perturbed_source(tmp_path, geqdsk_path):
     assert eq.eval_B(2.1, 0.0, 0.0)[0] and not src.eval_B(2.1, 0.0, 0.0)[0]
     with pytest.raises(RuntimeError):
         PerturbedSource(geqdsk_path, str(tmp_path / "missing.dat"))
+
+
+def test_footprint_needs_axis(tmp_path, geqdsk_path):
+    """Perturbation-only source has no axis: Footprint.run raises unless mag_axis is given."""
+    pert = GridPerturbationSource(write_dat(tmp_path / "p.dat"))
+    assert pert.magnetic_axis() is None
+    src = PerturbedSource(geqdsk_path, str(tmp_path / "p.dat"))
+    assert src.magnetic_axis() == pytest.approx((R0, 0.0), abs=1e-12)
+
+    t = Maglit(pert)
+    t.configure(0.01, 1e-6, 0.1)
+    with pytest.raises(RuntimeError, match="magnetic axis"):
+        Footprint(0, 1.5, 0.0, 1.5, 0.0, 1, 1, 1).run([t])

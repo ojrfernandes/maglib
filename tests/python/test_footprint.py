@@ -56,14 +56,14 @@ def test_output_data_shape_before_run():
     fp = Footprint(0, 0.435, -0.239, 0.435, -0.232, 3, 5, 50)
     data = fp.output_data
     assert isinstance(data, np.ndarray)
-    assert data.shape == (15, 6)   # nRZ * nPhi = 3 * 5
+    assert data.shape == (15, 7)   # nRZ * nPhi = 3 * 5
     assert data.dtype == np.float64
 
 
 # ── Serial execution ──────────────────────────────────────────────────────────
 
 def test_serial_run_shape(wall_fp):
-    assert wall_fp.output_data.shape == (4, 6)   # 2 * 2
+    assert wall_fp.output_data.shape == (4, 7)   # 2 * 2
 
 
 def test_serial_run_initial_positions(wall_fp):
@@ -98,6 +98,27 @@ def test_serial_run_reference_values(wall_fp):
     assert abs(data[1, 4] - 1.001697)  < TOL
     assert data[0, 5] == 1                       # turn count
     assert data[1, 5] == 3
+    assert np.all(data[:, 6] == 0)               # short open lines: no poloidal turn
+
+
+def test_magnetic_axis_from_source(tracer_and_source):
+    src, _ = tracer_and_source
+    R, Z = src.magnetic_axis()                   # C1.h5 scalars/xmag[0], zmag[0]
+    assert abs(R - 0.63088644) < 1e-6
+    assert abs(Z - (-0.00082328)) < 1e-6
+
+
+def test_poloidal_turns_long_line(tracer_and_source):
+    """Mirror Footprint_PoloidalTurns_LongLine: 8 toroidal, 2 poloidal turns; manual axis == auto."""
+    src, t = tracer_and_source
+    z0 = -0.239 + 0.007 / 3
+    fp_auto = Footprint(0, 0.435, z0, 0.435, z0, 1, 1, 300)
+    fp_auto.run([t])
+    assert fp_auto.output_data[0, 5] == 8
+    assert fp_auto.output_data[0, 6] == 2
+    fp_manual = Footprint(0, 0.435, z0, 0.435, z0, 1, 1, 300, mag_axis=src.magnetic_axis())
+    fp_manual.run([t])
+    np.testing.assert_array_equal(fp_manual.output_data, fp_auto.output_data)
 
 
 # ── Parallel execution ────────────────────────────────────────────────────────
@@ -131,7 +152,7 @@ def _round_trip_text(wall_fp, tmp_path, suffix, delimiter):
     assert len(lines) == 5   # 1 header + 4 data rows
 
     if delimiter == ",":
-        assert lines[0].strip() == "R0,Z0,phi0,length,psiMin,turn"
+        assert lines[0].strip() == "R0,Z0,phi0,length,psiMin,turn,polTurn"
         loaded = np.loadtxt(path, delimiter=delimiter, skiprows=1)
     else:
         assert lines[0].startswith("#")

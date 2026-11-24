@@ -23,4 +23,12 @@ class FieldSource {
     // Evaluate poloidal flux at (R, phi, Z).
     // Returns true on success.
     virtual bool eval_psi(double R, double phi, double Z, double &psi) = 0;
+
+    // Magnetic axis (R, Z) [m] of the equilibrium. Returns false if the source does not
+    // provide one (default).
+    virtual bool magnetic_axis(double &R, double &Z) {
+        (void)R;
+        (void)Z;
+        return false;
+    }
 };

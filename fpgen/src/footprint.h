@@ -21,6 +21,10 @@ public:
             const double grid_R2, const double grid_Z2, const int nRZ,
             const int nPhi, const int max_turns, const int ntor = 1);
 
+  // Magnetic axis (R, Z) [m] used as the origin of the poloidal angle. When not set,
+  // run() reads it from tracers[0]->source() and throws std::runtime_error if unavailable.
+  void set_magnetic_axis(double R, double Z);
+
   // Run the grid. Pass one tracer per thread for parallel execution,
   // or a single-element vector for serial execution.
   // When progress is non-null each thread increments its counter after
@@ -28,6 +32,9 @@ public:
   // When null the built-in single-bar progressBar() is used instead.
   void run(std::vector<maglit *> &tracers,
            std::vector<ThreadProgress> *progress = nullptr);
+
+  // Columns of each outputData row: R0, Z0, phi0, length, psiMin, turn, polTurn
+  static constexpr int ncols = 7;
 
   // Save outputData to file. Format is inferred from the extension:
   //   .dat / .txt  — space-separated with header
@@ -41,7 +48,8 @@ private:
   typedef struct {
     double length;
     double psimin;
-    int turn;    // toroidal turn number
+    int turn;      // toroidal turn number
+    int pol_turn;  // completed poloidal turns around the magnetic axis (net winding)
   } map_scalars; // structure to store the connection length and the minimum psi
                  // value
 
@@ -63,8 +71,14 @@ private:
   int nPhi;       // grid dimension along the phi direction
   int ntor = 1;   // toroidal mode number; phi grid restricted to [0, 2*pi/ntor)
   int max_turns = 1000; // maximum toroidal turns for field line integration
+  double R_axis = 0.0;  // magnetic axis R [m]
+  double Z_axis = 0.0;  // magnetic axis Z [m]
+  bool   axis_set = false;
 
   std::vector<std::vector<double>> outputData;
 };
+
+// Change of the poloidal angle about (R_ax, Z_ax) from (R0, Z0) to (R1, Z1), wrapped into (-pi, pi].
+double poloidal_angle_step(double R_ax, double Z_ax, double R0, double Z0, double R1, double Z1);
 
 #endif // FOOTPRINT_H

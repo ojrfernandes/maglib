@@ -54,7 +54,10 @@ int main(int argc, char *argv[]) {
               << "grid_Z2      = " << input.grid_Z2     << "\n"
               << "nRZ          = " << input.nRZ         << "\n"
               << "nPhi         = " << input.nPhi        << "\n"
-              << "ntor         = " << input.ntor        << "\n\n"
+              << "ntor         = " << input.ntor        << "\n"
+              << "mag. axis    = " << (input.axis_set
+                                       ? "R=" + std::to_string(input.R_axis) + " Z=" + std::to_string(input.Z_axis) + " (manual)"
+                                       : std::string("from source")) << "\n\n"
               << "--------------- INTEGRATOR PARAMETERS ---------\n\n"
               << "num_threads  = " << input.num_threads << "\n"
               << "max_turns    = " << input.max_turns   << "\n"
@@ -67,6 +70,8 @@ int main(int argc, char *argv[]) {
     std::cout << "\nCreating footprint object...\n"
               << std::endl;
     footprint footprint(input.manifold, input.grid_R1, input.grid_Z1, input.grid_R2, input.grid_Z2, input.nRZ, input.nPhi, input.max_turns, input.ntor);
+    if (input.axis_set)
+        footprint.set_magnetic_axis(input.R_axis, input.Z_axis);
 
     // set omp parameters
     omp_set_num_threads(input.num_threads);
@@ -170,12 +175,20 @@ int main(int argc, char *argv[]) {
         });
     }
 
-    footprint.run(tracer_ptrs, use_fancy ? &thread_prog : nullptr);
+    bool run_ok = true;
+    try {
+        footprint.run(tracer_ptrs, use_fancy ? &thread_prog : nullptr);
+    } catch (const std::exception &e) {
+        std::cerr << "\nError: " << e.what() << std::endl;
+        run_ok = false;
+    }
 
     if (use_fancy) {
         disp_done.store(true, std::memory_order_relaxed);
         disp_thread.join();
     }
+    if (!run_ok)
+        return 1;
 
     // Append .dat if no recognised extension is present
     auto has_ext = [](const std::string &p, const std::string &ext) {

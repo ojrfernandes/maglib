@@ -35,7 +35,14 @@ required for multi-threaded use.
             bool ok = self.eval_psi(R, phi, Z, psi);
             return py::make_tuple(ok, psi);
         }, "R"_a, "phi"_a, "Z"_a,
-        "Evaluate poloidal flux. Returns (success, psi).");
+        "Evaluate poloidal flux. Returns (success, psi).")
+
+        .def("magnetic_axis", [](FieldSource &self) -> py::object {
+            double R, Z;
+            if (!self.magnetic_axis(R, Z)) return py::none();
+            return py::make_tuple(R, Z);
+        },
+        "Magnetic axis (R, Z) in metres, or None if the source does not provide one.");
 
     py::class_<M3DC1Source, FieldSource>(m, "M3DC1Source", R"doc(
 M3D-C1 magnetic field source backed by a Fusion-IO HDF5 file.

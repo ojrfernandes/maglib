@@ -156,10 +156,17 @@ tracer2 = maglib.Maglit(src2)
 tracer2.configure(1e-2, 1e-6, 1e-2)
 fp.run([tracer, tracer2])
 
-data = fp.output_data   # numpy (N, 6): R0, Z0, phi0, length, psiMin, turn
+data = fp.output_data   # numpy (N, 7): R0, Z0, phi0, length, psiMin, turn, polTurn
 fp.save("footprint.npz")
 maglib.plot_footprint(fp)
 ```
+
+`polTurn` is the number of completed poloidal turns around the magnetic axis:
+`floor(|Θ| / 2π)`, where Θ is the net (unwrapped) poloidal angle the line travels from its
+start. The axis is read from the source (`src.magnetic_axis()`: M3D-C1 `scalars/xmag, zmag`
+at t=0, XML `op`, G-EQDSK `rmaxis, zmaxis`). Override it with `Footprint(..., mag_axis=(R, Z))`
+in Python or `R_axis` / `Z_axis` in the `fpgen` input file. A source without an axis and no
+override raises an error.
 
 `ntor` (default 1) restricts the traced toroidal grid to `[0, 2π/ntor)` instead of the
 full `[0, 2π)`, useful when the field has an imposed toroidal periodicity. Pass a

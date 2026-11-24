@@ -21,6 +21,8 @@ class M3DC1Source : public FieldSource {
     bool eval_B(double R, double phi, double Z, double B[3]) override;
     bool eval_psin(double R, double phi, double Z, double &psin) override;
     bool eval_psi(double R, double phi, double Z, double &psi) override;
+    // Equilibrium axis: Fusion-IO FIO_MAGAXIS_R/Z series (scalars/xmag, zmag) at its first time.
+    bool magnetic_axis(double &R, double &Z) override;
 
     // Returns false if the source or magnetic field failed to open.
     bool is_valid() const { return src_ != nullptr && b_field_ != nullptr; }

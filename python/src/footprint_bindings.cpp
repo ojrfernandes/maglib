@@ -11,10 +11,10 @@ void bind_footprint(py::module_ &m) {
     auto fp_to_numpy = [](const footprint &fp) {
         const auto   &data  = fp.get_output_data();
         py::ssize_t   nrows = static_cast<py::ssize_t>(data.size());
-        auto          arr   = py::array_t<double>({nrows, static_cast<py::ssize_t>(6)});
+        auto          arr   = py::array_t<double>({nrows, static_cast<py::ssize_t>(footprint::ncols)});
         auto          buf   = arr.mutable_unchecked<2>();
         for (py::ssize_t i = 0; i < nrows; ++i)
-            for (py::ssize_t j = 0; j < 6; ++j)
+            for (py::ssize_t j = 0; j < footprint::ncols; ++j)
                 buf(i, j) = data[static_cast<size_t>(i)][static_cast<size_t>(j)];
         return arr;
     };
@@ -24,7 +24,10 @@ Magnetic footprint generator.
 
 Traces a 2-D grid of field lines from a target plate segment through nPhi
 toroidal angles spanning [0, 2*pi/ntor) and records connection length,
-minimum psi_N, and turn count per point.
+minimum psi_N, toroidal turn count and poloidal turn count per point.
+
+The poloidal angle is measured about the magnetic axis, taken from the
+first tracer's source unless mag_axis is given.
 
 Pass one Maglit tracer per thread to run() for parallel execution; a
 single-element list gives serial execution.
@@ -46,13 +49,22 @@ Example::
         nRZ=100, nPhi=20, max_turns=1000, ntor=1,
     )
     fp.run(tracers)
-    data = fp.output_data   # numpy array (nRZ*nPhi, 6)
+    data = fp.output_data   # numpy array (nRZ*nPhi, 7)
     fp.save("output.dat")
 )doc")
-        .def(py::init<int, double, double, double, double, int, int, int, int>(),
+        .def(py::init([](int stability, double R1, double Z1, double R2, double Z2,
+                         int nRZ, int nPhi, int max_turns, int ntor, py::object mag_axis) {
+                 auto fp = std::make_unique<footprint>(stability, R1, Z1, R2, Z2,
+                                                       nRZ, nPhi, max_turns, ntor);
+                 if (!mag_axis.is_none()) {
+                     auto ax = mag_axis.cast<std::pair<double, double>>();
+                     fp->set_magnetic_axis(ax.first, ax.second);
+                 }
+                 return fp;
+             }),
              "stability"_a, "grid_R1"_a, "grid_Z1"_a,
              "grid_R2"_a, "grid_Z2"_a,
-             "nRZ"_a, "nPhi"_a, "max_turns"_a, "ntor"_a = 1,
+             "nRZ"_a, "nPhi"_a, "max_turns"_a, "ntor"_a = 1, "mag_axis"_a = py::none(),
              R"doc(
 Create a Footprint grid.
 
@@ -73,7 +85,14 @@ max_turns : int
 ntor : int, optional
     Toroidal mode number. Restricts the starting-angle grid to
     [0, 2*pi/ntor) instead of the full [0, 2*pi). Default 1 (full torus).
+mag_axis : (float, float), optional
+    Magnetic axis (R, Z) in metres, origin of the poloidal angle. Default:
+    read from the first tracer's source at run(); RuntimeError if the
+    source has none.
 )doc")
+
+        .def("set_magnetic_axis", &footprint::set_magnetic_axis, "R"_a, "Z"_a,
+             "Set the magnetic axis (R, Z) [m] used as the origin of the poloidal angle.")
 
         .def("run", [](footprint &self, py::list tracers) {
             std::vector<maglit*> ptrs;
@@ -89,9 +108,11 @@ ntor : int, optional
 
         .def_property_readonly("output_data", fp_to_numpy,
             R"doc(
-Output as a (nRZ*nPhi, 6) numpy array.
+Output as a (nRZ*nPhi, 7) numpy array.
 
-Columns: R0, Z0, phi0, length, psiMin, turn
+Columns: R0, Z0, phi0, length, psiMin, turn, polTurn
+
+polTurn = floor(|net poloidal angle travelled about the magnetic axis| / 2*pi).
 )doc")
 
         .def("save", [fp_to_numpy](const footprint &self, const std::string &path) {

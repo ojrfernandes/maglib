@@ -64,3 +64,18 @@ bool M3DC1Source::eval_psi(double R, double phi, double Z, double &psi) {
     double x[3] = {R, phi, Z};
     return psi_field_->eval(x, &psi, hint_) == FIO_SUCCESS;
 }
+
+bool M3DC1Source::magnetic_axis(double &R, double &Z) {
+    if (!src_) return false;
+    double     *out[2] = {&R, &Z};
+    const int   ids[2] = {FIO_MAGAXIS_R, FIO_MAGAXIS_Z};
+    for (int k = 0; k < 2; ++k) {
+        fio_series *s = nullptr;
+        if (src_->get_series(ids[k], &s) != FIO_SUCCESS || !s) return false;
+        double t0, t1;
+        int    ok = s->bounds(&t0, &t1) == FIO_SUCCESS && s->eval(t0, out[k]) == FIO_SUCCESS;
+        delete s;
+        if (!ok) return false;
+    }
+    return true;
+}

@@ -38,6 +38,8 @@ class maglit {
     void set_monitor(const std::string &path);
     // read-only access to the vessel boundary
     const collider &get_boundary() const;
+    // the field source this tracer integrates
+    FieldSource &source() const { return *source_; }
 
   private:
     int          inv_factor = 1;

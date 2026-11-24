@@ -49,6 +49,8 @@
         nRZ  = 10                               # number of grid points along the target surface
         nPhi = 20                               # number of toroidal planes sampled
         ntor = 1                                # toroidal mode number; restricts sampled phi range to [0, 2*pi/ntor)
+#       R_axis = 0.62                           # magnetic axis R (m), origin of the poloidal angle for polTurn;
+#       Z_axis = 0.0                            # magnetic axis Z (m). Both or neither; default: read from the source
 #
 #=============== INTEGRATOR PARAMETERS
 #

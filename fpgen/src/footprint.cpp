@@ -1,4 +1,5 @@
 #include "footprint.h"
+#include <cmath>
 #include <fstream>
 #include <stdexcept>
 
@@ -7,7 +8,22 @@ footprint::footprint(const int manifold, const double grid_R1, const double grid
         throw std::invalid_argument("nRZ and nPhi must each be at least 1");
     if (ntor < 1)
         throw std::invalid_argument("ntor must be at least 1");
-    this->outputData.resize(nRZ * nPhi, std::vector<double>(6));
+    this->outputData.resize(nRZ * nPhi, std::vector<double>(ncols));
+}
+
+void footprint::set_magnetic_axis(double R, double Z) {
+    R_axis   = R;
+    Z_axis   = Z;
+    axis_set = true;
+}
+
+double poloidal_angle_step(double R_ax, double Z_ax, double R0, double Z0, double R1, double Z1) {
+    double d = std::atan2(Z1 - Z_ax, R1 - R_ax) - std::atan2(Z0 - Z_ax, R0 - R_ax);
+    if (d > M_PI)
+        d -= 2 * M_PI;
+    else if (d <= -M_PI)
+        d += 2 * M_PI;
+    return d;
 }
 
 const std::vector<std::vector<double>> &footprint::get_output_data() const {
@@ -17,6 +33,16 @@ const std::vector<std::vector<double>> &footprint::get_output_data() const {
 void footprint::run(std::vector<maglit*> &tracers,
                     std::vector<ThreadProgress> *progress) {
     int nthreads = static_cast<int>(tracers.size());
+    if (nthreads < 1)
+        throw std::invalid_argument("footprint::run needs at least one tracer");
+
+    if (!axis_set) {
+        double R, Z;
+        if (!tracers[0]->source().magnetic_axis(R, Z))
+            throw std::runtime_error("magnetic axis not available from the field source; "
+                                     "set it manually (R_axis/Z_axis, mag_axis=)");
+        set_magnetic_axis(R, Z);
+    }
 
     // set manifold direction on all tracers
     for (auto *t : tracers) {
@@ -57,6 +83,7 @@ void footprint::run(std::vector<maglit*> &tracers,
                 outputData[index][3] = scalars.length;
                 outputData[index][4] = scalars.psimin;
                 outputData[index][5] = scalars.turn;
+                outputData[index][6] = scalars.pol_turn;
 
                 if (!progress && tid == 0) {
                     float p = (float)(i * nRZ + j) / (nRZ * nPhi);
@@ -76,6 +103,7 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     int    status;
     double phi_max = this->max_turns * 2 * M_PI;
     double arc = 0;
+    double theta = 0; // unwrapped poloidal angle travelled about the axis [rad]
 
     double psin_current = std::numeric_limits<double>::max();
     scalars.psimin = psin_current;
@@ -90,6 +118,8 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
         status = tracer.step(R1, Z1, phi1, phi_max, -1);
         if (status == SODE_CONTINUE_GOOD_STEP) {
             arc += this->connection_length(R0, Z0, phi0, R1, Z1, phi1);
+            // valid while each step advances the poloidal angle by less than pi
+            theta += poloidal_angle_step(R_axis, Z_axis, R0, Z0, R1, Z1);
             if (tracer.psin_eval(R1, phi1, Z1, &psin_current)) {
                 if (psin_current < scalars.psimin)
                     scalars.psimin = psin_current;
@@ -98,6 +128,7 @@ void footprint::evolve_line(maglit &tracer, double R0, double Z0, double phi0, d
     } while (status == SODE_CONTINUE_GOOD_STEP || status == SODE_CONTINUE_BAD_STEP);
 
     scalars.turn = static_cast<int>(floor((phi1 - phi_start) / (2 * M_PI)));
+    scalars.pol_turn = static_cast<int>(floor(std::fabs(theta) / (2 * M_PI)));
     scalars.length = arc;
 }
 
@@ -130,22 +161,22 @@ bool footprint::save(const std::string &path) const {
     }
 
     if (is_csv) {
-        f << "R0,Z0,phi0,length,psiMin,turn\n";
+        f << "R0,Z0,phi0,length,psiMin,turn,polTurn\n";
         for (const auto &row : outputData) {
             f << std::fixed << std::setprecision(16)
               << row[0] << "," << row[1] << "," << row[2] << ","
               << row[3] << "," << row[4] << ","
-              << std::setprecision(0) << row[5] << "\n";
+              << std::setprecision(0) << row[5] << "," << row[6] << "\n";
         }
     } else {
         f << "#R0" << std::string(17, ' ') << "Z0" << std::string(17, ' ')
           << "phi0" << std::string(15, ' ') << "length" << std::string(13, ' ')
-          << "psiMin" << std::string(13, ' ') << "turn\n";
+          << "psiMin" << std::string(13, ' ') << "turn" << std::string(4, ' ') << "polTurn\n";
         for (const auto &row : outputData) {
             f << std::fixed << std::setprecision(16)
               << row[0] << " " << row[1] << " " << row[2]
               << " " << row[3] << " " << row[4] << " "
-              << std::setprecision(0) << row[5] << "\n";
+              << std::setprecision(0) << row[5] << " " << row[6] << "\n";
         }
     }
 

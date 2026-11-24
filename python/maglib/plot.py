@@ -14,8 +14,9 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     Parameters
     ----------
     source : str, numpy.ndarray, or Footprint
-        File path, (N, 6) array, or Footprint object.
-        Columns: R0, Z0, phi0, connection_length, psiN_min, turns.
+        File path, (N, >=6) array, or Footprint object.
+        Columns: R0, Z0, phi0, connection_length, psiN_min, turns[, polTurn].
+        polTurn (column 6) is not plotted.
     which_plot : str
         Subset to plot: "cl", "psi", "turns", "au", or "all". Default "all".
     xaxis : str
@@ -55,7 +56,7 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
         raise TypeError("source must be a file path, numpy array, or Footprint object.")
 
     if data.ndim != 2 or data.shape[1] < 6:
-        raise ValueError("Footprint data must have shape (N, 6).")
+        raise ValueError("Footprint data must have shape (N, >=6).")
 
     if which_plot not in ("cl", "psi", "turns", "au", "all"):
         raise ValueError("which_plot must be 'cl', 'psi', 'turns', 'au', or 'all'.")

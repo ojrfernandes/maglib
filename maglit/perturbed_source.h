@@ -32,6 +32,7 @@ class PerturbedSource : public FieldSource {
     bool eval_psi(double R, double phi, double Z, double &psi) override {
         return eq_->eval_psi(R, phi, Z, psi);
     }
+    bool magnetic_axis(double &R, double &Z) override { return eq_->magnetic_axis(R, Z); }
 
   private:
     std::unique_ptr<FieldSource> eq_, pert_;
