@@ -155,9 +155,21 @@ def test_plot_footprint_invalid_xaxis(fp_data):
         plot_footprint(fp_data, which_plot="cl", xaxis="invalid")
 
 
-def test_plot_footprint_vmin_ge_vmax(fp_data):
+def test_plot_footprint_au_removed(fp_data):
     with pytest.raises(ValueError):
-        plot_footprint(fp_data, which_plot="au", v_min=0.8, v_max=0.2)
+        plot_footprint(fp_data, which_plot="au")
+
+
+def test_plot_footprint_yaxis_is_distance_from_first_point():
+    # Slanted plate (1.0, 0.0) -> (1.3, 0.4): s spans [0, 0.5] m.
+    n_phi, n_rz = 4, 5
+    t = np.tile(np.linspace(0.0, 1.0, n_rz), n_phi)  # fpgen row order: index = i*nRZ + j
+    phi = np.repeat(np.linspace(0.0, 2 * np.pi, n_phi, endpoint=False), n_rz)
+    R, Z = 1.0 + 0.3 * t, 0.4 * t
+    data = np.column_stack([R, Z, phi, 1.0 + t, 0.5 + 0.1 * t, 2.0 + t])
+    plot_footprint(data, which_plot="cl")
+    extent = plt.gcf().axes[0].images[0].get_extent()
+    np.testing.assert_allclose(extent[2:], (0.0, 0.5))
 
 
 def test_plot_footprint_invalid_ntor(fp_data):
@@ -170,23 +182,9 @@ def test_plot_footprint_invalid_ntor_type(fp_data):
         plot_footprint(fp_data, which_plot="cl", ntor=1.5)
 
 
-def test_plot_footprint_au_raises_when_all_values_identical():
-    # CL=2, psi=0.5 for all → 1/(CL*psi)=1 everywhere → lo==hi → ValueError
-    n = 4 * 3
-    phi   = np.tile(np.linspace(0.0, 270.0, 4), 3)
-    R     = np.repeat(np.linspace(1.4, 1.6, 3), 4)
-    Z     = np.zeros(n)
-    CL    = np.full(n, 2.0)
-    psi   = np.full(n, 0.5)
-    turns = np.full(n, 5.0)
-    data  = np.column_stack([R, Z, phi, CL, psi, turns])
-    with pytest.raises(ValueError):
-        plot_footprint(data, which_plot="au")
-
-
 # ── plot_footprint — smoke tests ──────────────────────────────────────────────
 
-@pytest.mark.parametrize("which_plot", ["cl", "psi", "turns", "au"])
+@pytest.mark.parametrize("which_plot", ["cl", "psi", "turns"])
 def test_plot_footprint_each_subplot(fp_data, which_plot):
     plot_footprint(fp_data, which_plot=which_plot)
 

@@ -4,7 +4,7 @@ Magnetic footprint plotting — demonstrates all input modes of maglib.plot_foot
 Usage
 -----
     # First generate the output files:
-    PYTHONPATH=<maglib_root>/python python examples/fpgen/run.py
+    PYTHONPATH=<maglib_root>/python python examples/fpgen/run_M3DC1Source.py   # or run_SuperpositionSource.py / run_PerturbedSource.py
 
     # Then plot:
     PYTHONPATH=<maglib_root>/python python examples/fpgen/plot.py
@@ -13,33 +13,20 @@ plot_footprint() accepts three source types:
 
   1. File path   — load from .dat / .csv / .npy / .npz on disk
   2. numpy array — (N, 7) array held in memory (older 6-column files also work)
-  3. Footprint object — only available immediately after run.py in the same session
+  3. Footprint object — only available immediately after a run_*.py script in the same session
 
 Sub-plots: "cl" (connection length), "psi" (psi_N min), "turns" (toroidal
-turns), "polturns" (poloidal turns; 7-column data only), and "au" (combined
-proxy). The "all" shortcut produces each available one in sequence.
+turns), and "polturns" (poloidal turns; 7-column data only). The "all"
+shortcut produces each available one in sequence.
 """
 
 from pathlib import Path
 import numpy as np
 import maglib
 
-# ── Case 3: Footprint object (requires a live computation) ───────────────────
-# Only available immediately after running the integration in the same session.
-# Uncomment this block and comment out cases 1/2 if you want to avoid
-# loading from disk.
-#
-#   from run import build_tracer, Footprint, NRZ, NPHI, MAX_TURNS
-#   from run import MANIFOLD, GRID_R1, GRID_Z1, GRID_R2, GRID_Z2, DPHI_INIT, DPHI_MIN, DPHI_MAX, N_THREADS
-#   pairs   = [build_tracer() for _ in range(N_THREADS)]
-#   tracers = [t for _, t in pairs]
-#   fp = Footprint(MANIFOLD, GRID_R1, GRID_Z1, GRID_R2, GRID_Z2, NRZ, NPHI, MAX_TURNS)
-#   fp.run(tracers)
-#   maglib.plot_footprint(fp, which_plot="all")
-
 
 # ── Case 1: file path ─────────────────────────────────────────────────────────
-# Load directly from the .dat file saved by run.py. Produces all four sub-plots.
+# Load directly from the .dat file saved by a run_*.py script. Produces all four sub-plots.
 
 def plot_from_file():
     print("Case 1: all sub-plots from footprint.dat")
@@ -62,6 +49,18 @@ def plot_from_npz():
     arr = np.load("footprint.npz")["data"]
     maglib.plot_footprint(arr, which_plot="psi")
 
+# ── Case 3: Footprint object (requires a live computation) ───────────────────
+# Only available immediately after running the integration in the same session.
+# Uncomment this block and comment out cases 1/2 if you want to avoid
+# loading from disk.
+#
+#   from run_M3DC1Source import build_tracer, Footprint, NRZ, NPHI, MAX_TURNS
+#   from run_M3DC1Source import MANIFOLD, GRID_R1, GRID_Z1, GRID_R2, GRID_Z2, DPHI_INIT, DPHI_MIN, DPHI_MAX, N_THREADS
+#   pairs   = [build_tracer() for _ in range(N_THREADS)]
+#   tracers = [t for _, t in pairs]
+#   fp = Footprint(MANIFOLD, GRID_R1, GRID_Z1, GRID_R2, GRID_Z2, NRZ, NPHI, MAX_TURNS)
+#   fp.run(tracers)
+#   maglib.plot_footprint(fp, which_plot="all")
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 

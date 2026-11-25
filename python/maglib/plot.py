@@ -17,8 +17,10 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
         File path, (N, >=6) array, or Footprint object.
         Columns: R0, Z0, phi0, connection_length, psiN_min, turns[, polTurn].
         polTurn (column 6) is present in fpgen output since the 7-column format.
+        Rows must be in fpgen output order: row 0 is the plate endpoint
+        (R1, Z1), the origin of the y-axis s = |(R0, Z0) - (R1, Z1)| ( m ).
     which_plot : str
-        Subset to plot: "cl", "psi", "turns", "polturns", "au", or "all".
+        Subset to plot: "cl", "psi", "turns", "polturns", or "all".
         Default "all". "all" includes "polturns" only when the data has the
         polTurn column; requesting "polturns" explicitly on 6-column data
         raises ValueError.
@@ -33,7 +35,7 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     cmap : str
         Matplotlib colormap name. Default "jet".
     cmap_key : int
-        Number of discrete colors used for "turns", "polturns" and "au" plots. Default 10.
+        Number of discrete colors used by all plots. Default 10.
     figsize : tuple of float
         Base figure size in inches. Default (10, 5).
     sizef : float
@@ -41,7 +43,7 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     dpi : int
         Figure resolution. Default 80.
     v_min, v_max : float, optional
-        Manual colormap bounds for the "au" plot. Both must be provided together.
+        Manual colormap bounds for the "cl" plot.
     turn_cap : tuple of float, optional
         (min, max) color scale bounds for the "turns" plot. Uses LogNorm when None.
     polturn_cap : tuple of float, optional
@@ -64,8 +66,8 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     if data.ndim != 2 or data.shape[1] < 6:
         raise ValueError("Footprint data must have shape (N, >=6).")
 
-    if which_plot not in ("cl", "psi", "turns", "polturns", "au", "all"):
-        raise ValueError("which_plot must be 'cl', 'psi', 'turns', 'polturns', 'au', or 'all'.")
+    if which_plot not in ("cl", "psi", "turns", "polturns", "all"):
+        raise ValueError("which_plot must be 'cl', 'psi', 'turns', 'polturns', or 'all'.")
     has_pol = data.shape[1] >= 7
     if which_plot == "polturns" and not has_pol:
         raise ValueError("'polturns' needs the polTurn column: footprint data must have shape (N, 7).")
@@ -74,20 +76,15 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
     if ntor is not None and (not isinstance(ntor, (int, np.integer)) or ntor < 1):
         raise ValueError("ntor must be a positive integer or None.")
 
-    # Detect plate orientation from uniqueness of R column
-    if np.unique(data[:, 0]).size == 1:
-        ylabel = "$Z$ ( m )"
-        y_col = 1
-    else:
-        ylabel = "$R$ ( m )"
-        y_col = 0
-
-    x = data[:, 2]
-    y = data[:, y_col]
-    sort_idx = np.lexsort((y, x))
+    # y-axis: distance s along the plate from (R1, Z1), valid for any plate tilt.
+    # shortcut: (R1, Z1) is taken from row 0 (fpgen writes j=0, t=0 first, see footprint.cpp);
+    # a re-sorted input shifts the origin — add an explicit (R1, Z1) argument if that is needed.
+    s = np.hypot(data[:, 0] - data[0, 0], data[:, 1] - data[0, 1])  # shape=(N,), units=m
+    sort_idx = np.lexsort((s, data[:, 2]))
     data = data[sort_idx]
-    x = data[:, 2]
-    y = data[:, y_col]
+    x = data[:, 2]  # phi0, rad
+    y = s[sort_idx]
+    ylabel = "$s$ ( m )"
 
     z_cl = data[:, 3]
     z_psi = data[:, 4]
@@ -193,33 +190,6 @@ def plot_footprint(source, which_plot="all", xaxis="rad", ntor=None, cmap="jet",
         fig.colorbar(im, ax=ax).set_label("poloidal turns")
         _xaxis(ax)
         _save("polturns")
-        plt.show(block=False)
-
-    if which_plot in ("all", "au"):
-        if v_min is not None and v_max is not None:
-            if v_min >= v_max:
-                raise ValueError("v_min must be less than v_max.")
-            z_norm = ((1.0 - 1.0 / (z_psi * z_cl)) - v_min) / (v_max - v_min)
-        else:
-            z_raw = 1.0 / (z_cl * z_psi)
-            lo, hi = float(np.nanmin(z_raw)), float(np.nanmax(z_raw))
-            if lo == hi:
-               raise ValueError("All 1/(psiN_min * CL) values are identical; cannot normalize.")
-            z_norm = 1- (z_raw - lo) / (hi - lo)
-
-            # z_raw = (1 - z_psi) / z_cl
-            # lo, hi = float(np.nanmin(z_raw)), float(np.nanmax(z_raw))
-            # if lo == hi:
-            #     raise ValueError("All 1/(psiN_min * CL) values are identical; cannot normalize.")
-            # z_norm = (z_raw - lo) / (hi - lo)
-
-            # z_norm = (1 - z_psi) * np.exp(z_cl/np.median(z_cl))
-        fig, ax = plt.subplots(figsize=fsize, dpi=dpi)
-        im = ax.imshow(z_norm, cmap=cmap_disc, vmin=v_min, vmax=v_max, **imshow_kw)
-        fig.colorbar(im, ax=ax).set_label(
-            r"$1 - (\psi_{N\,\,\mathrm{min}} \cdot L_c\,)^{-1}_\mathrm{norm}$")
-        _xaxis(ax)
-        _save("au")
         plt.show(block=False)
 
     plt.show()
