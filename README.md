@@ -24,7 +24,13 @@ Developed at the Plasma Physics Laboratory, Institute of Physics — University 
 ### Fusion-IO
 maglib requires [Fusion-IO](https://github.com/nferraro/fusion-io), developed by Nate Ferraro at PPPL.
 
-> **Important:** maglib expects two shared libraries named `libfusionio.so` and `libm3dc1.so` in the Fusion-IO build directory. These are the default library names when building Fusion-IO with Makefiles. When building Fusion-IO with CMake, verify these names before proceeding.
+The recommended setup is Fusion-IO built and installed with CMake (static libraries `libfusionio_fusionio.a`, `libfusionio_m3dc1.a`). These are linked into the maglib binaries and the Python extension, so nothing from Fusion-IO is needed at runtime. A shared Fusion-IO install also works, whether built with CMake (`libfusionio_fusionio.so`, `libfusionio_m3dc1.so`) or with Makefiles (`libfusionio.so`, `libm3dc1.so`); in that case its `lib/` directory must be on `LD_LIBRARY_PATH` at runtime.
+
+```bash
+cd fusion-io
+cmake -B build -DCMAKE_INSTALL_PREFIX=/path/to/fusion-io/install
+cmake --build build -j$(nproc) && cmake --install build
+```
 
 ### Python (optional, for bindings and post-processing)
 - Python ≥ 3.8 with development headers
@@ -41,8 +47,10 @@ pybind11 is fetched automatically by CMake — no manual installation needed.
 ### 1. Set the Fusion-IO path
 
 ```bash
-export FUSION_IO_DIR=/path/to/fusion-io/build
+export FUSION_IO_DIR=/path/to/fusion-io/install
 ```
+
+`FUSION_IO_DIR` is the Fusion-IO **install prefix** (the directory containing `lib/` and `include/`), not its CMake build tree. To switch an existing maglib build to another Fusion-IO install, re-run `cmake -B build -DFUSION_IO_DIR=...`.
 
 Add this to `~/.bashrc` or `~/.zshrc` to persist across sessions.
 
@@ -396,7 +404,7 @@ maglib/
 ## Troubleshooting
 
 - **CMake can't find HDF5** — install HDF5 development headers (`libhdf5-dev` on Debian/Ubuntu).
-- **Fusion-IO linking errors** — verify `libfusionio.so` and `libm3dc1.so` exist in `$FUSION_IO_DIR/lib`.
+- **Fusion-IO not found / linking errors** — `$FUSION_IO_DIR/lib` must contain `libfusionio_fusionio` and `libfusionio_m3dc1` (CMake install, `.a` or `.so`) or `libfusionio.so` and `libm3dc1.so` (Makefile install), and `$FUSION_IO_DIR/include` the Fusion-IO headers. The configure step prints the libraries it picked (`FUSION_IO_LIBRARIES`).
 - **`import maglib` fails** — check that `PYTHONPATH` includes the `python/` directory and that the build completed with Python bindings enabled.
 - **`lobe_map` / `simplify` ImportError** — install shapely: `pip install shapely`.
 - **`mfgen` exits with status 1 / `Manifold.new_segment` raises `RuntimeError`** — a field-line trace failed while building a segment (the point left the domain, or the X-point is not a saddle). The segments computed before the failure are saved; later ones would build on a truncated curve, so the section is stopped. Check the X-point, `epsilon`, and the first wall/domain.

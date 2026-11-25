@@ -29,9 +29,8 @@ pybind11_add_module(_maglib
 )
 
 target_link_libraries(_maglib PRIVATE
+    ${FUSION_IO_LIBRARIES}
     ${HDF5_LIBRARIES}
-    ${FUSION_IO_LIB_DIR}/libfusionio.so
-    ${FUSION_IO_LIB_DIR}/libm3dc1.so
     OpenMP::OpenMP_CXX
 )
 
@@ -45,6 +44,12 @@ target_include_directories(_maglib PRIVATE
 )
 
 target_compile_features(_maglib PRIVATE cxx_std_17)
+
+# Static fusion-io is copied into _maglib; hide its symbols so they cannot
+# interpose with a shared fusion-io loaded by fio_py in the same process.
+if(FUSION_IO_LIBRARY MATCHES "\\.a$")
+    target_link_options(_maglib PRIVATE "LINKER:--exclude-libs,ALL")
+endif()
 
 # Place the compiled extension alongside __init__.py so that adding
 # python/ to PYTHONPATH is all that is needed to import maglib.

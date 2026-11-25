@@ -20,9 +20,8 @@ add_library(maglit STATIC
 
 # Link dependencies
 target_link_libraries(maglit                          
-    PRIVATE ${HDF5_LIBRARIES}           
-            ${FUSION_IO_LIB_DIR}/libfusionio.so  
-            ${FUSION_IO_LIB_DIR}/libm3dc1.so    
+    PRIVATE ${FUSION_IO_LIBRARIES}
+            ${HDF5_LIBRARIES}
 )
 
 # Include directories

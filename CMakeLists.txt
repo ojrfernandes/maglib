@@ -15,24 +15,32 @@ find_package(HDF5 REQUIRED COMPONENTS C)
 find_package(OpenMP REQUIRED)
 
 # Custom dependency - fusion-io
-set(FUSION_IO_DIR "$ENV{FUSION_IO_DIR}" CACHE PATH "Path to fusion-io build directory")
+# FUSION_IO_DIR is the install prefix (<prefix>/lib, <prefix>/include). Both the
+# CMake install (libfusionio_fusionio, libfusionio_m3dc1; static by default) and
+# the Makefile install (libfusionio.so, libm3dc1.so) are accepted. Upstream's
+# fusionio-config.cmake is not used: it fails to load (no @PACKAGE_INIT@) and
+# references an undefined PkgConfig::HDF5 target.
+set(FUSION_IO_DIR "$ENV{FUSION_IO_DIR}" CACHE PATH "Path to fusion-io install prefix")
 if(NOT FUSION_IO_DIR)
     message(FATAL_ERROR "FUSION_IO_DIR must be set either as environment variable or cmake option")
 endif()
 
-# Verify fusion-io structure
-if(NOT EXISTS "${FUSION_IO_DIR}/lib")
-    message(FATAL_ERROR "Cannot find fusion-io libraries at ${FUSION_IO_DIR}/lib")
-endif()
-
-# Set fusion-io paths for subdirectories to use
 set(FUSION_IO_INCLUDE_DIR "${FUSION_IO_DIR}/include")
-set(FUSION_IO_LIB_DIR "${FUSION_IO_DIR}/lib")
+# find_library caches its result; re-search when FUSION_IO_DIR changes
+if(NOT FUSION_IO_DIR STREQUAL "${_FUSION_IO_DIR_LAST}")
+    unset(FUSION_IO_LIBRARY CACHE)
+    unset(FUSION_IO_M3DC1_LIBRARY CACHE)
+endif()
+set(_FUSION_IO_DIR_LAST "${FUSION_IO_DIR}" CACHE INTERNAL "")
+find_library(FUSION_IO_LIBRARY NAMES fusionio_fusionio fusionio
+             PATHS "${FUSION_IO_DIR}/lib" NO_DEFAULT_PATH REQUIRED)
+find_library(FUSION_IO_M3DC1_LIBRARY NAMES fusionio_m3dc1 m3dc1
+             PATHS "${FUSION_IO_DIR}/lib" NO_DEFAULT_PATH REQUIRED)
+# order matters for static archives: fusionio depends on m3dc1
+set(FUSION_IO_LIBRARIES ${FUSION_IO_LIBRARY} ${FUSION_IO_M3DC1_LIBRARY})
 
-# Status messages
 message(STATUS "FUSION_IO_DIR: ${FUSION_IO_DIR}")
-message(STATUS "FUSION_IO_INCLUDE_DIR: ${FUSION_IO_INCLUDE_DIR}")
-message(STATUS "FUSION_IO_LIB_DIR: ${FUSION_IO_LIB_DIR}")
+message(STATUS "FUSION_IO_LIBRARIES: ${FUSION_IO_LIBRARIES}")
 
 #=============================================================================
 
