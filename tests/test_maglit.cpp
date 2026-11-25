@@ -1,5 +1,9 @@
+#include <atomic>
 #include <cstring>
 #include <gtest/gtest.h>
+#include <memory>
+#include <thread>
+#include <vector>
 
 #include "../maglit/m3dc1_source.h"
 #include "../maglit/maglit.h"
@@ -96,6 +100,35 @@ TEST_F(MaglitTest, PsiNFieldEvaluation) {
     // Basic checks on psiN values
     // Compared to fusion-io python routines output
     EXPECT_TRUE(values_are_close(psiN, 0.328436, tolerance)); // psiN
+}
+
+// Per-thread sources whose first eval_psin (lazy HDF5 load of the psin field)
+// runs concurrently, as in footprint::run. Must not race inside HDF5.
+TEST_F(MaglitTest, ConcurrentLazyPsinLoad) {
+    constexpr int nthreads = 32;
+    std::vector<std::unique_ptr<M3DC1Source>> sources;
+    for (int i = 0; i < nthreads; ++i) {
+        sources.push_back(std::make_unique<M3DC1Source>(source_path, -1));
+        ASSERT_TRUE(sources.back()->is_valid());
+    }
+
+    std::vector<double>   psin(nthreads, 0.0);
+    std::vector<char>     ok(nthreads, 0);
+    std::atomic<int>      ready{0};
+    std::vector<std::thread> threads;
+    for (int i = 0; i < nthreads; ++i) {
+        threads.emplace_back([&, i] {
+            ready.fetch_add(1);
+            while (ready.load() < nthreads) {} // start all first loads together
+            ok[i] = sources[i]->eval_psin(0.7, 0.0, 0.0, psin[i]);
+        });
+    }
+    for (auto &t : threads) t.join();
+
+    for (int i = 0; i < nthreads; ++i) {
+        EXPECT_TRUE(ok[i]) << "thread " << i;
+        EXPECT_TRUE(values_are_close(psin[i], 0.328436, tolerance)) << "thread " << i;
+    }
 }
 
 // Test inverse map functionality

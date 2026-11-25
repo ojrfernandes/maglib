@@ -8,7 +8,9 @@
 //
 // The Fusion-IO search hint is allocated in the constructor and freed in the
 // destructor, so callers do not need to manage hint lifetime manually.
-// psin and psi fields are loaded lazily on first use.
+// psin and psi fields are loaded lazily on first use. All HDF5 access (open,
+// lazy loads, magnetic_axis, close) is serialized by a process-wide mutex, so
+// per-thread instances are safe even with a non-thread-safe HDF5 build.
 class M3DC1Source : public FieldSource {
   public:
     M3DC1Source(const char *path, int timeslice);

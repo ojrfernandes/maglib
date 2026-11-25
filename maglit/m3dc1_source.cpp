@@ -1,7 +1,15 @@
 #include "m3dc1_source.h"
 #include <iostream>
+#include <mutex>
+
+// HDF5 is not thread-safe unless built with --enable-threadsafe, and the lock is
+// process-wide: separate instances still share the library. Every Fusion-IO call
+// that reads or closes the file holds this mutex; field evaluation does not touch
+// HDF5 and stays unlocked.
+static std::mutex fio_io_mutex;
 
 M3DC1Source::M3DC1Source(const char *path, int timeslice) {
+    std::lock_guard<std::mutex> lock(fio_io_mutex);
     int result = fio_open_source(&src_, FIO_M3DC1_SOURCE, path);
     if (result != FIO_SUCCESS) {
         std::cerr << "M3DC1Source: error opening " << path << std::endl;
@@ -27,6 +35,7 @@ M3DC1Source::M3DC1Source(const char *path, int timeslice) {
 }
 
 M3DC1Source::~M3DC1Source() {
+    std::lock_guard<std::mutex> lock(fio_io_mutex);
     if (hint_)       src_->deallocate_search_hint(&hint_);
     if (b_field_)    fio_close_field(&b_field_);
     if (psin_field_) fio_close_field(&psin_field_);
@@ -41,6 +50,7 @@ bool M3DC1Source::eval_B(double R, double phi, double Z, double B[3]) {
 
 bool M3DC1Source::eval_psin(double R, double phi, double Z, double &psin) {
     if (!psin_field_) {
+        std::lock_guard<std::mutex> lock(fio_io_mutex);
         int status = src_->get_field(FIO_POLOIDAL_FLUX_NORM, &psin_field_, &opt_);
         if (status != FIO_SUCCESS) {
             std::cerr << "M3DC1Source: error loading psin field" << std::endl;
@@ -54,6 +64,7 @@ bool M3DC1Source::eval_psin(double R, double phi, double Z, double &psin) {
 
 bool M3DC1Source::eval_psi(double R, double phi, double Z, double &psi) {
     if (!psi_field_) {
+        std::lock_guard<std::mutex> lock(fio_io_mutex);
         int status = src_->get_field(FIO_POLOIDAL_FLUX, &psi_field_, &opt_);
         if (status != FIO_SUCCESS) {
             std::cerr << "M3DC1Source: error loading psi field" << std::endl;
@@ -67,6 +78,7 @@ bool M3DC1Source::eval_psi(double R, double phi, double Z, double &psi) {
 
 bool M3DC1Source::magnetic_axis(double &R, double &Z) {
     if (!src_) return false;
+    std::lock_guard<std::mutex> lock(fio_io_mutex);
     double     *out[2] = {&R, &Z};
     const int   ids[2] = {FIO_MAGAXIS_R, FIO_MAGAXIS_Z};
     for (int k = 0; k < 2; ++k) {
